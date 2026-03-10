@@ -20,11 +20,10 @@
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
 
-struct VisPluginData
-{
-	GList *vis_list;
-	GList *enabled_list;
-	gboolean playback_started;
+struct VisPluginData {
+    GList *vis_list;
+    GList *enabled_list;
+    gboolean playback_started;
 };
 
 GList *get_vis_list(void);
@@ -37,7 +36,7 @@ void vis_playback_start(void);
 void vis_playback_stop(void);
 gboolean vis_enabled(int i);
 gchar *vis_stringify_enabled_list(void);
-void vis_enable_from_stringified_list(gchar * list);
-void vis_send_data(gint16 pcm_data[2][512], int nch, int lenght);
+void vis_enable_from_stringified_list(gchar *list);
+void vis_send_data(gint16 pcm_data[2][512], int nch, int length);
 
 #endif

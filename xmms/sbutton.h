@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,15 +19,14 @@
 #ifndef SBUTTON_H
 #define SBUTTON_H
 
-typedef struct
-{
-	Widget sb_widget;
-	gint sb_pressed, sb_inside;
-	void (*sb_push_cb) (void);
-}
-SButton;
+typedef struct {
+    Widget sb_widget;
+    gint sb_pressed, sb_inside;
+    void (*sb_push_cb)(void);
+} SButton;
 
-SButton *create_sbutton(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h, void (*cb) (void));
-void free_sbutton(SButton * b);
+SButton *create_sbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
+                        void (*cb)(void));
+void free_sbutton(SButton *b);
 
 #endif

@@ -17,10 +17,8 @@ static int ir_hex_to_int(unsigned char hex);
 static int ir_enabled = 0;
 
 /* output hex digits */
-static char ir_hexdigit[16] =
-{
-	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-};
+static char ir_hexdigit[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
 /* this function is used by both ir_get_code() and ir_poll_code(),
  * the difference being in the timeout for the first piece of data.
@@ -29,138 +27,129 @@ static char ir_hexdigit[16] =
  * and get back to normal life.
  *
  * note esp. that these functions return a pointer to statically defined
- * data.  In the forseeable usage of LIBIRMAN this seems the easiest way.
+ * data.  In the foreseeable usage of LIBIRMAN this seems the easiest way.
  */
 
 static unsigned char *ir_read_code(unsigned long timeout)
 {
-	static unsigned char codebuf[IR_MAX_CODE_LEN];
-	int i, datum;
+    static unsigned char codebuf[IR_MAX_CODE_LEN];
+    int i, datum;
 
-	datum = ir_read_char(timeout);
-	if (datum < 0)
-		return NULL;
+    datum = ir_read_char(timeout);
+    if (datum < 0)
+        return NULL;
 
-	codebuf[0] = (unsigned char) datum;
+    codebuf[0] = (unsigned char)datum;
 
-	for (i = 1; i < ircfg.codelen; i++)
-	{
-		datum = ir_read_char(IR_POLL_TIMEOUT);
-		if (datum < 0)
-		{
-			return NULL;
-		}
-		else
-		{
-			codebuf[i] = (unsigned char) datum;
-		}
-	}
+    for (i = 1; i < ircfg.codelen; i++) {
+        datum = ir_read_char(IR_POLL_TIMEOUT);
+        if (datum < 0) {
+            return NULL;
+        } else {
+            codebuf[i] = (unsigned char)datum;
+        }
+    }
 
-	return codebuf;
+    return codebuf;
 }
 
 unsigned char *ir_get_code(void)
 {
-	/* well dodgy choice of error here...! */
-	if (!ir_enabled)
-	{
-		errno = ENXIO;
-		return NULL;
-	}
+    /* well dodgy choice of error here...! */
+    if (!ir_enabled) {
+        errno = ENXIO;
+        return NULL;
+    }
 
-	return ir_read_code(IR_BLOCKING);
+    return ir_read_code(IR_BLOCKING);
 }
 
 unsigned char *ir_poll_code(void)
 {
-	if (!ir_enabled)
-	{
-		errno = ENXIO;
-		return NULL;
-	}
+    if (!ir_enabled) {
+        errno = ENXIO;
+        return NULL;
+    }
 
-	return ir_read_code(0);
+    return ir_read_code(0);
 }
 
 /* checks to see if a piece of text is a valid ir code (1 = yes) */
 int ir_valid_code(char *text)
 {
-	char *c;
+    char *c;
 
-	if (strlen(text) != ircfg.codelen * 2)
-		return 0;
+    if (strlen(text) != ircfg.codelen * 2)
+        return 0;
 
-	for (c = text; *c; c++)
-		if (!isxdigit(*c))
-			return 0;
+    for (c = text; *c; c++)
+        if (!isxdigit(*c))
+            return 0;
 
-	return 1;
+    return 1;
 }
 
 char *ir_code_to_text(unsigned char *code)
 {
-	static char text[2 * IR_MAX_CODE_LEN + 1];
-	int i;
-	char *j;
+    static char text[2 * IR_MAX_CODE_LEN + 1];
+    int i;
+    char *j;
 
-	j = text;
-	for (i = 0; i < ircfg.codelen; i++)
-	{
-		*j++ = ir_hexdigit[(code[i] >> 4) & 0x0f];
-		*j++ = ir_hexdigit[code[i] & 0x0f];
-	}
-	*j = '\0';
+    j = text;
+    for (i = 0; i < ircfg.codelen; i++) {
+        *j++ = ir_hexdigit[(code[i] >> 4) & 0x0f];
+        *j++ = ir_hexdigit[code[i] & 0x0f];
+    }
+    *j = '\0';
 
-	return text;
+    return text;
 }
 
 static int ir_hex_to_int(unsigned char hex)
 {
-	if (hex >= '0' && hex <= '9')
-		return hex - '0';
+    if (hex >= '0' && hex <= '9')
+        return hex - '0';
 
-	hex = tolower(hex);
-	if (hex >= 'a' && hex <= 'f')
-		return hex - 'a' + 10;
+    hex = tolower(hex);
+    if (hex >= 'a' && hex <= 'f')
+        return hex - 'a' + 10;
 
-	/* error! */
-	return 0;
+    /* error! */
+    return 0;
 }
 
 unsigned char *ir_text_to_code(char *text)
 {
-	static char code[IR_MAX_CODE_LEN];
-	int i;
-	char *j;
+    static char code[IR_MAX_CODE_LEN];
+    int i;
+    char *j;
 
-	j = text;
-	for (i = 0; i < ircfg.codelen; i++)
-	{
-		if (!j[0] || !j[1])
-		{
-			break;
-		}
-		code[i] = (ir_hex_to_int(*j++) << 4) & 0xf0;
-		code[i] += (ir_hex_to_int(*j++)) & 0x0f;
-	}
+    j = text;
+    for (i = 0; i < ircfg.codelen; i++) {
+        if (!j[0] || !j[1]) {
+            break;
+        }
+        code[i] = (ir_hex_to_int(*j++) << 4) & 0xf0;
+        code[i] += (ir_hex_to_int(*j++)) & 0x0f;
+    }
 
-	/* if string isn't long enough, pad with zeros. This is (marginally)
-	 * better than the leaving in the remains of the last conversion
-	 */
-	for (; i < ircfg.codelen; i++)
-		code[i] = '\0';
+    /* if string isn't long enough, pad with zeros. This is (marginally)
+     * better than the leaving in the remains of the last conversion
+     */
+    for (; i < ircfg.codelen; i++)
+        code[i] = '\0';
 
-	return code;
+    return code;
 }
 
 /* this function should never be called, but maybe someone wants to manually
  * open the ir channel, then use the higher level functions.  If you use this
  * then you deserve any problems you get!  It is only here because I don't
- * believe in unneccesary restrictions.
+ * believe in unnecessary restrictions.
  */
 void ir_set_enabled(int val)
 {
-	ir_enabled = val;
+    ir_enabled = val;
 }
 
 /* end of irfunc.c */

@@ -18,46 +18,45 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "config.h"
 #include "urldecode.h"
+
 #include <glib.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
+
+#include "config.h"
 
 /* URL-decode a file: URL path, return NULL if it's not what we expect */
 char *xmms_urldecode_path(char *encoded_path)
 {
-	char *tmp, *cur, *ext;
+    char *tmp, *cur, *ext;
 
-	if (!encoded_path || *encoded_path == '\0' ||
-	    strncasecmp(encoded_path, "file:", 5))
-		return NULL;
-	cur = encoded_path + 5;
-	if (!strncasecmp(cur, "//localhost", 11))
-		cur += 11;
-	tmp = g_malloc0(strlen(cur) + 1);
-	while ((ext = strchr(cur, '%')) != NULL)
-	{
-		int realchar;
+    if (!encoded_path || *encoded_path == '\0' || strncasecmp(encoded_path, "file:", 5))
+        return NULL;
+    cur = encoded_path + 5;
+    if (!strncasecmp(cur, "//localhost", 11))
+        cur += 11;
+    tmp = g_malloc0(strlen(cur) + 1);
+    while ((ext = strchr(cur, '%')) != NULL) {
+        int realchar;
 
-		strncat(tmp, cur, ext - cur);
-		ext++;
-		cur = ext + 2;
-		if (!sscanf(ext, "%2x", &realchar))
-		{
-			/*
-			 * Assume it is a literal '%'.  Several file
-			 * managers send unencoded file: urls on on
-			 * drag and drop.
-			 */
-			realchar = '%';
-			cur -= 2;
-		}
-		tmp[strlen(tmp)] = realchar;
-	}
-	strcat(tmp, cur);
-	strcpy(encoded_path, tmp);
-	g_free(tmp);
+        strncat(tmp, cur, ext - cur);
+        ext++;
+        cur = ext + 2;
+        if (!sscanf(ext, "%2x", &realchar)) {
+            /*
+             * Assume it is a literal '%'.  Several file
+             * managers send unencoded file: urls on on
+             * drag and drop.
+             */
+            realchar = '%';
+            cur -= 2;
+        }
+        tmp[strlen(tmp)] = realchar;
+    }
+    strcat(tmp, cur);
+    strcpy(encoded_path, tmp);
+    g_free(tmp);
 
-	return encoded_path;
+    return encoded_path;
 }

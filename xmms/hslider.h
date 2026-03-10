@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,28 +19,26 @@
 #ifndef HSLIDER_H
 #define HSLIDER_H
 
-typedef struct
-{
-	Widget hs_widget;
-	gint hs_frame, hs_frame_offset, hs_frame_height, hs_min, hs_max;
-	gint hs_knob_nx, hs_knob_ny, hs_knob_px, hs_knob_py;
-	gint hs_knob_width, hs_knob_height;
-	gint hs_position;
-	gboolean hs_pressed;
-	gint hs_pressed_x, hs_pressed_y;
-	     gint(*hs_frame_cb) (gint);
-	void (*hs_motion_cb) (gint);
-	void (*hs_release_cb) (gint);
-	SkinIndex hs_skin_index;
-}
-HSlider;
+typedef struct {
+    Widget hs_widget;
+    gint hs_frame, hs_frame_offset, hs_frame_height, hs_min, hs_max;
+    gint hs_knob_nx, hs_knob_ny, hs_knob_px, hs_knob_py;
+    gint hs_knob_width, hs_knob_height;
+    gint hs_position;
+    gboolean hs_pressed;
+    gint hs_pressed_x, hs_pressed_y;
+    gint (*hs_frame_cb)(gint);
+    void (*hs_motion_cb)(gint);
+    void (*hs_release_cb)(gint);
+    SkinIndex hs_skin_index;
+} HSlider;
 
-HSlider *create_hslider(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h,
-		   gint knx, gint kny, gint kpx, gint kpy, gint kw, gint kh,
-		    gint fh, gint fo, gint min, gint max, gint(*fcb) (gint),
-		      void (*mcb) (gint), void (*rcb) (gint), SkinIndex si);
+HSlider *create_hslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
+                        gint knx, gint kny, gint kpx, gint kpy, gint kw, gint kh, gint fh, gint fo,
+                        gint min, gint max, gint (*fcb)(gint), void (*mcb)(gint), void (*rcb)(gint),
+                        SkinIndex si);
 
-void hslider_set_position(HSlider * hs, gint pos);
-gint hslider_get_position(HSlider * hs);
+void hslider_set_position(HSlider *hs, gint pos);
+gint hslider_get_position(HSlider *hs);
 
 #endif

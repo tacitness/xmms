@@ -1,6 +1,7 @@
 
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,10 +20,9 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-struct OutputPluginData
-{
-	GList *output_list;
-	OutputPlugin *current_output_plugin;
+struct OutputPluginData {
+    GList *output_list;
+    OutputPlugin *current_output_plugin;
 };
 
 GList *get_output_list(void);

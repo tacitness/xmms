@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,19 +19,20 @@
 #ifndef PBUTTON_H
 #define PBUTTON_H
 
-typedef struct
-{
-	Widget pb_widget;
-	gint pb_nx, pb_ny, pb_px, pb_py;
-	gboolean pb_pressed, pb_inside, pb_allow_draw;
-	void (*pb_push_cb) (void);
-	SkinIndex pb_skin_index1, pb_skin_index2;
-}
-PButton;
+typedef struct {
+    Widget pb_widget;
+    gint pb_nx, pb_ny, pb_px, pb_py;
+    gboolean pb_pressed, pb_inside, pb_allow_draw;
+    void (*pb_push_cb)(void);
+    SkinIndex pb_skin_index1, pb_skin_index2;
+} PButton;
 
-PButton *create_pbutton(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h, gint nx, gint ny, gint px, gint py, void (*cb) (void), SkinIndex si);
-PButton *create_pbutton_ex(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h, gint nx, gint ny, gint px, gint py, void (*cb) (void), SkinIndex si1, SkinIndex si2);
-void free_pbutton(PButton * b);
+PButton *create_pbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
+                        gint nx, gint ny, gint px, gint py, void (*cb)(void), SkinIndex si);
+PButton *create_pbutton_ex(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w,
+                           gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void),
+                           SkinIndex si1, SkinIndex si2);
+void free_pbutton(PButton *b);
 void pbutton_set_skin_index(PButton *b, SkinIndex si);
 void pbutton_set_skin_index1(PButton *b, SkinIndex si);
 void pbutton_set_skin_index2(PButton *b, SkinIndex si);

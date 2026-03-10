@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-int	sun_mixer_open(void);
-void	sun_mixer_close(void);
-int	sun_mixer_get_dev(int, int *, char *);
-void	sun_get_volume(int *, int *);
-void	sun_set_volume(int, int);
+int sun_mixer_open(void);
+void sun_mixer_close(void);
+int sun_mixer_get_dev(int, int *, char *);
+void sun_get_volume(int *, int *);
+void sun_set_volume(int, int);

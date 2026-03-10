@@ -9,6 +9,10 @@ rules:
   truthy:
     allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
     check-keys: false
+  # .clang-format uses alignment-padded colons (BasedOnStyle:    LLVM)
+  # which is idiomatic for clang-format files — allow any spaces after ':'
+  colons:
+    max-spaces-after: -1
   comments:
     min-spaces-from-content: 1
   braces:

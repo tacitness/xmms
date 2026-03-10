@@ -14,19 +14,18 @@
  * e.g. half duration seek point = (toc[50]/256.0) * total_bitstream_bytes
  */
 
-#define FRAMES_FLAG     0x0001
-#define BYTES_FLAG      0x0002
-#define TOC_FLAG        0x0004
-#define VBR_SCALE_FLAG  0x0008
+#define FRAMES_FLAG 0x0001
+#define BYTES_FLAG 0x0002
+#define TOC_FLAG 0x0004
+#define VBR_SCALE_FLAG 0x0008
 
 /*
  * structure to receive extracted header
  */
-typedef struct
-{
-	int frames;		/* total bit stream frames from Xing header data */
-	int bytes;		/* total bit stream bytes from Xing header data */
-	unsigned char toc[100];	/* "table of contents" */
+typedef struct {
+    int frames;             /* total bit stream frames from Xing header data */
+    int bytes;              /* total bit stream bytes from Xing header data */
+    unsigned char toc[100]; /* "table of contents" */
 } xing_header_t;
 
 /*
@@ -34,11 +33,11 @@ typedef struct
  * xing structure to receive header data (output)
  * buf bitstream input
  */
-int mpg123_get_xing_header(xing_header_t * xing, unsigned char *buf);
+int mpg123_get_xing_header(xing_header_t *xing, unsigned char *buf);
 
 
 /*
  * Returns seekpoint in bytes (may be at eof if percent=100.0)
  * percent: play time percentage of total playtime. May be fractional.
  */
-int mpg123_seek_point(xing_header_t * xing, float percent);
+int mpg123_seek_point(xing_header_t *xing, float percent);

@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,70 +19,67 @@
 #ifndef XMMS_H
 #define XMMS_H
 
-#include <gtk/gtk.h>
-#include <gdk/gdkx.h>
-#include <gdk/gdkkeysyms.h>
 #include <X11/Xlib.h>
-
+#include <errno.h>
+#include <gdk/gdkkeysyms.h>
+#include <gdk/gdkx.h>
+#include <gtk/gtk.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+
 #include <dirent.h>
-#include <errno.h>
 #include <pthread.h>
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
-#include <math.h>
-
+#include "about.h"
 #include "bmp.h"
-#include "util.h"
-#include "skin.h"
-#include "plugin.h"
-#include "output.h"
-#include "input.h"
-#include "effect.h"
-#include "general.h"
-#include "visualization.h"
-#include "fullscreen.h"
-#include "pluginenum.h"
-#include "playlist.h"
+#include "config.h"
 #include "controlsocket.h"
+#include "dnd.h"
 #include "dock.h"
-#include "widget.h"
-#include "sbutton.h"
-#include "pbutton.h"
-#include "tbutton.h"
-#include "textbox.h"
-#include "menurow.h"
-#include "hslider.h"
-#include "monostereo.h"
-#include "vis.h"
-#include "svis.h"
-#include "number.h"
-#include "playstatus.h"
-#include "playlist_list.h"
-#include "playlist_slider.h"
-#include "playlist_popup.h"
+#include "effect.h"
 #include "eq_graph.h"
 #include "eq_slider.h"
-#include "main.h"
-#include "skinwin.h"
-#include "prefswin.h"
-#include "playlistwin.h"
 #include "equalizer.h"
-#include "about.h"
+#include "fullscreen.h"
+#include "general.h"
 #include "hints.h"
+#include "hslider.h"
 #include "i18n.h"
+#include "input.h"
+#include "main.h"
+#include "menurow.h"
+#include "monostereo.h"
+#include "number.h"
+#include "output.h"
+#include "pbutton.h"
+#include "playlist.h"
+#include "playlist_list.h"
+#include "playlist_popup.h"
+#include "playlist_slider.h"
+#include "playlistwin.h"
+#include "playstatus.h"
+#include "plugin.h"
+#include "pluginenum.h"
+#include "prefswin.h"
+#include "sbutton.h"
+#include "skin.h"
+#include "skinwin.h"
 #include "sm.h"
-#include "dnd.h"
+#include "svis.h"
+#include "tbutton.h"
+#include "textbox.h"
 #include "urldecode.h"
-
-#include "config.h"
+#include "util.h"
+#include "vis.h"
+#include "visualization.h"
+#include "widget.h"
 
 #endif

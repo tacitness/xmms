@@ -13,113 +13,113 @@ static void check_buffer_range(int size)
 
 void mpg123_backbits(int number_of_bits)
 {
-	bsi.bitindex    -= number_of_bits;
-	bsi.wordpointer += (bsi.bitindex>>3);
-	bsi.bitindex    &= 0x7;
+    bsi.bitindex -= number_of_bits;
+    bsi.wordpointer += (bsi.bitindex >> 3);
+    bsi.bitindex &= 0x7;
 }
 
 int mpg123_getbitoffset(void)
 {
-	return (-bsi.bitindex)&0x7;
+    return (-bsi.bitindex) & 0x7;
 }
 
 int mpg123_getbyte(void)
 {
 #ifdef DEBUG_GETBITS
-	if(bsi.bitindex)
-		fprintf(stderr,"getbyte called unsynched!\n");
+    if (bsi.bitindex)
+        fprintf(stderr, "getbyte called unsynched!\n");
 #endif
-	return *bsi.wordpointer++;
+    return *bsi.wordpointer++;
 }
 
 unsigned int mpg123_getbits(int number_of_bits)
 {
-	unsigned long rval;
+    unsigned long rval;
 
 #ifdef DEBUG_GETBITS
-	fprintf(stderr, "g%d", number_of_bits);
+    fprintf(stderr, "g%d", number_of_bits);
 #endif
 
-	if(!number_of_bits)
-		return 0;
+    if (!number_of_bits)
+        return 0;
 
 #if 0
 	check_buffer_range(number_of_bits + bsi.bitindex);
 #endif
 
-	{
-		rval = bsi.wordpointer[0];
-		rval <<= 8;
-		rval |= bsi.wordpointer[1];
-		rval <<= 8;
-		rval |= bsi.wordpointer[2];
+    {
+        rval = bsi.wordpointer[0];
+        rval <<= 8;
+        rval |= bsi.wordpointer[1];
+        rval <<= 8;
+        rval |= bsi.wordpointer[2];
 
-		rval <<= bsi.bitindex;
-		rval &= 0xffffff;
+        rval <<= bsi.bitindex;
+        rval &= 0xffffff;
 
-		bsi.bitindex += number_of_bits;
+        bsi.bitindex += number_of_bits;
 
-		rval >>= (24-number_of_bits);
+        rval >>= (24 - number_of_bits);
 
-		bsi.wordpointer += (bsi.bitindex >> 3);
-		bsi.bitindex &= 7;
-	}
+        bsi.wordpointer += (bsi.bitindex >> 3);
+        bsi.bitindex &= 7;
+    }
 
 #ifdef DEBUG_GETBITS
-	fprintf(stderr,":%x ",rval);
+    fprintf(stderr, ":%x ", rval);
 #endif
 
-	return rval;
+    return rval;
 }
 
 unsigned int mpg123_getbits_fast(int number_of_bits)
 {
-	unsigned int rval;
+    unsigned int rval;
 #ifdef DEBUG_GETBITS
-	fprintf(stderr,"g%d",number_of_bits);
+    fprintf(stderr, "g%d", number_of_bits);
 #endif
 
 #if 0
 	check_buffer_range(number_of_bits+bsi.bitindex);
 #endif
 
-	rval =  (unsigned char) (bsi.wordpointer[0] << bsi.bitindex);
-	rval |= ((unsigned int) bsi.wordpointer[1] << bsi.bitindex) >> 8;
-	rval <<= number_of_bits;
-	rval >>= 8;
+    rval = (unsigned char)(bsi.wordpointer[0] << bsi.bitindex);
+    rval |= ((unsigned int)bsi.wordpointer[1] << bsi.bitindex) >> 8;
+    rval <<= number_of_bits;
+    rval >>= 8;
 
-	bsi.bitindex += number_of_bits;
+    bsi.bitindex += number_of_bits;
 
-	bsi.wordpointer += (bsi.bitindex >> 3);
-	bsi.bitindex &= 7;
+    bsi.wordpointer += (bsi.bitindex >> 3);
+    bsi.bitindex &= 7;
 
 #ifdef DEBUG_GETBITS
-	fprintf(stderr,":%x ",rval);
+    fprintf(stderr, ":%x ", rval);
 #endif
-	return rval;
+    return rval;
 }
 
 unsigned int mpg123_get1bit(void)
 {
-	unsigned char rval;
+    unsigned char rval;
 
 #ifdef DEBUG_GETBITS
-	fprintf(stderr,"g%d",1);
+    fprintf(stderr, "g%d", 1);
 #endif
 
 #if 0
 	check_buffer_range(1+bsi.bitindex);
 #endif
 
-	rval = *bsi.wordpointer << bsi.bitindex;
+    rval = *bsi.wordpointer << bsi.bitindex;
 
-	bsi.bitindex++;
-	bsi.wordpointer += (bsi.bitindex >> 3);
-	bsi.bitindex &= 7;
+    bsi.bitindex++;
+    bsi.wordpointer += (bsi.bitindex >> 3);
+    bsi.bitindex &= 7;
 
 #ifdef DEBUG_GETBITS
-	fprintf(stderr,":%d ",rval >> 7);
+    fprintf(stderr, ":%d ", rval >> 7);
 #endif
 
-	return rval>>7;
+    return rval >> 7;
 }

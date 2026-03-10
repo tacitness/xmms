@@ -1,6 +1,7 @@
 
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,15 +20,13 @@
 #ifndef NUMBER_H
 #define NUMBER_H
 
-typedef struct
-{
-	Widget nu_widget;
-	gint nu_number;
-	SkinIndex nu_skin_index;
-}
-Number;
+typedef struct {
+    Widget nu_widget;
+    gint nu_number;
+    SkinIndex nu_skin_index;
+} Number;
 
-void number_set_number(Number * nu, int number);
-Number *create_number(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, SkinIndex si);
+void number_set_number(Number *nu, int number);
+Number *create_number(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, SkinIndex si);
 
 #endif

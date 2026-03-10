@@ -26,23 +26,23 @@
  * For holding info on a single CD track.
  */
 typedef struct {
-	gchar	*artist;
-	gchar	*title;
-	gint	num;
+    gchar *artist;
+    gchar *title;
+    gint num;
 } trackinfo_t;
 
 /*
  * For holding info on a complete CD.
  */
 typedef struct {
-	gboolean is_valid;
-	gchar	*albname;
-	gchar	*artname;
-	trackinfo_t tracks[100];
+    gboolean is_valid;
+    gchar *albname;
+    gchar *artname;
+    trackinfo_t tracks[100];
 } cdinfo_t;
 
 void cdda_cdinfo_flush(cdinfo_t *cdinfo);
-cdinfo_t * cdda_cdinfo_new(void);
+cdinfo_t *cdda_cdinfo_new(void);
 void cdda_cdinfo_delete(cdinfo_t *info);
 void cdda_cdinfo_track_set(cdinfo_t *cdinfo, gint, gchar *, gchar *);
 void cdda_cdinfo_cd_set(cdinfo_t *cdinfo, gchar *, gchar *);

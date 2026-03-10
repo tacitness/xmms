@@ -1700,7 +1700,7 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
          *
          * A further optimization would be to save the
          * lowercased versions of the filenames rather than
-         * constructing them everytime. This'd take memory, so
+         * constructing them every time. This'd take memory, so
          * I won't do it this time.
          */
 
@@ -4105,7 +4105,7 @@ static void enable_x11r5_session_management(int argc, char **argv)
 
 	/*
 	 * It would be easier if we could call gdk_add_client_message_filter()
-	 * here but GDK only allows one filter per message and want's to
+	 * here but GDK only allows one filter per message and wants to
 	 * filter "WM_PROTOCOLS" itself.
 	 */
 	gdk_window_add_filter(mainwin->window, save_yourself_filter, NULL);

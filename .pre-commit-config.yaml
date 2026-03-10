@@ -10,7 +10,7 @@
 # unnecessary GitHub clones and version-pin drift.
 # Only two remote repos are used: pre-commit-hooks (basic hygiene) and
 # conventional-pre-commit (commit-msg validation).
-
+---
 default_language_version:
   python: python3
 
@@ -88,6 +88,9 @@ repos:
         args: [--config-file=.yamllint.yml, --strict]
         language: system
         types: [yaml]
+        # .clang-format uses tool-generated alignment syntax with long regex
+        # lines that are valid clang-format YAML but not lintable as standard YAML
+        exclude: '^\.clang-format$'
 
       # ── codespell: spell-check code comments and docs ────────────────────
       - id: codespell

@@ -66,7 +66,8 @@ AlignTrailingComments:
 AlignEscapedNewlines:    Left
 
 # Comments
-ReflowComments:          Always
+# NOTE: 'Always' is clang-format ≥19 only; use bool for clang-format-18 CI compat
+ReflowComments:          true
 SpacesBeforeTrailingComments: 2
 
 # Misc

@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,15 +18,11 @@
  */
 
 /* Designate dropped data types that we know and care about */
-enum {
-	XMMS_DROP_STRING,
-	XMMS_DROP_PLAINTEXT,
-	XMMS_DROP_URLENCODED
-};
+enum { XMMS_DROP_STRING, XMMS_DROP_PLAINTEXT, XMMS_DROP_URLENCODED };
 
 /* Drag data format listing for gtk_drag_dest_set() */
 extern const GtkTargetEntry _xmms_drop_types[];
 
-#define xmms_drag_dest_set(widget) gtk_drag_dest_set(widget, \
-		GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP, \
-		_xmms_drop_types, 3, GDK_ACTION_COPY | GDK_ACTION_MOVE)
+#define xmms_drag_dest_set(widget)                                                               \
+    gtk_drag_dest_set(widget, GTK_DEST_DEFAULT_MOTION | GTK_DEST_DEFAULT_DROP, _xmms_drop_types, \
+                      3, GDK_ACTION_COPY | GDK_ACTION_MOVE)

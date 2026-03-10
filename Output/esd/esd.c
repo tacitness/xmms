@@ -18,30 +18,28 @@
 #include "esdout.h"
 #include "xmms/i18n.h"
 
-OutputPlugin esd_op =
-{
-	NULL,
-	NULL,
-	NULL, /* Description */
-	esdout_init,
-	esdout_about,
-	esdout_configure,
-	esdout_get_volume,
-	esdout_set_volume,
-	esdout_open,
-	esdout_write,
-	esdout_close,
-	esdout_flush,
-	esdout_pause,
-	esdout_free,
-	esdout_playing,
-	esdout_get_output_time,
-	esdout_get_written_time,
+OutputPlugin esd_op = {
+    NULL,
+    NULL,
+    NULL, /* Description */
+    esdout_init,
+    esdout_about,
+    esdout_configure,
+    esdout_get_volume,
+    esdout_set_volume,
+    esdout_open,
+    esdout_write,
+    esdout_close,
+    esdout_flush,
+    esdout_pause,
+    esdout_free,
+    esdout_playing,
+    esdout_get_output_time,
+    esdout_get_written_time,
 };
 
 OutputPlugin *get_oplugin_info(void)
 {
-	esd_op.description =
-		g_strdup_printf(_("eSound Output Plugin %s"), VERSION);
-	return &esd_op;
+    esd_op.description = g_strdup_printf(_("eSound Output Plugin %s"), VERSION);
+    return &esd_op;
 }

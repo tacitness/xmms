@@ -33,22 +33,22 @@
  */
 void id3_init_tag(struct id3_tag *id3)
 {
-	/*
-	 * Initialize header.
-	 */
-	id3->id3_version = 3;
-	id3->id3_revision = 0;
-	id3->id3_flags = ID3_THFLAG_USYNC | ID3_THFLAG_EXP;
-	id3->id3_tagsize = 0;
+    /*
+     * Initialize header.
+     */
+    id3->id3_version = 3;
+    id3->id3_revision = 0;
+    id3->id3_flags = ID3_THFLAG_USYNC | ID3_THFLAG_EXP;
+    id3->id3_tagsize = 0;
 
-	id3->id3_altered = 1;
-	id3->id3_newtag = 1;
-	id3->id3_pos = 0;
+    id3->id3_altered = 1;
+    id3->id3_newtag = 1;
+    id3->id3_pos = 0;
 
-	/*
-	 * Initialize frames.
-	 */
-	id3->id3_frame = NULL;
+    /*
+     * Initialize frames.
+     */
+    id3->id3_frame = NULL;
 }
 
 
@@ -57,77 +57,73 @@ void id3_init_tag(struct id3_tag *id3)
  *
  *    Read the ID3 tag from the input stream.  The start of the tag
  *    must be positioned in the next tag in the stream.  Return 0 upon
- *    success, or -1 if an error occured.
+ *    success, or -1 if an error occurred.
  *
  */
 int id3_read_tag(struct id3_tag *id3)
 {
-	char *buf;
+    char *buf;
 
-	/*
-	 * We know that the tag will be at least this big.
-	 *
-	 * tag header + "ID3"
-	 */
-	id3->id3_tagsize = ID3_TAGHDR_SIZE + 3;
+    /*
+     * We know that the tag will be at least this big.
+     *
+     * tag header + "ID3"
+     */
+    id3->id3_tagsize = ID3_TAGHDR_SIZE + 3;
 
-	if (!(id3->id3_oflags & ID3_OPENF_NOCHK))
-	{
-		/*
-		 * Check if we have a valid ID3 tag.
-		 */
-		char *id = id3->id3_read(id3, NULL, 3);
-		if (id == NULL)
-			return -1;
+    if (!(id3->id3_oflags & ID3_OPENF_NOCHK)) {
+        /*
+         * Check if we have a valid ID3 tag.
+         */
+        char *id = id3->id3_read(id3, NULL, 3);
+        if (id == NULL)
+            return -1;
 
-		if (id[0] != 'I' || id[1] != 'D' || id[2] != '3')
-		{
-			/*
-			 * ID3 tag was not detected.
-			 */
-			id3->id3_seek(id3, -3);
-			return -1;
-		}
-	}
+        if (id[0] != 'I' || id[1] != 'D' || id[2] != '3') {
+            /*
+             * ID3 tag was not detected.
+             */
+            id3->id3_seek(id3, -3);
+            return -1;
+        }
+    }
 
-	/*
-	 * Read ID3 tag-header.
-	 */
-	buf = id3->id3_read(id3, NULL, ID3_TAGHDR_SIZE);
-	if (buf == NULL)
-		return -1;
+    /*
+     * Read ID3 tag-header.
+     */
+    buf = id3->id3_read(id3, NULL, ID3_TAGHDR_SIZE);
+    if (buf == NULL)
+        return -1;
 
-	id3->id3_version = buf[0];
-	id3->id3_revision = buf[1];
-	id3->id3_flags = buf[2];
-	id3->id3_tagsize = ID3_GET_SIZE28(buf[3], buf[4], buf[5], buf[6]);
-	id3->id3_newtag = 0;
-	id3->id3_pos = 0;
+    id3->id3_version = buf[0];
+    id3->id3_revision = buf[1];
+    id3->id3_flags = buf[2];
+    id3->id3_tagsize = ID3_GET_SIZE28(buf[3], buf[4], buf[5], buf[6]);
+    id3->id3_newtag = 0;
+    id3->id3_pos = 0;
 
-	if (id3->id3_version < 2 || id3->id3_version > 4)
-		return -1;
+    if (id3->id3_version < 2 || id3->id3_version > 4)
+        return -1;
 
-	/*
-	 * Parse extended header.
-	 */
-	if (id3->id3_flags & ID3_THFLAG_EXT)
-	{
-		buf = id3->id3_read(id3, NULL, ID3_EXTHDR_SIZE);
-		if (buf == NULL)
-			return -1;
-	}
+    /*
+     * Parse extended header.
+     */
+    if (id3->id3_flags & ID3_THFLAG_EXT) {
+        buf = id3->id3_read(id3, NULL, ID3_EXTHDR_SIZE);
+        if (buf == NULL)
+            return -1;
+    }
 
-	/*
-	 * Parse frames.
-	 */
-	while (id3->id3_pos < id3->id3_tagsize)
-	{
-		if (id3_read_frame(id3) == -1)
-			return -1;
-	}
+    /*
+     * Parse frames.
+     */
+    while (id3->id3_pos < id3->id3_tagsize) {
+        if (id3_read_frame(id3) == -1)
+            return -1;
+    }
 
-	if (id3->id3_frame == NULL)
-		return -1;
+    if (id3->id3_frame == NULL)
+        return -1;
 
-	return 0;
+    return 0;
 }

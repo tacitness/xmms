@@ -8,18 +8,19 @@
 
 struct xmms_convert_buffers;
 
-struct xmms_convert_buffers* xmms_convert_buffers_new(void);
+struct xmms_convert_buffers *xmms_convert_buffers_new(void);
 /*
- * Free the data assosiated with the buffers, without destroying the
+ * Free the data associated with the buffers, without destroying the
  * context.  The context can be reused.
  */
-void xmms_convert_buffers_free(struct xmms_convert_buffers* buf);
-void xmms_convert_buffers_destroy(struct xmms_convert_buffers* buf);
+void xmms_convert_buffers_free(struct xmms_convert_buffers *buf);
+void xmms_convert_buffers_destroy(struct xmms_convert_buffers *buf);
 
 
-typedef int (*convert_func_t)(struct xmms_convert_buffers* buf, void **data, int length);
-typedef int (*convert_channel_func_t)(struct xmms_convert_buffers* buf, void **data, int length);
-typedef int (*convert_freq_func_t)(struct xmms_convert_buffers* buf, void **data, int length, int ifreq, int ofreq);
+typedef int (*convert_func_t)(struct xmms_convert_buffers *buf, void **data, int length);
+typedef int (*convert_channel_func_t)(struct xmms_convert_buffers *buf, void **data, int length);
+typedef int (*convert_freq_func_t)(struct xmms_convert_buffers *buf, void **data, int length,
+                                   int ifreq, int ofreq);
 
 
 convert_func_t xmms_convert_get_func(AFormat output, AFormat input);

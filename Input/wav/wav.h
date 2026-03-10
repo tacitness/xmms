@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,42 +19,38 @@
 #ifndef WAV_H
 #define WAV_H
 
-#include "config.h"
+#include <glib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <pthread.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <glib.h>
-
+#include "config.h"
 #include "xmms/plugin.h"
 
-#define	WAVE_FORMAT_UNKNOWN		(0x0000)
-#define	WAVE_FORMAT_PCM			(0x0001)
-#define	WAVE_FORMAT_ADPCM		(0x0002)
-#define	WAVE_FORMAT_ALAW		(0x0006)
-#define	WAVE_FORMAT_MULAW		(0x0007)
-#define	WAVE_FORMAT_OKI_ADPCM		(0x0010)
-#define	WAVE_FORMAT_DIGISTD		(0x0015)
-#define	WAVE_FORMAT_DIGIFIX		(0x0016)
-#define	IBM_FORMAT_MULAW         	(0x0101)
-#define	IBM_FORMAT_ALAW			(0x0102)
-#define	IBM_FORMAT_ADPCM         	(0x0103)
+#define WAVE_FORMAT_UNKNOWN (0x0000)
+#define WAVE_FORMAT_PCM (0x0001)
+#define WAVE_FORMAT_ADPCM (0x0002)
+#define WAVE_FORMAT_ALAW (0x0006)
+#define WAVE_FORMAT_MULAW (0x0007)
+#define WAVE_FORMAT_OKI_ADPCM (0x0010)
+#define WAVE_FORMAT_DIGISTD (0x0015)
+#define WAVE_FORMAT_DIGIFIX (0x0016)
+#define IBM_FORMAT_MULAW (0x0101)
+#define IBM_FORMAT_ALAW (0x0102)
+#define IBM_FORMAT_ADPCM (0x0103)
 
 extern InputPlugin wav_ip;
 
-typedef struct
-{
-	FILE *file;
-	short format_tag, channels, block_align, bits_per_sample, eof, going;
-	long samples_per_sec, avg_bytes_per_sec;
-	unsigned long position, length;
-	int seek_to, data_offset;
-	pid_t pid;
-}
-WaveFile;
+typedef struct {
+    FILE *file;
+    short format_tag, channels, block_align, bits_per_sample, eof, going;
+    long samples_per_sec, avg_bytes_per_sec;
+    unsigned long position, length;
+    int seek_to, data_offset;
+    pid_t pid;
+} WaveFile;
 
 static void wav_init(void);
 static int is_our_file(char *filename);

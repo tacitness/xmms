@@ -20,17 +20,16 @@
 #ifndef PLAYLIST_SLIDER_H
 #define PLAYLIST_SLIDER_H
 
-typedef struct
-{
-	Widget ps_widget;
-	PlayList_List *ps_list;
-	gboolean ps_is_draging;
-	gint ps_drag_y, ps_prev_y, ps_prev_height;
-	GdkImage *ps_back_image;
-	int ps_skin_id;
-}
-PlaylistSlider;
+typedef struct {
+    Widget ps_widget;
+    PlayList_List *ps_list;
+    gboolean ps_is_draging;
+    gint ps_drag_y, ps_prev_y, ps_prev_height;
+    GdkImage *ps_back_image;
+    int ps_skin_id;
+} PlaylistSlider;
 
-PlaylistSlider *create_playlistslider(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint h, PlayList_List * list);
+PlaylistSlider *create_playlistslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
+                                      gint h, PlayList_List *list);
 
 #endif

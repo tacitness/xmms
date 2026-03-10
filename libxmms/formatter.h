@@ -3,7 +3,7 @@
 #define XMMS_FORMATTER_H
 
 typedef struct {
-	gchar *values[256];
+    gchar *values[256];
 } Formatter;
 
 Formatter *xmms_formatter_new(void);
