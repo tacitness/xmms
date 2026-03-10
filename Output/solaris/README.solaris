@@ -13,7 +13,7 @@ Current status
    main problems are due to systematic problems related to shared memory
    and Glib/GTK. A few features are still to be added (as per TODO
    list). Development is done under SPARC Solaris 7, but has been
-   reported to work succesfully on both x86 Solaris and older versions.
+   reported to work successfully on both x86 Solaris and older versions.
      _________________________________________________________________
 
 Download
@@ -35,7 +35,7 @@ Installation
        -
     3. Compile using ./configure as normal (full instructions in the XMMS
        README file) (note: you may want to add "-O2" to CFLAGS; this
-       halfs CPU usage)
+       halves CPU usage)
     4. Download the plugin (see above).
     5. Extract the archive using eg gzip -dc xmms-solaris-0.6.4.tar.gz |
        tar xvf -

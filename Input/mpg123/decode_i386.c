@@ -6,7 +6,7 @@
  * See also 'README'
  *
  * slightly optimized for machines without autoincrement/decrement.
- * The performance is highly compiler dependend. Maybe
+ * The performance is highly compiler dependent. Maybe
  * the decode.c version for 'normal' processor may be faster
  * even for Intel processors.
  */

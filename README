@@ -458,7 +458,7 @@ Effect plugins can alter the sound in different ways.
 3.5.3 General Plugins
 ---------------------
 
-General plugins are mostly for controling XMMS.
+General plugins are mostly for controlling XMMS.
 
 3.5.4 Visualization Plugins
 ---------------------------
@@ -623,7 +623,7 @@ Device:
 		This is where XMMS will "hijack" the filerequester and present
 		the content of the CD. On my system I have it set to
 		/mnt/cdrom, but if you're using some sort of automounter or
-		simmilar I suggest you change it to something like
+		similar I suggest you change it to something like
 		/mnt/audio_cd and make sure the directory exists.
 
 Play mode:
@@ -643,10 +643,10 @@ Volume control:
 		You can't control the volume at all.
 
 	CDROM drive
-		The volume is controled directly on the CDROM, not all drives
+		The volume is controlled directly on the CDROM, not all drives
 		support this though.
 	OSS mixer
-		The volume is controled through the OSS mixer
+		The volume is controlled through the OSS mixer
 
 Check drive:
 	Makes a rudimentary check if everything is properly configured.
@@ -667,7 +667,7 @@ CDDB:
 	CDDB is used to get track information for your CD from a CDDB
 	compatible database.
 
-	You can set the enviroment variable "XMMS_CDDB_CLIENT_NAME" to change
+	You can set the environment variable "XMMS_CDDB_CLIENT_NAME" to change
 	how XMMS presents itself to the CDDB server. Default value is
 	"XMMS 1.2.8"
 
@@ -705,7 +705,7 @@ Now to add your CDROM tracks to the playlist. Insert an audio cd into the
 CDROM drive and press the Eject button. Go to the directory which you defined
 earlier ( /mnt/cdrom ) and you should see a list of tracks. They will be named
 Track XX.cda, select the tracks you want to play and press OK. If you had
-choosed an Internet database and the CD exists in it, XMMS will now display
+chosen an Internet database and the CD exists in it, XMMS will now display
 the tracks you have chosen with their names according to the 'Name format'
 configuration.
 
@@ -765,7 +765,7 @@ have an older soundcard and the music is going half speed, change the
 'Resolution' setting.
 
 In the 'Options' section you can tell XMMS how to handle the files you feed it.
-You can tell the plugin to dectect files by extension, content and both. The
+You can tell the plugin to detect files by extension, content and both. The
 reason why this option exists is to make XMMS less demanding when you add a lot
 of MP3 files with the extension .mp3. If you use both then XMMS will first look
 at the extension and then try to detect by content. This is useful if you have

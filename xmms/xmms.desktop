@@ -1,17 +1,17 @@
 [Desktop Entry]
 Name=XMMS
 Comment=X Multimedia System
-comment[az]=X Multimedya Sistemi
-comment[ca]=Sistema Multimèdia per a X
+comment[az]=X Multimedya Systemi
+comment[ca]=Systema Multimèdia per a X
 comment[cs]=Multimediální pøehrávaè
-comment[es]=Sistema Multimedia para X
-comment[gl]=Sistema Multimedia para X
+comment[es]=Systema Multimedia para X
+comment[gl]=Systema Multimedia para X
 comment[hr]=X Multimedijski Sustav
 comment[nn]=X Multimedia-system
 comment[pt_BR]=X Multimedia System
-comment[ro]=X MultiMedia Sistem
+comment[ro]=X MultiMedia System
 comment[th]=ÃÐººÁÑÅµÔÁÕà´ÕÂº¹ X
-comment[tr]=X Multimedya Sistem
+comment[tr]=X Multimedya System
 comment[zh_TW]=X ¦h´CÅé¨t²Î
 Encoding=Legacy-Mixed
 Exec=xmms

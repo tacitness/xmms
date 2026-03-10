@@ -149,8 +149,8 @@ static void stop(void)
 static void seek(int time)
 {
     /*
-       We need to seek in pattrens somehow
-       can't seek by time only by X pattrens on way or the other
+       We need to seek in patterns somehow
+       can't seek by time only by X patterns on way or the other
 
        Player_NextPosition ();
        Player_PrevPosition ();
@@ -368,8 +368,8 @@ static void play_file(char *filename)
     if (mf->volume > uservolume)
         Player_SetVolume(uservolume);
 
-    /* mods are in pattrens .. you need to be able to seek
-       back the forth from pattrens */
+    /* mods are in patterns .. you need to be able to seek
+       back the forth from patterns */
 
     /* We still need to check if we want filename titles */
     titletemp = get_title(filename);

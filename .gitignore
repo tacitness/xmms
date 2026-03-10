@@ -90,7 +90,6 @@ po/stamp-po
 wmxmms/Makefile
 xmms/Makefile
 xmms/defskin/Makefile
-xmms/i18n.h
 xmms/stamp-h2
 
 # libxmms sub-configure artefacts

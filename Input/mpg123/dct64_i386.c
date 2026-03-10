@@ -2,7 +2,7 @@
 /*
  * Discrete Cosine Transform (DCT) for subband synthesis
  * optimized for machines with no auto-increment.
- * The performance is highly compiler dependend. Maybe
+ * The performance is highly compiler dependent. Maybe
  * the mpg123_dct64.c version for 'normal' processor may be faster
  * even for Intel processors.
  */

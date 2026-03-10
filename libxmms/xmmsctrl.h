@@ -62,7 +62,7 @@ gboolean xmms_remote_is_main_win(gint session);
 gboolean xmms_remote_is_pl_win(gint session);
 gboolean xmms_remote_is_eq_win(gint session);
 void xmms_remote_show_prefs_box(gint session);
-void xmms_remote_toggle_aot(gint session, gboolean on top);
+void xmms_remote_toggle_aot(gint session, gboolean on_top);
 void xmms_remote_eject(gint session);
 void xmms_remote_playlist_prev(gint session);
 void xmms_remote_playlist_next(gint session);

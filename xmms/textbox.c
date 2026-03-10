@@ -317,7 +317,7 @@ static void textbox_generate_pixmap(TextBox *tb)
 
     /*
      * Don't reset the offset if only text after the last '(' has
-     * changed.  This is a hack to avoid visual noice on vbr files
+     * changed.  This is a hack to avoid visual noise on vbr files
      * where we guess the length.
      */
     if (!(tb->tb_pixmap_text && strrchr(tb->tb_text, '(') &&

@@ -5,10 +5,18 @@
 # Skip auto-generated or third-party files
 # *.xpm files contain XPM pixel-colour identifiers (e.g. "AbD", "vaI") that
 # look like words to codespell but are not.
-skip = ./po,./intl,./aclocal.m4,./configure,./ltmain.sh,./config.guess,./config.sub,./depcomp,./missing,./install-sh,./ABOUT-NLS,*.gmo,*.po,*.xpm
+# libxmms/acinclude.m4, aclocal.m4, configure are autotools-generated files.
+# Input/mpg123/decode_i586.s is raw x86 assembly.
+skip = ./po,./intl,./aclocal.m4,./configure,./ltmain.sh,./config.guess,./config.sub,./depcomp,./missing,./install-sh,./ABOUT-NLS,*.gmo,*.po,*.xpm,libxmms/acinclude.m4,libxmms/aclocal.m4,libxmms/configure,Input/mpg123/decode_i586.s
 
 # Project-specific word whitelist (add false positives here)
-ignore-words-list = datas,lod,thru,colour,colours,initialise,initialised,fullscreen
+# parm    — standard Linux/OSS kernel ioctl parameter abbreviation
+# bu,fo   — local variable names in MPEG decode / hslider code
+# noe     — variable name (number of entries) in playlist.c
+# WORS    — ID3v2 tag code (Official internet radio station homepage)
+# Alle    — German word in example string "Alle Gegen Alle" (Laibach)
+# This'd  — informal contraction in an old code comment
+ignore-words-list = datas,lod,thru,colour,colours,initialise,initialised,fullscreen,parm,bu,fo,noe,WORS,Alle,This'd
 
 # Count occurrences for easier threshold decisions
 count = true

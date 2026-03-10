@@ -657,9 +657,9 @@ void xmms_remote_show_prefs_box(int session)
     remote_cmd(session, CMD_SHOW_PREFS_BOX);
 }
 
-void xmms_remote_toggle_aot(int session, gboolean on top)
+void xmms_remote_toggle_aot(int session, gboolean on_top)
 {
-    remote_send_boolean(session, CMD_TOGGLE_AOT, on top);
+    remote_send_boolean(session, CMD_TOGGLE_AOT, on_top);
 }
 
 void xmms_remote_show_about_box(int session)
