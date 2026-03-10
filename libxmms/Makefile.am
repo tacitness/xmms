@@ -19,4 +19,3 @@ xconvert.c xconvert.h \
 charset.c charset.h
 
 xmmsinclude_HEADERS = configfile.h xmmsctrl.h dirbrowser.h util.h formatter.h titlestring.h
-

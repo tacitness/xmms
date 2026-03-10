@@ -2,22 +2,22 @@
  * Copyright (C) 2001,  Espen Skoglund <esk@ira.uka.de>
  * Copyright (C) 2001, 2004, 2006  Haavard Kvaalen <havardk@xmms.org>
  * Copyright (C) 2004,  Matti Hämäläinen <ccr@tnsp.org>
- *                
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
- *                
+ *
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -48,7 +48,7 @@ static int xmms_vputstr(GString *output, char *pstr, struct padding *pad)
 	int i;
 	/* Lenght of the string that is actually printed */
 	int plen;
-	
+
 	if (!pstr)
 		return FALSE;
 
@@ -75,7 +75,7 @@ static int xmms_vputstr(GString *output, char *pstr, struct padding *pad)
 	}
 	else
 		g_string_append(output, pstr);
-	
+
 	/* Do right-padding */
 	if (pad->side == PAD_SIDE_RIGHT && pad->width > 0)
 		for (i = pad->width - plen; i > 0; i--)
@@ -93,7 +93,7 @@ static int xmms_vputnum(GString *output, int ival, struct padding *pad)
 	/* FIXME: Never print the value '0'? */
 	if (ival == 0)
 		return FALSE;
-	
+
 	/* Create string */
 	pstr = g_strdup_printf("%d", ival);
 	ndigits = strlen(pstr);
@@ -112,7 +112,7 @@ static int xmms_vputnum(GString *output, int ival, struct padding *pad)
 	/* Do zero-padding (precision) */
 	for (i = n - ndigits; i-- > 0;)
 		g_string_append_c(output, '0');
-	
+
 	/* Add the value */
 	g_string_append(output, pstr);
 	g_free(pstr);
@@ -158,7 +158,7 @@ static int parse_variable(char **fmt, GString *string, TitleInput *input)
 			ptr++;
 		}
 	}
-	
+
 	/* Parse precision */
 	if (*ptr == '.')
 	{
@@ -174,43 +174,43 @@ static int parse_variable(char **fmt, GString *string, TitleInput *input)
 			}
 		}
 	}
-	
+
 	/* Parse format conversion */
 	switch (c = *ptr++)
 	{
 		case 'a':
 			exp = xmms_vputstr(string, input->album_name, &padding);
 			break;
-			
+
 		case 'c':
 			exp = xmms_vputstr(string, input->comment, &padding);
 			break;
-			
+
 		case 'd':
 			exp = xmms_vputstr(string, input->date, &padding);
 			break;
-			
+
 		case 'e':
 			exp = xmms_vputstr(string, input->file_ext, &padding);
 			break;
-			
+
 		case 'f':
 			exp = xmms_vputstr(string, input->file_name, &padding);
 			break;
-			
+
 		case 'F':
 			exp = xmms_vputstr(string, input->file_path, &padding);
 			break;
-			
+
 		case 'g':
 			exp = xmms_vputstr(string, input->genre, &padding);
 			break;
-			
+
 		case 'n':
 			exp = xmms_vputnum(string, input->track_number,
 					   &padding);
 			break;
-			
+
 		case 'p':
 			exp = xmms_vputstr(string, input->performer, &padding);
 			break;
@@ -218,11 +218,11 @@ static int parse_variable(char **fmt, GString *string, TitleInput *input)
 		case 't':
 			exp = xmms_vputstr(string, input->track_name, &padding);
 			break;
-			
+
 		case 'y':
 			exp = xmms_vputnum(string, input->year, &padding);
 			break;
-					
+
 		case '%':
 			g_string_append_c(string, '%');
 			break;
@@ -338,4 +338,3 @@ GtkWidget* xmms_titlestring_descriptions(char* tags, int columns)
 
 	return table;
 }
-

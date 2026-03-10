@@ -264,7 +264,7 @@ void xmms_cfg_write_string(ConfigFile * cfg, gchar * section, gchar * key, gchar
 	g_return_if_fail(section != NULL);
 	g_return_if_fail(key != NULL);
 	g_return_if_fail(value != NULL);
-	
+
 	sect = xmms_cfg_find_section(cfg, section);
 	if (!sect)
 		sect = xmms_cfg_create_section(cfg, section);

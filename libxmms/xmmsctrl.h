@@ -92,7 +92,7 @@ gint xmms_remote_get_playqueue_length(gint session);
 gint xmms_remote_get_playqueue_pos_from_playlist_pos(gint session, gint pos);
 gint xmms_remote_get_playlist_pos_from_playqueue_pos(gint session, gint pos);
 
-	
+
 #ifdef __cplusplus
 }
 #endif

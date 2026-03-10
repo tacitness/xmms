@@ -13,4 +13,3 @@ void xmms_formatter_dissociate(Formatter *formatter, guchar id);
 gchar *xmms_formatter_format(Formatter *formatter, gchar *format);
 
 #endif
-

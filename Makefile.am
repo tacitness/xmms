@@ -1,4 +1,6 @@
-SUBDIRS = intl libxmms xmms Output Input Effect General Visualization wmxmms po
+ACLOCAL_AMFLAGS = -I m4
+# GTK3 migration: removed 'intl' from SUBDIRS -- AM_GNU_GETTEXT([external]) uses system gettext
+SUBDIRS = libxmms xmms Output Input Effect General Visualization wmxmms po
 
 bin_SCRIPTS = xmms-config
 

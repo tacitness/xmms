@@ -23,7 +23,8 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
-AM_PROG_LIBTOOL
+LT_INIT
+dnl GTK3 migration: upgraded AM_PROG_LIBTOOL -> LT_INIT (libtool >= 2.2)
 AM_ENABLE_STATIC
 AM_ENABLE_SHARED
 
@@ -31,8 +32,13 @@ AC_C_BIGENDIAN
 
 XMMS_FUNC_POSIX([sched_setscheduler nanosleep])
 
-AM_PATH_GLIB([1.2.2],,[AC_MSG_ERROR([*** GLIB >= 1.2.2 not installed - please install first ***])])
-AM_PATH_GTK([1.2.2],,[AC_MSG_ERROR([*** GTK+ >= 1.2.2 not installed - please install first ***])],[gthread])
+dnl GTK3 migration: replaced AM_PATH_GLIB / AM_PATH_GTK (GTK2 macros) with PKG_CHECK_MODULES
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.32],,
+    [AC_MSG_ERROR([*** GLib >= 2.32 not found -- install libglib2.0-dev / glib2-devel ***])])
+PKG_CHECK_MODULES([GTK], [gtk+-3.0 >= 3.22 gthread-2.0],,
+    [AC_MSG_ERROR([*** GTK+ >= 3.22 not found -- install libgtk-3-dev / gtk3-devel ***])])
+GLIB_CFLAGS="$GLIB_CFLAGS $GTK_CFLAGS"
+GLIB_LIBS="$GLIB_LIBS $GTK_LIBS"
 
 if test -n "$GCC"
 then

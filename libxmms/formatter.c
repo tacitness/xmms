@@ -71,4 +71,3 @@ gchar *xmms_formatter_format(Formatter *formatter, char *format)
 	*q = 0;
 	return buffer;
 }
-
