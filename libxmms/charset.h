@@ -5,8 +5,9 @@
  *
  */
 
+#include <stddef.h> /* size_t */
 
-char* xmms_charset_get_current(void);
-char* xmms_charset_convert(const char *string, size_t insize, char *from, char *to);
-char* xmms_charset_to_utf8(const char *string);
-char* xmms_charset_from_utf8(const char *string);
+char *xmms_charset_get_current(void);
+char *xmms_charset_convert(const char *string, size_t insize, char *from, char *to);
+char *xmms_charset_to_utf8(const char *string);
+char *xmms_charset_from_utf8(const char *string);
