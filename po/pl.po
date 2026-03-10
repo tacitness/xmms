@@ -1,4 +1,4 @@
-# translation of pl.po to 
+# translation of pl.po to
 # Copyright (C) 2000-2001, 2005 Free Software Foundation, Inc.
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Aktualn± wersjê tego pliku mo¿esz odnale¼æ w repozytorium cvs.gnome.pl

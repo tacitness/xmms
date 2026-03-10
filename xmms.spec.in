@@ -48,7 +48,7 @@ Requires:	gtk+ >= 1:1.2.2
 BuildPrereq:	gtk+-devel
 
 %description
-X MultiMedia System is a sound player written from scratch. Since it 
+X MultiMedia System is a sound player written from scratch. Since it
 uses the WinAmp GUI, it can use WinAmp skins. It can play mp3s, mods, s3ms,
 and other formats. It now has support for input, output, general, and
 visualization plugins.
@@ -151,9 +151,9 @@ install -m 644 xmms/xmms.wmconfig \
 	${RPM_BUILD_ROOT}%{_sysconfdir}/X11/wmconfig/xmms
 
 # Install applnk file
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/                             
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/
 install -m 644 xmms/xmms.desktop \
-	${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/ 
+	${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/
 
 %post	-p /sbin/ldconfig
 %postun -p /sbin/ldconfig
@@ -225,4 +225,3 @@ install -m 644 xmms/xmms.desktop \
 %endif
 
 %changelog
-

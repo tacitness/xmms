@@ -9,42 +9,42 @@ mpg123_synth_MMX:
         pushl %edi
         pushl %esi
         pushl %ebx
-        movl 24(%esp),%ecx              
-        movl 28(%esp),%edi              
+        movl 24(%esp),%ecx
+        movl 28(%esp),%edi
         movl $15,%ebx
-        movl 36(%esp),%edx              
+        movl 36(%esp),%edx
         leal (%edi,%ecx,2),%edi
 	decl %ecx
-        movl 32(%esp),%esi              
-        movl (%edx),%eax                
+        movl 32(%esp),%esi
+        movl (%edx),%eax
         jecxz .L1
         decl %eax
-        andl %ebx,%eax                  
-        leal 1088(%esi),%esi                            
-        movl %eax,(%edx)                
+        andl %ebx,%eax
+        leal 1088(%esi),%esi
+        movl %eax,(%edx)
 .L1:
-        leal (%esi,%eax,2),%edx         
-        movl %eax,%ebp                  
-        incl %eax                       
-        pushl 20(%esp)                  
-        andl %ebx,%eax                  
-        leal 544(%esi,%eax,2),%ecx      
-        incl %ebx                       
+        leal (%esi,%eax,2),%edx
+        movl %eax,%ebp
+        incl %eax
+        pushl 20(%esp)
+        andl %ebx,%eax
+        leal 544(%esi,%eax,2),%ecx
+        incl %ebx
 	testl $1, %eax
-	jnz .L2                       
+	jnz .L2
         xchgl %edx,%ecx
 	incl %ebp
-        leal 544(%esi),%esi           
-.L2: 
+        leal 544(%esi),%esi
+.L2:
         pushl %edx
         pushl %ecx
         call dct64_MMX
         addl $12,%esp
 	leal 1(%ebx), %ecx
-        subl %ebp,%ebx                
+        subl %ebp,%ebx
 
 	leal mpg123_decwins(%ebx,%ebx,1), %edx
-.L3: 
+.L3:
         movq  (%edx),%mm0
         pmaddwd (%esi),%mm0
         movq  8(%edx),%mm1
@@ -66,13 +66,13 @@ mpg123_synth_MMX:
 
         leal 32(%esi),%esi
         leal 64(%edx),%edx
-        leal 4(%edi),%edi                
+        leal 4(%edi),%edi
         loop .L3
 
 
-        subl $64,%esi                    
+        subl $64,%esi
         movl $15,%ecx
-.L4: 
+.L4:
         movq  (%edx),%mm0
         pmaddwd (%esi),%mm0
         movq  8(%edx),%mm1
@@ -96,7 +96,7 @@ mpg123_synth_MMX:
 
         subl $32,%esi
         addl $64,%edx
-        leal 4(%edi),%edi                
+        leal 4(%edi),%edi
         loop .L4
 	emms
         popl %ebx
@@ -104,5 +104,3 @@ mpg123_synth_MMX:
         popl %edi
         popl %ebp
         ret
-
-

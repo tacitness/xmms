@@ -24,7 +24,7 @@ struct VisPluginData
 {
 	GList *vis_list;
 	GList *enabled_list;
-	gboolean playback_started;	
+	gboolean playback_started;
 };
 
 GList *get_vis_list(void);

@@ -1,7 +1,7 @@
 /*  XMMS - Cross-platform multimedia player
  *  Copyright (C) 1998-2002  Peter Alm, Mikael Alm, Olle Hallnas,
  *                           Thomas Nilsson and 4Front Technologies
- *  Copyright (C) 1999-2002  Haavard Kvaalen		 
+ *  Copyright (C) 1999-2002  Haavard Kvaalen
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ GdkPixmap *read_bmp(gchar * filename)
 	if (headSize == 12) /* BITMAPCOREINFO */
 	{
 		guint16 tmpw, tmph, dummy;
-		
+
 		if (!read_le_short(file, &tmpw) ||
 		    !read_le_short(file, &tmph) ||
 		    !read_le_short(file, &dummy) ||
@@ -153,7 +153,7 @@ GdkPixmap *read_bmp(gchar * filename)
 	else if (headSize == 40) /* BITMAPINFO */
 	{
 		guint16 tmp;
-		
+
 		if (!read_le_long(file, &w) ||
 		    !read_le_long(file, &h) ||
 		    !read_le_short(file, &tmp) ||
@@ -256,7 +256,7 @@ static void read_1b_rgb(guint8 *input, gint input_size, guint8 *output, guint32 
 	guint8 *output_ptr = output + ((h - 1) * w * 3);
 	gint padding = (4 - ((w + 7) / 8) % 4) & 3;
 	gint x, y, i;
-	
+
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w && input < input_end;)
@@ -383,7 +383,7 @@ static void read_4b_rgb(guint8 *input, gint input_size, guint8 *output, guint32 
 	guint8 *output_ptr = output + ((h - 1) * w * 3);
 	gint padding = ((((w + 7) / 8) * 8) - w) / 2;
 	guint x, y;
-	
+
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w && input < input_end; x+=2)
@@ -396,7 +396,7 @@ static void read_4b_rgb(guint8 *input, gint input_size, guint8 *output, guint32 
 
 			if (x + 1 == w)
 				break;
-			
+
 			*output_ptr++ = palette[byte & 0xF].rgbRed;
 			*output_ptr++ = palette[byte & 0xF].rgbGreen;
 			*output_ptr++ = palette[byte & 0xF].rgbBlue;
@@ -430,7 +430,7 @@ static void read_8b_rle(guint8 *input, guint32 compr_size, guint8 *output, guint
 			{
 				if (x >= w)
 					break;
-				
+
 				*output_ptr++ = palette[byte].rgbRed;
 				*output_ptr++ = palette[byte].rgbGreen;
 				*output_ptr++ = palette[byte].rgbBlue;
@@ -475,18 +475,18 @@ static void read_8b_rle(guint8 *input, guint32 compr_size, guint8 *output, guint
 					for (j = 0; j < num; j++)
 					{
 						byte = *(input_ptr++);
-						
+
 						if (x >= w)
 						{
 							input_ptr += num - j;
 							break;
 						}
-						
+
 						*output_ptr++ = palette[byte].rgbRed;
 						*output_ptr++ = palette[byte].rgbGreen;
 						*output_ptr++ = palette[byte].rgbBlue;
 						x++;
-						
+
 						if (output_ptr > output_end)
 							output_ptr = output_end;
 
@@ -565,7 +565,7 @@ static void read_24b_rgb(guint8 *input, gint input_size, guint8 *output, guint32
 	gint padding = (4 - ((w * 3) % 4)) & 3;
 	guint8 r, g, b;
 	guint x, y;
-	
+
 	for (y = 0; y < h; y++)
 	{
 		for (x = 0; x < w && input < (input_end - 2); x++)
@@ -613,4 +613,3 @@ static void read_32b_rgb(guint8 *input, int input_size, guint8 *output, guint32 
 		output_ptr -= w * 6;
 	}
 }
-

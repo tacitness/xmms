@@ -7,8 +7,8 @@ dnl
 dnl Example:
 dnl AM_PATH_XMMS(0.9.5.1, , AC_MSG_ERROR([*** XMMS >= 0.9.5.1 not installed - please install first ***]))
 dnl
-dnl Defines XMMS_CFLAGS, XMMS_LIBS, XMMS_DATA_DIR, XMMS_PLUGIN_DIR, 
-dnl XMMS_VISUALIZATION_PLUGIN_DIR, XMMS_INPUT_PLUGIN_DIR, 
+dnl Defines XMMS_CFLAGS, XMMS_LIBS, XMMS_DATA_DIR, XMMS_PLUGIN_DIR,
+dnl XMMS_VISUALIZATION_PLUGIN_DIR, XMMS_INPUT_PLUGIN_DIR,
 dnl XMMS_OUTPUT_PLUGIN_DIR, XMMS_GENERAL_PLUGIN_DIR, XMMS_EFFECT_PLUGIN_DIR,
 dnl and XMMS_VERSION for your plugin pleasure.
 dnl
@@ -16,13 +16,13 @@ dnl
 dnl XMMS_TEST_VERSION(AVAILABLE-VERSION, NEEDED-VERSION [, ACTION-IF-OKAY [, ACTION-IF-NOT-OKAY]])
 AC_DEFUN([XMMS_TEST_VERSION], [
 
-# Determine which version number is greater. Prints 2 to stdout if	
-# the second number is greater, 1 if the first number is greater,	
-# 0 if the numbers are equal.						
-									
-# Written 15 December 1999 by Ben Gertzfield <che@debian.org>		
-# Revised 15 December 1999 by Jim Monty <monty@primenet.com>		
-									
+# Determine which version number is greater. Prints 2 to stdout if
+# the second number is greater, 1 if the first number is greater,
+# 0 if the numbers are equal.
+
+# Written 15 December 1999 by Ben Gertzfield <che@debian.org>
+# Revised 15 December 1999 by Jim Monty <monty@primenet.com>
+
     AC_PROG_AWK
     xmms_got_version=[` $AWK '						\
 BEGIN {									\
@@ -50,10 +50,10 @@ function vercmp(ver1, ver2,    ver1arr, ver2arr,			\
         return 1;							\
     else								\
         return 0;							\
-}' $1 $2`]								
+}' $1 $2`]
 
     if test $xmms_got_version -eq 2; then 	# failure
-	ifelse([$4], , :, $4)			
+	ifelse([$4], , :, $4)
     else  					# success!
 	ifelse([$3], , :, $3)
     fi

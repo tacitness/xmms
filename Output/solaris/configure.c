@@ -22,7 +22,7 @@ static void configure_write()
 	ConfigFile *cfgfile;
 
 	cfgfile = xmms_cfg_open_default_file();
-	
+
 	xmms_cfg_write_string(cfgfile, "Sun", "audio_device", sun_cfg.audio_device);
 	xmms_cfg_write_int(cfgfile, "Sun", "always_use_audiodev", sun_cfg.always_audiodev );
 	xmms_cfg_write_int(cfgfile, "Sun", "buffer_size", sun_cfg.buffer_size);
@@ -63,7 +63,7 @@ static gchar * device_name(gchar *file_name)
 	/* Use the ctl device to prevent a lock on any device being
 	   used by another process; also for CD output */
 	ctl_name = g_strconcat(file_name, "ctl", NULL);
-  
+
 	fd = open(ctl_name, O_RDONLY);
 	g_free(ctl_name);
 	if (fd != -1)
@@ -104,7 +104,7 @@ static gint scan_devices(gchar *type, GtkWidget *option_menu,
 				   sigfunc, default_device);
 		gtk_widget_show(item);
 		gtk_menu_append(GTK_MENU (menu), item);
-		
+
 		if (default_name && strcmp (default_name, default_device) == 0)
 			default_index = menu_index;
 		menu_index ++;
@@ -194,7 +194,7 @@ void abuffer_configure(void)
 			    TRUE, TRUE, 0);
 
 	port_frame = gtk_frame_new(_("Output ports:"));
-	
+
 	gtk_box_pack_start(GTK_BOX(audio_vbox), port_frame,
 			   FALSE, FALSE, 0);
 
@@ -220,7 +220,7 @@ void abuffer_configure(void)
 
 	gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(port_chk_lineout),
 				    !!(sun_cfg.channel_flags & AUDIO_LINE_OUT));
-	gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(port_chk_headphones), 
+	gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(port_chk_headphones),
 				    !!(sun_cfg.channel_flags & AUDIO_HEADPHONE));
 	gtk_toggle_button_set_state(GTK_TOGGLE_BUTTON(port_chk_speaker),
 				    !!(sun_cfg.channel_flags & AUDIO_SPEAKER));
@@ -246,7 +246,7 @@ void abuffer_configure(void)
 	buffer_size_spin = gtk_spin_button_new(GTK_ADJUSTMENT(buffer_size_adj), 8, 0);
 	gtk_widget_set_usize(buffer_size_spin, 60, -1);
 	gtk_box_pack_start(GTK_BOX(buffer_size_box), buffer_size_spin, FALSE, FALSE, 0);
-    
+
 	buffer_pre_box = gtk_hbox_new(FALSE, 5);
 	gtk_table_attach_defaults(GTK_TABLE(buffer_table), buffer_pre_box, 1, 2, 0, 1);
 	buffer_pre_label = gtk_label_new(_("Pre-buffer (percent):"));
@@ -262,7 +262,7 @@ void abuffer_configure(void)
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
 	gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
 	gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
-    
+
 	ok = gtk_button_new_with_label(_("OK"));
 	gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(configure_win_apply_cb), NULL);
 	gtk_signal_connect_object(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
@@ -274,12 +274,11 @@ void abuffer_configure(void)
 	gtk_signal_connect(GTK_OBJECT(apply), "clicked", GTK_SIGNAL_FUNC(configure_win_apply_cb), NULL);
 	GTK_WIDGET_SET_FLAGS(apply, GTK_CAN_DEFAULT);
 	gtk_box_pack_start(GTK_BOX(bbox), apply, TRUE, TRUE, 0);
-	
+
 	cancel = gtk_button_new_with_label(_("Cancel"));
 	gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
 	GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
 	gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
-	
+
 	gtk_widget_show_all(configure_win);
 }
-

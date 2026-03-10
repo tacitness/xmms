@@ -22,4 +22,3 @@ void	sun_mixer_close(void);
 int	sun_mixer_get_dev(int, int *, char *);
 void	sun_get_volume(int *, int *);
 void	sun_set_volume(int, int);
-

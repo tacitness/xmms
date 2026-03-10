@@ -23,7 +23,7 @@ Select XMMS session (Default: 0).
 .B \-c, \-\-command
 Command to start xmms (Default: xmms).
 .TP
-.B \-i, \-\-icon 
+.B \-i, \-\-icon
 Icon to show instead of the default one when xmms is not running.  The
 icon must be in XPM format.
 .TP

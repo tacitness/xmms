@@ -1,6 +1,6 @@
 
-/* 
- * Mpeg Layer-1,2,3 audio decoder 
+/*
+ * Mpeg Layer-1,2,3 audio decoder
  * ------------------------------
  * copyright (c) 1995,1996,1997 by Michael Hipp, All rights reserved.
  * See also 'README'

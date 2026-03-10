@@ -64,7 +64,7 @@ static BOOL xmms_Init(void)
 		buffer_size *= 2;
 	if (!(audiobuffer = (SBYTE *) g_malloc0(buffer_size)))
 		return 1;
-	
+
 	fmt = (md_mode & DMODE_16BITS) ? FMT_S16_NE : FMT_U8;
 	nch = (md_mode & DMODE_STEREO) ? 2 : 1;
 
@@ -103,7 +103,7 @@ static void xmms_Update(void)
 
 	length = VC_WriteBytes((SBYTE *) audiobuffer, buffer_size);
 	mikmod_ip.add_vis_pcm(mikmod_ip.output->written_time(), mikmod_cfg.force8bit ? FMT_U8 : FMT_S16_NE, mikmod_cfg.force_mono ? 1 : 2, length, audiobuffer);
-	
+
 	while(mikmod_ip.output->buffer_free() < length && mikmod_going)
 		xmms_usleep(10000);
 	if(mikmod_going)
@@ -127,7 +127,7 @@ MDRIVER drv_xmms =
         "xmms",
         NULL,
 #endif
-        xmms_IsThere, 
+        xmms_IsThere,
 	VC_SampleLoad,
 	VC_SampleUnload,
 	VC_SampleSpace,

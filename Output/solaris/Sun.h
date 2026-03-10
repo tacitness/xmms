@@ -70,5 +70,5 @@ void abuffer_set_audio_params(void);
 int abuffer_isopen(void);
 int abuffer_update_dev(void);
 int abuffer_set_dev(void);
-			
+
 #endif /* SUN_H */

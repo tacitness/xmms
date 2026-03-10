@@ -47,7 +47,7 @@ typedef struct
 	   which might be smaller */
 	gint current_width, current_height;
 } SkinPixmap;
-	
+
 
 typedef struct
 {

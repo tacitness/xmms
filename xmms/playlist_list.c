@@ -131,7 +131,7 @@ void playlist_list_button_press_cb(GtkWidget * widget, GdkEventButton * event, P
 			nr = get_playlist_length() - 1;
 		if (!(event->state & GDK_CONTROL_MASK))
 			playlist_select_all(FALSE);
-		
+
 		if (event->state & GDK_SHIFT_MASK && pl->pl_prev_selected != -1)
 		{
 			playlist_select_range(pl->pl_prev_selected, nr, TRUE);
@@ -184,7 +184,7 @@ void playlist_list_button_press_cb(GtkWidget * widget, GdkEventButton * event, P
 int playlist_list_get_playlist_position(PlayList_List *pl, int x, int y)
 {
 	int iy, length;
-	
+
 	if (!inside_widget(x, y, pl) || !pl->pl_fheight)
 		return -1;
 
@@ -326,7 +326,7 @@ void playlist_list_draw_string_wc(PlayList_List *pl, GdkFont *font, gint line, g
 			len -= 2;
 		}
 	}
-		
+
 	newlen = len + 2;
 
 	while (gdk_text_width_wc(font, wtext, len) > width && len > 4)
@@ -343,7 +343,7 @@ void playlist_list_draw_string_wc(PlayList_List *pl, GdkFont *font, gint line, g
 		wtext[len - 1] = L'.';
 		wtext[len] = L'\0';
 	}
-	
+
 	gdk_draw_text_wc(pl->pl_widget.parent, font, pl->pl_widget.gc,
 			 pl->pl_widget.x,
 			 pl->pl_widget.y + line * pl->pl_fheight + font->ascent,
@@ -383,7 +383,7 @@ void playlist_list_draw_string(PlayList_List *pl, GdkFont *font, gint line, gint
 		text[len - 1] = '.';
 		text[len] = '\0';
 	}
-	
+
 	gdk_draw_text(pl->pl_widget.parent, font, pl->pl_widget.gc, pl->pl_widget.x, pl->pl_widget.y + line * pl->pl_fheight + font->ascent, text, len);
 }
 
@@ -413,7 +413,7 @@ void playlist_list_draw(Widget * w)
 		      "Couldn't open playlist font");
 		return;
 	}
-	
+
 
 	PL_LOCK();
 	list = get_playlist();
@@ -436,7 +436,7 @@ void playlist_list_draw(Widget * w)
 	{
 		char qstr[20] = "", length[40] = "";
 		int pos;
-		
+
 		PlaylistEntry *entry = (PlaylistEntry *) list->data;
 		if (entry->selected)
 		{
@@ -457,7 +457,7 @@ void playlist_list_draw(Widget * w)
 			title = g_basename(entry->filename);
 
 		pos = playlist_get_queue_position(entry);
-		
+
 		if (pos != -1)
 			sprintf(qstr, "|%d|%s", pos + 1,
 				entry->length != -1 ? " " : "");

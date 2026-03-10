@@ -34,5 +34,3 @@ MIKMODConfig;
 extern MIKMODConfig mikmod_cfg;
 
 extern MDRIVER drv_xmms;
-
-

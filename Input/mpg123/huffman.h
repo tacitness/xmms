@@ -2,8 +2,8 @@
 /*
  * huffman tables ... recalcualted to work with my optimzed
  * decoder scheme (MH)
- * 
- * probably we could save a few bytes of memory, because the 
+ *
+ * probably we could save a few bytes of memory, because the
  * smaller tables are often the part of a bigger table
  */
 

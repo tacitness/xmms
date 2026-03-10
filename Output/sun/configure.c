@@ -572,4 +572,3 @@ void sun_configure(void)
 
 	gtk_widget_show_all(configure_win);
 }
-

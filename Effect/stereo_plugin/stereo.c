@@ -48,7 +48,7 @@ static void init(void)
 static void about(void)
 {
 	static GtkWidget *about_dialog = NULL;
-	
+
 	if (about_dialog != NULL)
 		return;
 
@@ -65,7 +65,7 @@ static void conf_ok_cb(GtkButton * button, gpointer data)
 	ConfigFile *cfg;
 
 	value = *(gfloat *) data;
-	
+
 	cfg = xmms_cfg_open_default_file();
 	xmms_cfg_write_float(cfg, "extra_stereo", "intensity", value);
 	xmms_cfg_write_default_file(cfg);
@@ -159,7 +159,7 @@ static int mod_samples(gpointer *d, gint length, AFormat afmt, gint srate, gint 
 		return length;
 
 	mul = value;
-	
+
 	for (i = 0; i < length / 2; i += 2)
 	{
 		avg = (data[i] + data[i + 1]) / 2;

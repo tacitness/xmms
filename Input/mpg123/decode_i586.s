@@ -1,4 +1,4 @@
-/ 
+/
 / mpg123_synth_1to1 works the same way as the c version of this
 / file.  only two types of changes have been made:
 / - reordered floating point instructions to
@@ -144,7 +144,7 @@ mpg123_synth_1to1_pent:
 	fsubrp %st,%st(1)
 	flds 52(%ecx)
 	fmuls 52(%ebx)
-	fxch %st(2)         
+	fxch %st(2)
 	faddp %st,%st(1)
 	flds 56(%ecx)
 	fmuls 56(%ebx)
@@ -318,4 +318,3 @@ mpg123_synth_1to1_pent:
 	popl %ebp
 	addl $12,%esp
 	ret
-

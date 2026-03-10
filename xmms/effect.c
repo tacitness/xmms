@@ -40,7 +40,7 @@ static int effect_do_mod_samples(gpointer *data, int length, AFormat fmt, int sr
 		l = g_list_next(l);
 	}
 	pthread_mutex_unlock(&emutex);
-	
+
 	return length;
 }
 
@@ -60,7 +60,7 @@ static void effect_do_query_format(AFormat *fmt, int *rate, int *nch)
 				ep->query_format(fmt, rate, nch);
 		}
 		l = g_list_next(l);
-	}	
+	}
 	pthread_mutex_unlock(&emutex);
 }
 
@@ -69,15 +69,15 @@ static EffectPlugin pseudo_effect_plugin =
 	NULL,
 	NULL,
 	"XMMS Multiple Effects Support",
-	NULL, 
+	NULL,
 	NULL,
 	NULL,
 	NULL,
 	effect_do_mod_samples,
 	effect_do_query_format
 };
-	
-/* get_current_effect_plugin() and effects_enabled() are still to be used by 
+
+/* get_current_effect_plugin() and effects_enabled() are still to be used by
  * output plugins as they were when we only supported one effects plugin at
  * a time. We now had a pseudo-effects-plugin that chains all the enabled
  * plugins. -- Jakdaw */
@@ -119,11 +119,11 @@ void enable_effect_plugin(int i, gboolean enable)
 {
 	GList *node = g_list_nth(ep_data->effect_list, i);
 	EffectPlugin *ep;
-	
+
 	if (!node || !(node->data))
 		return;
 	ep = node->data;
-	
+
 	pthread_mutex_lock(&emutex);
 	if (enable && !g_list_find(ep_data->enabled_list, ep))
 	{

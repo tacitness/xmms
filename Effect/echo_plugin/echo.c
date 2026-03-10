@@ -47,7 +47,7 @@ EffectPlugin *get_eplugin_info(void)
 static void init(void)
 {
 	ConfigFile *cfg;
-	
+
 	if (sizeof(short) != sizeof(gint16))
 		abort();
 	cfg = xmms_cfg_open_default_file();
@@ -61,7 +61,7 @@ static void init(void)
 static void cleanup(void)
 {
 	g_free(buffer);
-	buffer = NULL;	
+	buffer = NULL;
 }
 
 static int mod_samples(gpointer * d, gint length, AFormat afmt, gint srate, gint nch)

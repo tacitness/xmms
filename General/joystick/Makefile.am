@@ -8,8 +8,8 @@ about.c
 
 else
 
-joyltlibs = 
-joysources = 
+joyltlibs =
+joysources =
 
 endif
 

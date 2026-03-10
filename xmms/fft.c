@@ -148,7 +148,7 @@ static void fft_prepare(const sound_sample *input, float * re, float * im) {
     unsigned int i;
     float *realptr = re;
     float *imagptr = im;
-    
+
     /* Get input, in reverse bit order */
     for(i = 0; i < FFT_BUFFER_SIZE; i++) {
 	*realptr++ = input[bitReverse[i]];
@@ -161,7 +161,7 @@ static void fft_prepare(const sound_sample *input, float * re, float * im) {
  * Note: only produces half as many data points as the input had.
  * This is roughly a consequence of the Nyquist sampling theorm thingy.
  * (FIXME - make this comment better, and helpful.)
- * 
+ *
  * The two divisions by 4 are also a consequence of this: the contributions
  * returned for each frequency are split into two parts, one at i in the
  * table, and the other at FFT_BUFFER_SIZE - i, except for i = 0 and
@@ -173,11 +173,11 @@ static void fft_output(const float * re, const float * im, float *output) {
     const float *realptr   = re;
     const float *imagptr   = im;
     float *endptr    = output + FFT_BUFFER_SIZE / 2;
- 
+
 #ifdef DEBUG
     unsigned int i, j;
 #endif
- 
+
     while(outputptr <= endptr) {
 	*outputptr = (*realptr * *realptr) + (*imagptr * *imagptr);
 	outputptr++; realptr++; imagptr++;
@@ -215,7 +215,7 @@ static void fft_calculate(float * re, float * im) {
     float fact_real, fact_imag;
     float tmp_real, tmp_imag;
     unsigned int factfact;
-    
+
     /* Set up some variables to reduce calculation in the loops */
     exchanges = 1;
     factfact = FFT_BUFFER_SIZE / 2;
@@ -234,7 +234,7 @@ static void fft_calculate(float * re, float * im) {
 	     */
 	    fact_real = costable[j * factfact];
 	    fact_imag = sintable[j * factfact];
-	    
+
 	    /* Loop through all the exchange groups */
 	    for(k = j; k < FFT_BUFFER_SIZE; k += exchanges << 1) {
 		int k1 = k + exchanges;

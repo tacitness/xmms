@@ -1,6 +1,6 @@
 
-/* 
- * Mpeg Layer-2 audio decoder 
+/*
+ * Mpeg Layer-2 audio decoder
  * --------------------------
  * copyright (c) 1995 by Michael Hipp, All rights reserved. See also 'README'
  *
@@ -234,13 +234,13 @@ void II_step_two(unsigned int *bit_alloc, real fraction[2][4][SBLIMIT], int *sca
 			fraction[0][0][i] = fraction[0][1][i] = fraction[0][2][i] =
 				fraction[1][0][i] = fraction[1][1][i] = fraction[1][2][i] = 0.0;
 		}
-/* 
+/*
    should we use individual scalefac for channel 2 or
    is the current way the right one , where we just copy channel 1 to
-   channel 2 ?? 
+   channel 2 ??
    The current 'strange' thing is, that we throw away the scalefac
    values for the second channel ...!!
-   -> changed .. now we use the scalefac values of channel one !! 
+   -> changed .. now we use the scalefac values of channel one !!
  */
 	}
 
@@ -331,7 +331,7 @@ int mpg123_do_layer2(struct frame *fr)
 			xmms_usleep(10000);
 		if (mpg123_info->going && mpg123_info->jump_to_time == -1)
 			mpg123_ip.output->write_audio(mpg123_pcm_sample, mpg123_pcm_point);
-		
+
 
 	}
 	mpg123_pcm_point = 0;

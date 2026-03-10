@@ -413,10 +413,10 @@ static void update_tooltip(void)
 	static int pl_pos = -1;
 	static char *filename;
 	int new_pos;
-	
+
 	if (!tooltips)
 		return;
-	
+
 	new_pos = xmms_remote_get_playlist_pos(xmms_session);
 
 	if (new_pos == 0)

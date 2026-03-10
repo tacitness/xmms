@@ -1,6 +1,6 @@
 /*  IRman plugin for xmms by Charles Sielski (stray@teklabs.net) ..
  *  XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -34,7 +34,7 @@ void ir_about(void)
 
 	frame = gtk_frame_new(_("XMMS IRman Plugin:"));
 	gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0);
-	textbox = gtk_vbox_new(FALSE, 10);	
+	textbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_border_width(GTK_CONTAINER(textbox), 10);
 	gtk_container_add(GTK_CONTAINER(frame), textbox);
 

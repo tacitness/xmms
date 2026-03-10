@@ -1,9 +1,9 @@
 
 /*  Joystick plugin for xmms by Tim Ferguson (timf@dgs.monash.edu.au
  *                                  http://www.dgs.monash.edu.au/~timf/) ...
- *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>) 
+ *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>)
  *  XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or

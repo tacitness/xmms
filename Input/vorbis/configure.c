@@ -39,7 +39,7 @@ static void vorbis_configurewin_ok(GtkWidget * widget, gpointer data)
 
 	vorbis_cfg.http_buffer_size =
 		gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(streaming_size_spin));
-	vorbis_cfg.http_prebuffer = 
+	vorbis_cfg.http_prebuffer =
 		gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(streaming_pre_spin));
 
 	vorbis_cfg.use_proxy = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_use));
@@ -58,13 +58,13 @@ static void vorbis_configurewin_ok(GtkWidget * widget, gpointer data)
 	vorbis_cfg.proxy_pass = NULL;
 	if(strlen(gtk_entry_get_text(GTK_ENTRY(streaming_proxy_auth_pass_entry))) > 0)
 		vorbis_cfg.proxy_pass = g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_proxy_auth_pass_entry)));
-	
-	
+
+
 	vorbis_cfg.save_http_stream = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_save_use));
 	g_free(vorbis_cfg.save_http_path);
 	vorbis_cfg.save_http_path = g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_save_entry)));
 	g_free(vorbis_cfg.tag_format);
-        vorbis_cfg.tag_format = g_strdup(gtk_entry_get_text(GTK_ENTRY(title_tag_entry)));	
+        vorbis_cfg.tag_format = g_strdup(gtk_entry_get_text(GTK_ENTRY(title_tag_entry)));
 
 	tb = GTK_TOGGLE_BUTTON(title_tag_override);
 	vorbis_cfg.tag_override = gtk_toggle_button_get_active(tb);
@@ -80,7 +80,7 @@ static void vorbis_configurewin_ok(GtkWidget * widget, gpointer data)
 	else
 		vorbis_cfg.replaygain_mode = REPLAYGAIN_MODE_ALBUM;
 
-	
+
 	cfg = xmms_cfg_open_default_file();
 
 	xmms_cfg_write_int(cfg, "vorbis", "http_buffer_size",
@@ -128,7 +128,7 @@ static void proxy_use_cb(GtkWidget * w, gpointer data)
 
 	use_proxy = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_use));
 	use_proxy_auth = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use));
-		
+
 	gtk_widget_set_sensitive(streaming_proxy_hbox, use_proxy);
 	gtk_widget_set_sensitive(streaming_proxy_auth_use, use_proxy);
 	gtk_widget_set_sensitive(streaming_proxy_auth_hbox, use_proxy && use_proxy_auth);
@@ -297,7 +297,7 @@ void vorbis_configure(void)
 	gtk_entry_set_text(GTK_ENTRY(streaming_proxy_port_entry), temp);
 	g_free(temp);
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_hbox), streaming_proxy_port_entry, FALSE, FALSE, 0);
-	
+
 	streaming_proxy_auth_use = gtk_check_button_new_with_label(_("Use authentication"));
 	gtk_widget_set_sensitive(streaming_proxy_auth_use, vorbis_cfg.use_proxy);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use), vorbis_cfg.proxy_use_auth);
@@ -307,7 +307,7 @@ void vorbis_configure(void)
 	streaming_proxy_auth_hbox = gtk_hbox_new(FALSE, 5);
 	gtk_widget_set_sensitive(streaming_proxy_auth_hbox, vorbis_cfg.use_proxy && vorbis_cfg.proxy_use_auth);
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_hbox, FALSE, FALSE, 0);
-	
+
 	streaming_proxy_auth_user_label = gtk_label_new(_("Username:"));
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_auth_hbox), streaming_proxy_auth_user_label, FALSE, FALSE, 0);
 
@@ -376,10 +376,10 @@ void vorbis_configure(void)
         title_tag_box = gtk_hbox_new(FALSE, 5);
 	gtk_widget_set_sensitive(title_tag_box, vorbis_cfg.tag_override);
 	gtk_box_pack_start(GTK_BOX(title_tag_vbox), title_tag_box, FALSE, FALSE, 0);
-	
+
 	title_tag_label = gtk_label_new(_("Title format:"));
 	gtk_box_pack_start(GTK_BOX(title_tag_box), title_tag_label, FALSE, FALSE, 0);
-	
+
 	title_tag_entry = gtk_entry_new();
 	gtk_entry_set_text(GTK_ENTRY(title_tag_entry), vorbis_cfg.tag_format);
 	gtk_box_pack_start(GTK_BOX(title_tag_box), title_tag_entry, TRUE, TRUE, 0);
@@ -391,14 +391,14 @@ void vorbis_configure(void)
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), title_frame, gtk_label_new(_("Title")));
 
 	/* Replay Gain.. */
-	
+
 	rg_frame = gtk_frame_new(_("ReplayGain Settings:"));
 	gtk_container_border_width(GTK_CONTAINER(rg_frame), 5);
-	
+
 	rg_vbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_border_width(GTK_CONTAINER(rg_vbox), 5);
 	gtk_container_add(GTK_CONTAINER(rg_frame), rg_vbox);
-	
+
 	rg_clip_switch = gtk_check_button_new_with_label(_("Enable Clipping Prevention"));
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rg_clip_switch), vorbis_cfg.use_anticlip);
 	gtk_box_pack_start(GTK_BOX(rg_vbox), rg_clip_switch, FALSE, FALSE, 0);
@@ -406,12 +406,12 @@ void vorbis_configure(void)
 	rg_switch = gtk_check_button_new_with_label(_("Enable ReplayGain"));
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rg_switch), vorbis_cfg.use_replaygain);
 	gtk_box_pack_start(GTK_BOX(rg_vbox), rg_switch, FALSE, FALSE, 0);
-	
+
 	rg_type_frame = gtk_frame_new(_("ReplayGain Type:"));
 	gtk_box_pack_start(GTK_BOX(rg_vbox), rg_type_frame, FALSE, FALSE, 0);
 
 	gtk_signal_connect(GTK_OBJECT(rg_switch), "toggled", rg_switch_cb, rg_type_frame);
-	
+
 	rg_type_vbox = gtk_vbox_new(FALSE, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(rg_type_vbox), 5);
 	gtk_container_add(GTK_CONTAINER(rg_type_frame), rg_type_vbox);

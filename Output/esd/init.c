@@ -68,7 +68,7 @@ void esdout_init(void)
 	xmms_cfg_read_int(cfgfile, "ESD", "volume_l", &l);
 	xmms_cfg_read_int(cfgfile, "ESD", "volume_r", &r);
 	esdout_mixer_init_vol(l, r);
-	
+
 	xmms_cfg_free(cfgfile);
 
 	if (!esd_cfg.server)

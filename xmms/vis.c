@@ -254,7 +254,7 @@ void vis_draw(Widget * w)
 			for (x = 0; x < 75; x++)
 			{
 				if (cfg.analyzer_type == ANALYZER_BARS && (x % 4) == 0)
-					h = vis->vs_data[x >> 2];	
+					h = vis->vs_data[x >> 2];
 				else if (cfg.analyzer_type == ANALYZER_LINES)
 					h = vis->vs_data[x];
 				if (h && (cfg.analyzer_type == ANALYZER_LINES || (x % 4) != 3))

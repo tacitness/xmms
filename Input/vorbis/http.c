@@ -112,7 +112,7 @@ static gchar *basic_authentication_encode (const gchar *user, const gchar *passw
 	res = g_strdup_printf("%s: Basic %s\r\n", header, t2);
 	g_free(t2);
 	g_free(t1);
-	
+
 	return res;
 }
 
@@ -162,7 +162,7 @@ static void parse_url(const gchar * url, gchar ** user, gchar ** pass, gchar ** 
 		*port = 80;
 	}
 	*host = g_strdup(h);
-	
+
 	if (f)
 		*filename = g_strdup(f + 1);
 	else
@@ -196,7 +196,7 @@ static gint http_free(void)
 
 static void http_wait_for_data(gint bytes)
 {
-	while ((prebuffering || http_used() < bytes) && !eof && going && vorbis_playing) 
+	while ((prebuffering || http_used() < bytes) && !eof && going && vorbis_playing)
 		xmms_usleep(10000);
 }
 
@@ -221,7 +221,7 @@ int vorbis_http_read(gpointer data, gint length)
 
 	http_wait_for_data(length);
 
-	if (!going && !vorbis_playing) 
+	if (!going && !vorbis_playing)
 		return 0;
 	len = min(http_used(), length);
 
@@ -301,7 +301,7 @@ static void *http_buffer_loop(void *arg)
 	do
 	{
 		redirect=FALSE;
-	
+
 		g_strstrip(url);
 
 		parse_url(url, &user, &pass, &host, &port, &filename);
@@ -414,7 +414,7 @@ static void *http_buffer_loop(void *arg)
 
 						vorbis_ip.set_info_text(NULL);
 						eof = TRUE;
-						
+
 					}
 					break;
 				}
@@ -442,7 +442,7 @@ static void *http_buffer_loop(void *arg)
 						       "Host: %s\r\n"
 						       "User-Agent: %s/%s\r\n"
 						       "%s%s\r\n",
-						       file, host, PACKAGE, VERSION, 
+						       file, host, PACKAGE, VERSION,
 						       proxy_auth ? proxy_auth : "", auth ? auth : "");
 				g_free(file);
 				if(proxy_auth)
@@ -486,7 +486,7 @@ static void *http_buffer_loop(void *arg)
 												break;
 											}
 										}
-									}			
+									}
 									redirect=TRUE;
 									break;
 								}
@@ -517,7 +517,7 @@ static void *http_buffer_loop(void *arg)
 								break;
 							if (!strncmp(line, "ice-name:", 9))
 								ice_name = g_strdup(line + 9);
-							
+
 						}
 						else
 						{
@@ -529,7 +529,7 @@ static void *http_buffer_loop(void *arg)
 				}
 			}
 		}
-	
+
 		if(redirect)
 		{
 			if (output_file)
@@ -542,9 +542,9 @@ static void *http_buffer_loop(void *arg)
 			g_free(pass);
 			g_free(host);
 			g_free(filename);
-		}		
+		}
 	} while(redirect);
-	
+
 	if (vorbis_cfg.save_http_stream)
 	{
 		gchar *output_name, *fname, *temp;
@@ -638,7 +638,7 @@ static void *http_buffer_loop(void *arg)
 	g_free(filename);
 	g_free(buffer);
 	g_free(url);
-	
+
 	pthread_exit(NULL);
 }
 
@@ -647,7 +647,7 @@ int vorbis_http_open(gchar * _url)
 	gchar *url;
 
 
-	
+
 	url = g_strdup(_url);
 
 	rd_index = 0;

@@ -1,9 +1,9 @@
 /******************************************************************************
  *
  * Solaris audio plugin for XMMS
- * 
+ *
  * This file contains most of the audio routines for talking to the sound
- * device. 
+ * device.
  *
  *****************************************************************************/
 
@@ -88,7 +88,7 @@ static char *get_audiodev(void)
 /* in order to switch to internal CD port when playing CD Audio. 	*/
 
 int ctlfd = -1; /* Global file descriptor for /dev/audioctl usage */
-		
+
 int init_ctlfd(void)
 {
 
@@ -96,10 +96,10 @@ int init_ctlfd(void)
 	int port, monitor;
 	audio_info_t info;
 	audio_device_t device;
-	
+
 	/* Get audio device name */
 	ctlname = g_strconcat(get_audiodev(), "ctl", NULL);
-	
+
 	/* Open audio control device, audio device may be in use already */
     	if ((ctlfd = open(ctlname, O_RDONLY, 0)) < 0)
 	{
@@ -108,7 +108,7 @@ int init_ctlfd(void)
 	}
 
 	g_free(ctlname);
-	
+
 	/* Get audio device characteristics */
 	if (ioctl(ctlfd, AUDIO_GETDEV, &device) < 0)
 	{
@@ -116,8 +116,8 @@ int init_ctlfd(void)
 		ctlfd = -1;
 		return -1;
 	}
-	
-	/* We can apply the trick only for sound cards using Sun driver */	
+
+	/* We can apply the trick only for sound cards using Sun driver */
 	if (strcmp(device.name, "SUNW,CS4231") &&
 	    strcmp(device.name, "SUNW,sb16") &&
 	    strcmp(device.name, "SUNW,sbpro"))
@@ -130,27 +130,27 @@ int init_ctlfd(void)
         	ctlfd = -1;
         	return -1;
 	}
-	if (info.record.avail_ports & AUDIO_INTERNAL_CD_IN) 
+	if (info.record.avail_ports & AUDIO_INTERNAL_CD_IN)
 		port = AUDIO_INTERNAL_CD_IN;
 	else
 		port = AUDIO_LINE_IN;
 	monitor = info.monitor_gain;
-	
+
 	/* Initialize info structure */
-	AUDIO_INITINFO(&info);	
-	
+	AUDIO_INITINFO(&info);
+
 	/* Set port */
 	info.record.port = port;
-	
+
 	/* Set monitor volume so that CD sound is audible. */
 	/* My tests shows that 3 is a minimum value (MZ). */
 	if (monitor < 3)
 		info.monitor_gain = AUDIO_MAX_GAIN / 2;
-	
+
 	/* Apply changes to audio control device */
 	if (ioctl(ctlfd, AUDIO_SETINFO, &info) < 0)
 		perror(get_audiodev());
-	
+
 	return 0;
 }
 
@@ -195,7 +195,7 @@ gint abuffer_get_written_time(void)
 {
 	if (!playing)
 		return 0;
-    
+
 	return ((double)byte_offset * 1000.0) / stream_attrs.bps;
 }
 
@@ -203,7 +203,7 @@ gint abuffer_get_output_time(void)
 {
 	if (!aopen || !playing)
 		return 0;
-    
+
 	ioctl(audiofd, AUDIO_GETINFO, &adinfo);
 
 	return time_offset + ((double)adinfo.play.samples * 1000) / adinfo.play.sample_rate;
@@ -290,7 +290,7 @@ void dsp_memcpy(void *dst, void *src, int len)
 		 * Endian tranformation required
 		 * Note that since the endianness for 8 bit samples is set to native,
 		 * we can assume we have a 16 bit sample What we cannot assume is the
-		 * sign of the data 
+		 * sign of the data
 		 */
 		guint16 *csrc = src, *csend = (guint16 *) ((char *) src + len);
 		guint16 *cdst = dst;
@@ -329,7 +329,7 @@ void dsp_memcpy(void *dst, void *src, int len)
 		}
 	}
 }
-    
+
 gint abuffer_write_sub(void *ptr, gint length)
 {
 	/* Amount to end of buffer */
@@ -364,7 +364,7 @@ gint abuffer_write_sub(void *ptr, gint length)
 
 void abuffer_write(void *ptr, gint length)
 {
-	char *iptr; 
+	char *iptr;
 	gint amt;
 	void *tmp_buf;
 	gint tmp_buf_size;
@@ -375,17 +375,17 @@ void abuffer_write(void *ptr, gint length)
 	EffectPlugin *ep;
 
 	remove_prebuffer = FALSE;
-	
+
 	new_format = input_format;
 	new_frequency = stream_attrs.sample_rate;
 	new_channels = stream_attrs.channels;
-	
+
 	ep = get_current_effect_plugin();
 	if (effects_enabled() && ep && ep->query_format)
 	{
 		ep->query_format(&new_format,&new_frequency,&new_channels);
 	}
-	
+
 	if (effects_enabled() && ep && ep->mod_samples)
 		length = ep->mod_samples(&ptr,length, input_format, stream_attrs.sample_rate , stream_attrs.channels);
 
@@ -402,7 +402,7 @@ void abuffer_write(void *ptr, gint length)
 /*  		oss_set_audio_params(); */
 		/* FIXME: This is leaking memory */
 		abuffer_open(new_format, new_frequency, new_channels);
-		
+
 	}
 
 
@@ -502,7 +502,7 @@ gint abuffer_startup(void)
 	}
 
 	/* Initialise audio device */
-	abuffer_set_audio_params();	
+	abuffer_set_audio_params();
 
 	/* Get the audio info */
 	ioctl(audiofd, AUDIO_GETINFO, &adinfo);
@@ -582,7 +582,7 @@ void * abuffer_loop(void *arg)
 		if (abuffer_used() > 0 && !paused && !prebuffer)
 		{
 			/* we have something in the buffer and we're not paused */
-			length = MIN(SUN_AUDIO_CACHE, abuffer_used()); 
+			length = MIN(SUN_AUDIO_CACHE, abuffer_used());
 			bdiff = buffer_end - buffer_read;
 
 			/* Write out the buffer */
@@ -609,7 +609,7 @@ void * abuffer_loop(void *arg)
 			AUDIO_INITINFO(&info);
 			info.play.pause = 1;
 			ioctl(audiofd, AUDIO_SETINFO, &info);
-            
+
 			/* Flush out the queue */
                         /* Yes this is voodoo magic. On my box, this works.
                            But, if I remove the calls to xmms_usleep(), the
@@ -635,10 +635,10 @@ void * abuffer_loop(void *arg)
 			/* Force the time and byte offsets */
 			time_offset = flush;
 			byte_offset = ((double)flush * stream_attrs.bps / 1000);
-            
+
 			/* Reset the buffers */
 			buffer_write = buffer_read = buffer_ptr;
-            
+
 			/* Finish the flush */
 			flush = -1;
 		}
@@ -673,13 +673,13 @@ void abuffer_set_audio_params(void)
 
 		/* Make sure we're not muted */
 		info.output_muted = 0;
-	
+
 		/* Set input audio data encoding for CD */
 		info.record.sample_rate = 44100;
 		info.record.channels = 2;
 		info.record.precision = 16;
 		info.record.encoding = AUDIO_ENCODING_LINEAR;
-	
+
 		/* Set the info */
 		if (ioctl(audiofd, AUDIO_SETINFO, &info) == -1)
 		{
@@ -763,7 +763,7 @@ gint abuffer_open(AFormat fmt, gint rate, gint nch)
 	g_free(ctl_dev);
 	ioctl(audiofd, AUDIO_GETDEV, &aud_dev);
 	close(audiofd);
-    
+
 	if (!strcmp(aud_dev.name, "SUNW,CS4231"))
 	{
 		/* CS4231 card (SS[45], Ultra's) */
@@ -818,7 +818,7 @@ gint abuffer_open(AFormat fmt, gint rate, gint nch)
 		stream_attrs.output_precision = stream_attrs.precision;
 		stream_attrs.is_signed = TRUE;
 		sun_cfg.channel_flags = 0;
-	}       
+	}
 	else if (!strcmp(aud_dev.name, "SUNW,oss"))
 	{
 		/* OSS emulating /dev/audio */
@@ -831,7 +831,7 @@ gint abuffer_open(AFormat fmt, gint rate, gint nch)
 		g_warning("solaris output: Assuming capable of the bitstream");
 		stream_attrs.output_precision = stream_attrs.precision;
 	}
-	
+
 	stream_attrs.bps = rate * nch;
 	if (stream_attrs.precision == 16)
 		stream_attrs.bps *= 2;
@@ -897,10 +897,10 @@ void abuffer_get_volume(int *left, int *right)
 {
 	audio_info_t info;
 
-	/* Since we do not know if CD is playing or not, we need ctlfd 
+	/* Since we do not know if CD is playing or not, we need ctlfd
 	   open all the time. */
 	if (ctlfd < 0)
-		init_ctlfd(); 	
+		init_ctlfd();
 
 	if (ctlfd == -1)
 		return;
@@ -937,14 +937,14 @@ void abuffer_set_volume(int left, int right)
 {
 	audio_info_t info;
 
-	/* Since we do not know if CD is playing or not, we need ctlfd 
+	/* Since we do not know if CD is playing or not, we need ctlfd
 	   open all the time. */
 	if (ctlfd < 0)
-		init_ctlfd(); 	
+		init_ctlfd();
 
 	if (ctlfd == -1)
 		return;
-		
+
 	AUDIO_INITINFO (&info);
 
         /* Calculate gain and volume. */
@@ -972,7 +972,7 @@ void abuffer_set_volume(int left, int right)
 }
 
 /*
- * Simple function to check if audio device is open 
+ * Simple function to check if audio device is open
  * Returns 1 if open, 0 otherwise.
  */
 int abuffer_isopen(void)
@@ -999,7 +999,7 @@ int abuffer_update_dev(void)
 
 	if (ioctl(audiofd, AUDIO_GETINFO, &ainfo) == -1)
 		return 1;
-    
+
 	sun_cfg.channel_flags = ainfo.play.port;
 
 	return 0;

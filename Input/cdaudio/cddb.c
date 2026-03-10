@@ -58,7 +58,7 @@ static void cddb_log(gchar *str, ...)
 	if (message_num > CDDB_LOG_MAX)
 	{
 		GList *temp;
-		
+
 		temp = g_list_previous(end_ptr);
 		temp->next = NULL;
 		g_free(end_ptr->data);
@@ -140,7 +140,7 @@ static gchar * cddb_generate_hello_string(void)
 			client = PACKAGE;
 			version = VERSION;
 		}
-		
+
 		buffer = g_strdup_printf("&hello=nobody+localhost+%s+%s",
 					 client, version);
 		if (strs)
@@ -153,12 +153,12 @@ static gint cddb_http_open_connection(gchar * server, gint port)
 {
 	gint sock;
 	gchar *status;
-	
+
 	if((sock = http_open_connection(server, 80)) == 0)
 		status = "Failed";
 	else
 		status = "OK";
-	
+
 	cddb_log("Connecting to CDDB-server %s: %s", server, status);
 	return sock;
 }
@@ -170,7 +170,7 @@ static gboolean cddb_query(gchar *server, cdda_disc_toc_t *info, cddb_disc_heade
 	 * Query the cddb-server for the cd.
 	 * Returns the *real* diskid and category.
 	 */
-	
+
 	gint sock;
 	gchar *offsets, *getstr;
 	gchar buffer[256];
@@ -236,14 +236,14 @@ static gint cddb_check_protocol_level(gchar *server)
 
 	if((sock = cddb_http_open_connection(server, 80)) == 0)
 		return 0;
-		
+
 	str = g_strdup_printf(
 		"GET /~cddb/cddb.cgi?cmd=stat%s&proto=1 HTTP/1.0\r\n\r\n",
 		cddb_generate_hello_string());
-		
+
 	write(sock, str, strlen(str));
 	g_free(str);
-	
+
 	if ((n = http_read_first_line(sock, buffer, 256)) < 0 ||
 	    atoi(buffer) != 210)
 	{
@@ -252,7 +252,7 @@ static gint cddb_check_protocol_level(gchar *server)
 				 buffer);
 		else
 			cddb_log("Getting cddb protocol level failed.");
-			
+
 		http_close_connection(sock);
 		return 0;
 	}
@@ -280,7 +280,7 @@ static gboolean cddb_read(gchar *server, cddb_disc_header_t *cddb_info, cdinfo_t
 	gchar *realstr, *temp;
 	gint len, command, bufs;
 	gint num, oldnum;
-	
+
 	if((sock = cddb_http_open_connection(server, 80)) == 0)
 		return FALSE;
 
@@ -314,7 +314,7 @@ static gboolean cddb_read(gchar *server, cddb_disc_header_t *cddb_info, cdinfo_t
 
 		realstr++;
 		len = strlen(realstr);
-		
+
 		switch (command) {
 			case 1:
 				if (!strncmp(buffer, "DISCID", 6))
@@ -349,7 +349,7 @@ static gboolean cddb_read(gchar *server, cddb_disc_header_t *cddb_info, cdinfo_t
 						bufs += len;
 					}
 					else
-					{	
+					{
 						buffer2[BUF2SIZE - 1] = '\0';
 						cdda_cdinfo_track_set(cdinfo, oldnum + 1, NULL, g_strdup(buffer2));
 						strncpy(buffer2, realstr, BUF2SIZE);
@@ -385,9 +385,9 @@ static gboolean cddb_read(gchar *server, cddb_disc_header_t *cddb_info, cdinfo_t
 				g_log(NULL, G_LOG_LEVEL_WARNING, "%s: illegal cddb-data: %s", PACKAGE, buffer);
 				break;
 		}
-		
+
 	} while (http_read_line(sock, buffer, 256) >= 0);
-	
+
 	if (oldnum >= 0)
 		cdda_cdinfo_track_set(cdinfo, oldnum + 1, NULL, g_strdup(buffer2));
 
@@ -400,7 +400,7 @@ static gint cddb_get_protocol_level(void)
 	if (cdda_cfg.cddb_protocol_level < 1)
 		cdda_cfg.cddb_protocol_level =
 			cddb_check_protocol_level(cdda_cfg.cddb_server);
-	
+
 	return cdda_cfg.cddb_protocol_level;
 }
 
@@ -411,7 +411,7 @@ static GList * cddb_get_server_list(gchar *server, gint protocol_level)
 	gchar buffer[256];
 	gchar **message;
 	GList *list = NULL;
-	
+
 	if((sock = cddb_http_open_connection(server, 80)) == 0)
 		return NULL;
 
@@ -431,7 +431,7 @@ static GList * cddb_get_server_list(gchar *server, gint protocol_level)
 	}
 
 	cddb_log("Sites response: %s", buffer);
-	
+
 	switch (atoi(buffer))
 	{
 		case 210:
@@ -583,7 +583,7 @@ int cddb_read_file(char *file, cddb_disc_header_t *cddb_info, cdinfo_t *cdinfo)
                         bufs += len;
                     }
                     else
-                    {	
+                    {
                         buffer2[BUF2SIZE - 1] = '\0';
                         cdda_cdinfo_track_set(cdinfo, oldnum + 1, NULL, g_strdup(buffer2));
                         strncpy(buffer2, realstr, BUF2SIZE);
@@ -651,7 +651,7 @@ void cdda_cddb_get_info(cdda_disc_toc_t *toc, cdinfo_t *cdinfo)
 		cdinfo->is_valid = TRUE;
 
     } else  if ((cached_id != disc_id) && (strncmp(cdda_cfg.cddb_server,"file://",7) == 0)){
-        cached_id = disc_id;     
+        cached_id = disc_id;
         if(!scan_cddb_dir(cdda_cfg.cddb_server,cddb_file,disc_id))
             return;
         if(!cddb_read_file(cddb_file[0],&cddb_disc_info, cdinfo)){
@@ -787,7 +787,7 @@ void cdda_cddb_show_server_dialog(GtkWidget *w, gpointer data)
 	{
 		char *row[4];
 		int i;
-		
+
 		row[0] = g_strdup(((char**) servers->data)[0]);
 		row[1] = cddb_position_string(((char**) servers->data)[4]);
 		row[2] = cddb_position_string(((char**) servers->data)[5]);
@@ -843,7 +843,7 @@ void cdda_cddb_show_network_window(GtkWidget *w, gpointer data)
 
 	if (debug_window)
 		return;
-	
+
 	debug_window = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_signal_connect(GTK_OBJECT(debug_window), "destroy",
 			   GTK_SIGNAL_FUNC(gtk_widget_destroyed), &debug_window);
@@ -861,14 +861,14 @@ void cdda_cddb_show_network_window(GtkWidget *w, gpointer data)
 	debug_clist = gtk_clist_new(1);
 	gtk_container_add(GTK_CONTAINER(scroll_win), debug_clist);
 	gtk_box_pack_start(GTK_BOX(vbox), scroll_win, TRUE, TRUE, 0);
-	
+
 	temp = debug_messages;
 	while (temp)
 	{
 		gtk_clist_prepend(GTK_CLIST(debug_clist), (gchar **)&temp->data);
 		temp = g_list_next(temp);
 	}
-	
+
 	bbox = gtk_hbutton_box_new();
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_SPREAD);
 	gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);

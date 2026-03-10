@@ -29,7 +29,7 @@ EXTRA_SRC = decode_i386.c dct64_i386.c decode_i586.s \
 
 else
 
-EXTRA_SRC = decode_i386.c dct64_i386.c decode_i586.s 
+EXTRA_SRC = decode_i386.c dct64_i386.c decode_i586.s
 
 endif
 

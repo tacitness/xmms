@@ -143,7 +143,7 @@ static gboolean textbox_should_scroll(TextBox *tb)
 void textbox_set_text(TextBox * tb, gchar * text)
 {
         lock_widget(tb);
-	
+
 	if (tb->tb_text)
 	{
 		if (!strcmp(text, tb->tb_text))
@@ -361,7 +361,7 @@ static void textbox_generate_pixmap(TextBox * tb)
 		wl++;
 
 	length = strlen(tb->tb_text);
-	
+
 	tb->tb_is_scrollable = FALSE;
 
 	if (textbox_should_scroll(tb))
@@ -377,7 +377,7 @@ static void textbox_generate_pixmap(TextBox * tb)
 
 		pixmaptext = g_strconcat(tb->tb_pixmap_text, padchars , NULL);
 		g_free(padchars);
-		length += pad;		
+		length += pad;
 	}
 	else
 		pixmaptext = g_strdup(tb->tb_pixmap_text);
@@ -477,11 +477,11 @@ void textbox_set_xfont(TextBox *tb, gboolean use_xfont, gchar *fontname)
 	tb->tb_font = NULL;
 	tb->tb_widget.y = tb->tb_nominal_y;
 	tb->tb_widget.height = tb->tb_nominal_height;
-	
+
 	/* Make sure the pixmap is regenerated */
 	g_free(tb->tb_pixmap_text);
 	tb->tb_pixmap_text = NULL;
-	
+
 	if (!use_xfont || strlen(fontname) == 0)
 		return;
 	tb->tb_font = util_font_load(fontname);
@@ -525,7 +525,7 @@ void free_textbox(TextBox * tb)
 	if (tb->tb_pixmap)
 		gdk_pixmap_unref(tb->tb_pixmap);
 	if (tb->tb_font)
-		gdk_font_unref(tb->tb_font);	
+		gdk_font_unref(tb->tb_font);
 	g_free(tb->tb_text);
 	g_free(tb);
 }

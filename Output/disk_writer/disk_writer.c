@@ -5,7 +5,7 @@
  *
  *  File name suffix option added by Heikki Orsila 2003
  *  <heikki.orsila@iki.fi> (no copyrights claimed)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -35,7 +35,7 @@
 #include "libxmms/util.h"
 
 
-struct format_info { 
+struct format_info {
 	AFormat format;
 	int frequency;
 	int channels;
@@ -265,11 +265,11 @@ static void disk_write(void *ptr, gint length)
 	new_channels = input.channels;
 
 	ep = get_current_effect_plugin();
-	if ( effects_enabled() && ep && ep->query_format ) { 
+	if ( effects_enabled() && ep && ep->query_format ) {
 		ep->query_format(&new_format,&new_frequency,&new_channels);
 	}
 
-	if ( effects_enabled() && ep && ep->mod_samples ) { 
+	if ( effects_enabled() && ep && ep->mod_samples ) {
 		length = ep->mod_samples(&ptr,length,
 					input.format,
 					input.frequency,

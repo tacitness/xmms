@@ -61,10 +61,10 @@ void vis_playback_start(void)
 {
 	GList *node = vp_data->enabled_list;
 	VisPlugin *vp;
-	
+
 	if(vp_data->playback_started)
 		return;
-	
+
 	while(node)
 	{
 		vp = node->data;
@@ -79,11 +79,11 @@ void vis_playback_stop(void)
 {
 	GList *node = vp_data->enabled_list;
 	VisPlugin *vp;
-	
+
 	if(!vp_data->playback_started)
 		return;
 
-	
+
 	while(node)
 	{
 		vp = node->data;
@@ -192,7 +192,7 @@ static void calc_mono_pcm(gint16 dest[2][512], gint16 src[2][512], gint nch)
 {
 	gint i;
 	gint16 *d, *sl, *sr;
-	
+
 	if(nch == 1)
 		memcpy(dest[0], src[0], 512 * sizeof(gint16));
 	else
@@ -212,12 +212,12 @@ static void calc_freq(gint16 *dest, gint16 *src)
 	static fft_state *state = NULL;
 	gfloat tmp_out[257];
 	gint i;
-	
+
 	if(!state)
 		state = fft_init();
 
 	fft_perform(src,tmp_out,state);
-	
+
 	for(i = 0; i < 256; i++)
 		dest[i] = ((gint)sqrt(tmp_out[i + 1])) >> 8;
 }
@@ -226,7 +226,7 @@ static void calc_mono_freq(gint16 dest[2][256], gint16 src[2][512], gint nch)
 {
 	gint i;
 	gint16 *d, *sl, *sr, tmp[512];
-	
+
 	if(nch == 1)
 		calc_freq(dest[0], src[0]);
 	else
@@ -251,7 +251,7 @@ static void calc_stereo_freq(gint16 dest[2][256], gint16 src[2][512], gint nch)
 	else
 		memcpy(dest[1], dest[0], 256 * sizeof(gint16));
 }
-	
+
 void vis_send_data(gint16 pcm_data[2][512], int nch, int length)
 {
 	GList *node = vp_data->enabled_list;

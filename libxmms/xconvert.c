@@ -28,7 +28,7 @@ struct xmms_convert_buffers* xmms_convert_buffers_new(void)
 {
 	return g_malloc0(sizeof(struct xmms_convert_buffers));
 }
-	
+
 static void* convert_get_buffer(struct buffer *buffer, size_t size)
 {
 	if (size > 0 && size <= buffer->size)
@@ -248,7 +248,7 @@ convert_func_t xmms_convert_get_func(AFormat output, AFormat input)
 	     ((output == FMT_U16_LE && input == FMT_S16_BE) ||
 	      (output == FMT_S16_LE && input == FMT_U16_BE))))
 		return convert_swap_sign_and_endian_to_native;
-		
+
 	if ((!IS_BIG_ENDIAN &&
 	     ((output == FMT_U16_BE && input == FMT_S16_LE) ||
 	      (output == FMT_S16_BE && input == FMT_U16_LE))) ||
@@ -345,7 +345,7 @@ static int convert_mono_to_stereo(struct xmms_convert_buffers* buf, void **data,
 			input++;
 		}
 	}
-	else 
+	else
 	{
 		guint8 *output = outbuf, *input = *data;
 		for (i = 0; i < length; i++)
@@ -510,7 +510,7 @@ convert_channel_func_t xmms_convert_get_channel_func(AFormat fmt, int output, in
 				g_warning("Unknown format: %d.  "
 					  "No conversion available.", fmt);
 				return NULL;
-				
+
 		}
 
 	g_warning("Input has %d channels, soundcard uses %d channels\n"

@@ -236,7 +236,7 @@ static GtkWidget* generate_credit_list(const char *text[], gboolean sec_space)
 	{
 		gchar *temp[2];
 		guint row;
-		
+
 		temp[0] = gettext(text[i++]);
 		temp[1] = gettext(text[i++]);
 		row = gtk_clist_append(GTK_CLIST(clist), temp);
@@ -258,7 +258,7 @@ static GtkWidget* generate_credit_list(const char *text[], gboolean sec_space)
 	}
 	gtk_clist_columns_autosize(GTK_CLIST(clist));
 	gtk_clist_set_column_justification(GTK_CLIST(clist), 0, GTK_JUSTIFY_RIGHT);
-	
+
 	scrollwin = gtk_scrolled_window_new(NULL, NULL);
 	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin),
 				       GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
@@ -283,7 +283,7 @@ void show_about_window(void)
 
 	if (about_window)
 		return;
-	
+
 	about_window = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_window_set_title(GTK_WINDOW(about_window), _("About XMMS"));
 	gtk_window_set_policy(GTK_WINDOW(about_window), FALSE, TRUE, FALSE);
@@ -293,51 +293,51 @@ void show_about_window(void)
 	gtk_signal_connect(GTK_OBJECT(about_window), "key_press_event",
 			   util_dialog_keypress_cb, NULL);
 	gtk_widget_realize(about_window);
-	
+
 	about_vbox = gtk_vbox_new(FALSE, 5);
 	gtk_container_add(GTK_CONTAINER(about_window), about_vbox);
-	
+
 	if (!xmms_logo_pmap)
 		xmms_logo_pmap =
 			gdk_pixmap_create_from_xpm_d(about_window->window,
 						     &xmms_logo_mask, NULL,
 						     xmms_logo);
-	
+
 	about_credits_logo_box = gtk_hbox_new(TRUE, 0);
 	gtk_box_pack_start(GTK_BOX(about_vbox), about_credits_logo_box,
 			   FALSE, FALSE, 0);
-	
+
 	about_credits_logo_frame = gtk_frame_new(NULL);
 	gtk_frame_set_shadow_type(GTK_FRAME(about_credits_logo_frame),
 				  GTK_SHADOW_OUT);
 	gtk_box_pack_start(GTK_BOX(about_credits_logo_box),
 			   about_credits_logo_frame, FALSE, FALSE, 0);
-	
+
 	about_credits_logo = gtk_pixmap_new(xmms_logo_pmap, xmms_logo_mask);
 	gtk_container_add(GTK_CONTAINER(about_credits_logo_frame),
 			  about_credits_logo);
-	
+
 	text = g_strdup_printf(_("XMMS %s - Cross platform multimedia player"),
 			       VERSION);
 	label = gtk_label_new(text);
 	g_free(text);
-	
+
 	gtk_box_pack_start(GTK_BOX(about_vbox), label, FALSE, FALSE, 0);
-	
+
 	label = gtk_label_new(_("Copyright (C) 1997-2004 4Front Technologies "
 				"and The XMMS Team"));
 	gtk_box_pack_start(GTK_BOX(about_vbox), label, FALSE, FALSE, 0);
-	
+
 	about_notebook = gtk_notebook_new();
 	gtk_box_pack_start(GTK_BOX(about_vbox), about_notebook, TRUE, TRUE, 0);
-	
+
 	list = generate_credit_list(credit_text, TRUE);
-	
+
 	gtk_notebook_append_page(GTK_NOTEBOOK(about_notebook), list,
 				 gtk_label_new(_("Credits")));
 
 	list = generate_credit_list(translators, FALSE);
-	
+
 	gtk_notebook_append_page(GTK_NOTEBOOK(about_notebook), list,
 				 gtk_label_new(_("Translators")));
 	bbox = gtk_hbutton_box_new();

@@ -91,7 +91,7 @@ static int _commentheader_out(vorbis_comment *vc, char *vendor, ogg_packet *op)
 
 	oggpack_writeinit(&opb);
 
-	/* preamble */  
+	/* preamble */
 	oggpack_write(&opb,0x03,8);
 	_v_writestring(&opb,"vorbis", 6);
 
@@ -106,7 +106,7 @@ static int _commentheader_out(vorbis_comment *vc, char *vendor, ogg_packet *op)
 		for(i=0;i<vc->comments;i++){
 			if(vc->user_comments[i]){
 				oggpack_write(&opb,vc->comment_lengths[i],32);
-				_v_writestring(&opb,vc->user_comments[i], 
+				_v_writestring(&opb,vc->user_comments[i],
                         vc->comment_lengths[i]);
 			}else{
 				oggpack_write(&opb,0,32);
@@ -160,7 +160,7 @@ static int _fetch_next_packet(vcedit_state *s, ogg_packet *p, ogg_page *page)
 			buffer = ogg_sync_buffer(s->oy, CHUNKSIZE);
 			bytes = s->read(buffer,1, CHUNKSIZE, s->in);
 			ogg_sync_wrote(s->oy, bytes);
-			if(bytes == 0) 
+			if(bytes == 0)
 				return 0;
 		}
 		if(ogg_page_eos(page))
@@ -180,7 +180,7 @@ static int _fetch_next_packet(vcedit_state *s, ogg_packet *p, ogg_page *page)
 
 int vcedit_open(vcedit_state *state, FILE *in)
 {
-	return vcedit_open_callbacks(state, (void *)in, 
+	return vcedit_open_callbacks(state, (void *)in,
 			(vcedit_read_func)fread, (vcedit_write_func)fwrite);
 }
 
@@ -272,7 +272,7 @@ int vcedit_open_callbacks(vcedit_state *state, void *in,
 					{
 						state->booklen = header->bytes;
 						state->bookbuf = g_malloc(state->booklen);
-						memcpy(state->bookbuf, header->packet, 
+						memcpy(state->bookbuf, header->packet,
 								header->bytes);
 					}
 					i++;
@@ -346,7 +346,7 @@ int vcedit_write(vcedit_state *state, void *out)
 		if(state->write(ogout.header,1,ogout.header_len, out) !=
 				(size_t) ogout.header_len)
 			goto cleanup;
-		if(state->write(ogout.body,1,ogout.body_len, out) != 
+		if(state->write(ogout.body,1,ogout.body_len, out) !=
 				(size_t) ogout.body_len)
 			goto cleanup;
 	}
@@ -361,10 +361,10 @@ int vcedit_write(vcedit_state *state, void *out)
 		{
 			if(ogg_stream_flush(&streamout, &ogout))
 			{
-				if(state->write(ogout.header,1,ogout.header_len, 
+				if(state->write(ogout.header,1,ogout.header_len,
 							out) != (size_t) ogout.header_len)
 					goto cleanup;
-				if(state->write(ogout.body,1,ogout.body_len, 
+				if(state->write(ogout.body,1,ogout.body_len,
 							out) != (size_t) ogout.body_len)
 					goto cleanup;
 			}
@@ -373,10 +373,10 @@ int vcedit_write(vcedit_state *state, void *out)
 		{
 			if(ogg_stream_pageout(&streamout, &ogout))
 			{
-				if(state->write(ogout.header,1,ogout.header_len, 
+				if(state->write(ogout.header,1,ogout.header_len,
 							out) != (size_t) ogout.header_len)
 					goto cleanup;
-				if(state->write(ogout.body,1,ogout.body_len, 
+				if(state->write(ogout.body,1,ogout.body_len,
 							out) != (size_t) ogout.body_len)
 					goto cleanup;
 			}
@@ -389,8 +389,8 @@ int vcedit_write(vcedit_state *state, void *out)
 			op.granulepos = granpos;
 			ogg_stream_packetin(&streamout, &op);
 		}
-		else /* granulepos is set, validly. Use it, and force a flush to 
-				account for shortened blocks (vcut) when appropriate */ 
+		else /* granulepos is set, validly. Use it, and force a flush to
+				account for shortened blocks (vcut) when appropriate */
 		{
 			if(granpos > op.granulepos)
 			{
@@ -398,21 +398,21 @@ int vcedit_write(vcedit_state *state, void *out)
 				ogg_stream_packetin(&streamout, &op);
 				needflush=1;
 			}
-			else 
+			else
 			{
 				ogg_stream_packetin(&streamout, &op);
 				needout=1;
 			}
-		}		
+		}
 	}
 
 	streamout.e_o_s = 1;
 	while(ogg_stream_flush(&streamout, &ogout))
 	{
-		if(state->write(ogout.header,1,ogout.header_len, 
+		if(state->write(ogout.header,1,ogout.header_len,
 					out) != (size_t) ogout.header_len)
 			goto cleanup;
-		if(state->write(ogout.body,1,ogout.body_len, 
+		if(state->write(ogout.body,1,ogout.body_len,
 					out) != (size_t) ogout.body_len)
 			goto cleanup;
 	}
@@ -444,9 +444,9 @@ int vcedit_write(vcedit_state *state, void *out)
 				state->lasterror = "Corrupt or missing data, continuing...";
 			else
 			{
-				/* Don't bother going through the rest, we can just 
+				/* Don't bother going through the rest, we can just
 				 * write the page out now */
-				if(state->write(ogout.header,1,ogout.header_len, 
+				if(state->write(ogout.header,1,ogout.header_len,
 						out) != (size_t) ogout.header_len)
 					goto cleanup;
 				if(state->write(ogout.body,1,ogout.body_len, out) !=
@@ -457,13 +457,13 @@ int vcedit_write(vcedit_state *state, void *out)
 		buffer = ogg_sync_buffer(state->oy, CHUNKSIZE);
 		bytes = state->read(buffer,1, CHUNKSIZE, state->in);
 		ogg_sync_wrote(state->oy, bytes);
-		if(bytes == 0) 
+		if(bytes == 0)
 		{
 			state->eosin = 1;
 			break;
 		}
 	}
-							
+
 
 cleanup:
 	ogg_stream_clear(&streamout);
@@ -475,7 +475,7 @@ cleanup:
 	vcedit_clear_internals(state);
 	if(!state->eosin)
 	{
-		state->lasterror =  
+		state->lasterror =
 			"Error writing stream to output. "
 			"Output stream may be corrupted or truncated.";
 		return -1;
@@ -483,4 +483,3 @@ cleanup:
 
 	return 0;
 }
-

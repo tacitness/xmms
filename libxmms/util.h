@@ -13,5 +13,5 @@ void xmms_usleep(gint usec);
 #ifdef __cplusplus
 }
 #endif
-	
+
 #endif

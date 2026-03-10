@@ -165,7 +165,7 @@ dct64_MMX:
 	fsubs  64(%eax)
 	fmuls  60(%ebx)
 	fstps  64(%edx)
-	
+
 	flds     (%edx)
 	fadds  60(%edx)
 	fstps    (%ecx)
@@ -222,7 +222,7 @@ dct64_MMX:
 	fsubs  32(%edx)
 	fmuls  92(%ebx)
 	fstps  32(%ecx)
-	
+
 	flds   64(%edx)
 	fadds 124(%edx)
 	fstps  64(%ecx)
@@ -279,7 +279,7 @@ dct64_MMX:
 	fsubs  92(%edx)
 	fmuls  92(%ebx)
 	fstps  96(%ecx)
-	
+
 	flds     (%ecx)
 	fadds  28(%ecx)
 	fstps    (%edx)
@@ -504,7 +504,7 @@ dct64_MMX:
 	fsubs 116(%edx)
 	fmuls 116(%ebx)
 	fstps 120(%ecx)
-	
+
 	flds   32(%ecx)
 	fadds  36(%ecx)
 	fstps  32(%edx)
@@ -600,7 +600,7 @@ dct64_MMX:
 	fstps 116(%edx)
 	fstps 120(%edx)
 	jnz .L01
-	
+
 	flds      (%ecx)
 	fadds    4(%ecx)
 	fstps 1024(%esi)
@@ -634,7 +634,7 @@ dct64_MMX:
 	fstps 256(%esi)
 	faddp    %st(1)
 	fstps 256(%edi)
-	
+
 	flds   32(%edx)
 	fadds  48(%edx)
 	fstps 896(%esi)
@@ -715,7 +715,7 @@ dct64_MMX:
 	popl %esi
 	popl %ebx
 	ret
-.L01:	
+.L01:
 	flds      (%ecx)
 	fadds    4(%ecx)
 	fistp  512(%esi)
@@ -750,7 +750,7 @@ dct64_MMX:
 	fistp  128(%esi)
 	faddp    %st(1)
 	fistp  128(%edi)
-	
+
 	flds    32(%edx)
 	fadds   48(%edx)
 	fistp  448(%esi)
@@ -832,5 +832,3 @@ dct64_MMX:
 	popl %esi
 	popl %ebx
 	ret
-	
-

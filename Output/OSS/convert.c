@@ -213,7 +213,7 @@ int (*oss_get_convert_func(int output, int input))(void **, int)
 	     ((output == AFMT_U16_LE && input == AFMT_S16_BE) ||
 	      (output == AFMT_S16_LE && input == AFMT_U16_BE))))
 		return convert_swap_sign_and_endian_to_native;
-		
+
 	if ((!IS_BIG_ENDIAN &&
 	     ((output == AFMT_U16_BE && input == AFMT_S16_LE) ||
 	      (output == AFMT_S16_BE && input == AFMT_U16_LE))) ||
@@ -310,7 +310,7 @@ static int convert_mono_to_stereo(void **data, int length, int fmt)
 			input++;
 		}
 	}
-	else 
+	else
 	{
 		guint16 *output = outbuf, *input = *data;
 		for (i = 0; i < length / 2; i++)

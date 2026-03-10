@@ -247,8 +247,8 @@ static const short yyrline[] =
 /* YYTNAME[TOKEN_NUM] -- String name of the token TOKEN_NUM. */
 static const char *const yytname[] =
 {
-  "$", "error", "$undefined.", "'?'", "'|'", "'&'", "EQUOP2", "CMPOP2", 
-  "ADDOP2", "MULOP2", "'!'", "NUMBER", "':'", "'n'", "'('", "')'", 
+  "$", "error", "$undefined.", "'?'", "'|'", "'&'", "EQUOP2", "CMPOP2",
+  "ADDOP2", "MULOP2", "'!'", "NUMBER", "':'", "'n'", "'('", "')'",
   "start", "exp", 0
 };
 #endif
@@ -580,7 +580,7 @@ int yydebug;
 #ifndef YYMAXDEPTH
 # define YYMAXDEPTH 10000
 #endif
-
+
 #ifdef YYERROR_VERBOSE
 
 # ifndef yystrlen
@@ -632,7 +632,7 @@ yystpcpy (yydest, yysrc)
 #  endif
 # endif
 #endif
-
+
 #line 315 "/usr/local/share/bison/bison.simple"
 
 
@@ -1105,7 +1105,7 @@ case 12:
 
 #line 705 "/usr/local/share/bison/bison.simple"
 
-
+
   yyvsp -= yylen;
   yyssp -= yylen;
 #if YYLSP_NEEDED

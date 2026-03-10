@@ -107,4 +107,3 @@ do {								\
 		sun_bswap16(nbuffer, nlen);			\
 	w = write_all(audio.fd, nbuffer, nlen);			\
 } while (0)
-

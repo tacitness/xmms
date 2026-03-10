@@ -1,13 +1,13 @@
 ///
 /// Replacement of dct64() with AMD's 3DNow! SIMD operations support
-/// 
+///
 /// Syuuhei Kashiyama <squash@mb.kcom.ne.jp>
-/// 
+///
 /// The author of this program disclaim whole expressed or implied
 /// warranties with regard to this program, and in no event shall the
 /// author of this program liable to whatever resulted from the use of
 /// this program. Use it at your own risk.
-/// 
+///
 /
 / porting xmms-0.9.1 by Osamu kayasono <jacobi@jcom.home.ne.jp>
 / - rename function name for xmms
@@ -127,10 +127,10 @@ mpg123_dct64_3dnow:
 	movd %mm5,68(%ebx)
 	psrlq $32,%mm5
 	movd %mm5,64(%ebx)
-	
+
 	// 2
 	movl mpg123_pnts+4,%eax
-	/ 0, 14	
+	/ 0, 14
 	movq 0(%ebx),%mm0
 	movq %mm0,%mm1
 	movd 60(%ebx),%mm2
@@ -331,7 +331,7 @@ mpg123_dct64_3dnow:
 	movd %mm6,116(%ebx)
 	psrlq $32,%mm6
 	movd %mm6,112(%ebx)
-	
+
 	// 4
 	movl mpg123_pnts+12,%eax
 	movq 0(%eax),%mm0
@@ -468,7 +468,7 @@ mpg123_dct64_3dnow:
 	/ 4
 	movq %mm2,%mm3
 	pfmul %mm0,%mm3
-	pfacc %mm3,%mm2 
+	pfacc %mm3,%mm2
 	pfmul %mm1,%mm2
 	movq 24(%esi),%mm4
 	movq %mm4,%mm5
@@ -506,7 +506,7 @@ mpg123_dct64_3dnow:
 	/ 12
 	movq %mm2,%mm3
 	pfmul %mm0,%mm3
-	pfacc %mm3,%mm2 
+	pfacc %mm3,%mm2
 	pfmul %mm1,%mm2
 	movq 56(%esi),%mm4
 	movq %mm4,%mm5
@@ -544,7 +544,7 @@ mpg123_dct64_3dnow:
 	/ 20
 	movq %mm2,%mm3
 	pfmul %mm0,%mm3
-	pfacc %mm3,%mm2 
+	pfacc %mm3,%mm2
 	pfmul %mm1,%mm2
 	movq 88(%esi),%mm4
 	movq %mm4,%mm5
@@ -582,7 +582,7 @@ mpg123_dct64_3dnow:
 	/ 28
 	movq %mm2,%mm3
 	pfmul %mm0,%mm3
-	pfacc %mm3,%mm2 
+	pfacc %mm3,%mm2
 	pfmul %mm1,%mm2
 	movq 120(%esi),%mm4
 	movq %mm4,%mm5
@@ -705,6 +705,5 @@ mpg123_dct64_3dnow:
 	popl %edi
         popl %ebp
 	addl $256,%esp
-	
-        ret
 
+        ret

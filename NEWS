@@ -1,15 +1,15 @@
 xmms 1.2.11
 
 	The '1211 days since last release' release.  XMMS was 10 years
-	old on 2007-11-15.  
+	old on 2007-11-15.
 
 	* Make the --toggle switches take an optional value to either
 	enable or disable the function.
 
-	* New command line switches: --quit, --toggle-shuffle, 
+	* New command line switches: --quit, --toggle-shuffle,
 	--toggle-repeat, --toggle-advance, --queue
 
-	* New remote commands: xmms_remote_playqueue_clear, 
+	* New remote commands: xmms_remote_playqueue_clear,
 	xmms_remote_get_playqueue_pos_from_playlist_pos,
 	xmms_remote_get_playlist_pos_from_playqueue_pos,
 	xmms_remote_playqueue_add, xmms_remote_get_playqueue_length,

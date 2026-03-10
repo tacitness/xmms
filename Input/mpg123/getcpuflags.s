@@ -1,9 +1,9 @@
 # KIMURA Takuhiro <kim@comtec.co.jp>
 # Copyright 2002 Haavard Kvaalen <havardk@xmms.org>
-	
+
 # Get feature flags with cpuid
 # void mpg123_getcpuid(unsigned int *fflags, unsigned int *efflags)
-	
+
 .text
 	.align 4
 .globl mpg123_getcpuflags

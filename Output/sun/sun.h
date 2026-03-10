@@ -155,4 +155,3 @@ int	(*sun_get_convert_func(int, int))(void **, int);
 #else
 #define IS_BIG_ENDIAN FALSE
 #endif
-

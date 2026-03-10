@@ -25,7 +25,7 @@ void oss_about(void)
 
 	if (dialog != NULL)
 		return;
-	
+
 	dialog = xmms_show_message(
 		_("About OSS Driver"),
 		_("XMMS OSS Driver\n\n "

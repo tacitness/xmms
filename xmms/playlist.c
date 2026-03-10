@@ -68,7 +68,7 @@ static void play_queued(void)
 {
 	/* Caller should hold playlist-mutex */
 	GList *temp = queued_list;
-	
+
 	playlist_position = queued_list->data;
 	queued_list = g_list_remove_link(queued_list, queued_list);
 	g_list_free_1(temp);
@@ -78,7 +78,7 @@ void playlist_clear(void)
 {
 	GList *node;
 	PlaylistEntry *entry;
-	
+
 	if (get_input_playing())
 		input_stop();
 
@@ -178,7 +178,7 @@ void playlist_delete_index(glong index)
 {
 	gboolean restart_playing = FALSE, set_info_text = FALSE;
 	GList *node;
-	
+
 	PL_LOCK();
 	if (!playlist)
 	{
@@ -240,7 +240,7 @@ void playlist_delete_filenames(GList *filenames)
 			mainwin_clear_song_info();
 	}
 	else if (set_info_text)
-		mainwin_set_info_text();	
+		mainwin_set_info_text();
 }
 
 void playlist_delete(gboolean crop)
@@ -262,7 +262,7 @@ void playlist_delete(gboolean crop)
 		node = next;
 	}
 	PL_UNLOCK();
-	
+
 	playlistwin_update_list();
 	if (restart_playing)
 	{
@@ -272,7 +272,7 @@ void playlist_delete(gboolean crop)
 			mainwin_clear_song_info();
 	}
 	else if (set_info_text)
-		mainwin_set_info_text();	
+		mainwin_set_info_text();
 }
 
 static void __playlist_ins_with_info(char *filename, long pos, char* title, int len)
@@ -326,7 +326,7 @@ void playlist_ins(char * filename, long pos)
 		 * net.
 		 */
 		struct stat stat_buf;
-	    
+
 		/*
 		 * Some strange people put fifo's with the .mp3 extension,
 		 * so we need to make sure it's a real file.  This is not
@@ -485,7 +485,7 @@ guint playlist_ins_dir(char *path, long pos, gboolean background)
 	list = g_list_sort(list, playlist_sort_str_by_path_cmpfunc);
 
 	g_hash_table_foreach_remove(htab, devino_destroy, NULL);
-	
+
 	node = list;
 	while (node)
 	{
@@ -606,7 +606,7 @@ void playlist_play(void)
 
 	if (!filename)
 		return;
-	
+
 	input_play(filename);
 
 	if (input_get_time() != -1)
@@ -676,7 +676,7 @@ void playlist_next(void)
 		PL_UNLOCK();
 		return;
 	}
-	
+
 	if (get_input_playing())
 	{
 		/* We need to stop before changing playlist_position */
@@ -716,7 +716,7 @@ void playlist_prev(void)
 {
 	GList *plist_pos_list;
 	gboolean restart_playing = FALSE;
-	
+
 	PL_LOCK();
 	if (!playlist)
 	{
@@ -740,7 +740,7 @@ void playlist_prev(void)
 		PL_LOCK();
 		restart_playing = TRUE;
 	}
-	
+
 	plist_pos_list = find_playlist_position_list();
 	if (g_list_previous(plist_pos_list))
 		playlist_position = plist_pos_list->prev->data;
@@ -882,7 +882,7 @@ void playlist_queue_move(int oldpos, int newpos)
 	queued_list = g_list_insert(queued_list, tmp->data, newpos);
 	g_list_free_1 (tmp);
 	PL_UNLOCK();
-	
+
 	playlistwin_update_list();
 }
 
@@ -905,7 +905,7 @@ void playlist_set_position(int pos)
 {
 	GList *node;
 	gboolean restart_playing = FALSE;
-	
+
 	PL_LOCK();
 	if (!playlist)
 	{
@@ -919,7 +919,7 @@ void playlist_set_position(int pos)
 		PL_UNLOCK();
 		return;
 	}
-	
+
 	if (get_input_playing())
 	{
 		/* We need to stop before changing playlist_position */
@@ -1000,7 +1000,7 @@ int get_playlist_length(void)
 	PL_LOCK();
 	retval = __get_playlist_length();
 	PL_UNLOCK();
-	
+
 	return retval;
 }
 
@@ -1064,7 +1064,7 @@ char *playlist_get_info_text(void)
 				*(tmp++) = *(tmp2++);
 			*tmp = '\0';
 		}
-	
+
 	return text;
 }
 
@@ -1110,7 +1110,7 @@ gboolean playlist_save(char *filename, gboolean is_pls)
 			if (entry->title && cfg.use_pl_metadata)
 			{
 				int seconds;
-				
+
 				if (entry->length > 0)
 					seconds = (entry->length) / 1000;
 				else
@@ -1166,7 +1166,7 @@ static void playlist_load_ins_file(char *filename, char *playlist_name,
 static void parse_extm3u_info(char *info, char **title, int *length)
 {
 	char *str;
-	
+
 	*title = NULL;
 	*length = -1;
 
@@ -1174,7 +1174,7 @@ static void parse_extm3u_info(char *info, char **title, int *length)
 		return;
 
 	g_return_if_fail(strlen(info) >= 8);
-	
+
 	*length = atoi(info + 8);
 	if (*length <= 0)
 		*length = -1;
@@ -1206,7 +1206,7 @@ static guint playlist_load_ins(char * filename, long pos)
 	if (ext && !strcasecmp(ext, ".pls"))
 	{
 		int noe, i;
-		
+
 		line = read_ini_string(filename, "playlist", "NumberOfEntries");
 		if (line == NULL)
 			return 0;
@@ -1264,13 +1264,13 @@ static guint playlist_load_ins(char * filename, long pos)
 		while (line[strlen(line) - 1] == '\r' ||
 		       line[strlen(line) - 1] == '\n')
 			line[strlen(line) - 1] = '\0';
-		
+
 		if (!strncmp(line, "#EXTM3U", 8))
 		{
 			extm3u = TRUE;
 			continue;
 		}
-		
+
 		if (extm3u && !strncmp(line, "#EXTINF:", 8))
 		{
 			if (ext_info)
@@ -1278,7 +1278,7 @@ static guint playlist_load_ins(char * filename, long pos)
 			ext_info = g_strdup(line);
 			continue;
 		}
-		
+
 		if (line[0] == '#')
 		{
 			if (ext_info)
@@ -1288,7 +1288,7 @@ static guint playlist_load_ins(char * filename, long pos)
 			}
 			continue;
 		}
-		
+
 		if (extm3u)
 		{
 			if (cfg.use_pl_metadata)
@@ -1296,13 +1296,13 @@ static guint playlist_load_ins(char * filename, long pos)
 			g_free(ext_info);
 			ext_info = NULL;
 		}
-		
+
 		playlist_load_ins_file(line, filename, pos, ext_title, ext_len);
-		
+
 		g_free(ext_title);
 		ext_title = NULL;
 		ext_len = -1;
-		
+
 		entries++;
 		if (pos >= 0)
 			pos++;
@@ -1325,7 +1325,7 @@ GList *get_queue(void)
 {
 	/* Caller should hold playlist_mutex */
 	return queued_list;
-} 
+}
 
 int __get_playlist_position(void)
 {
@@ -1351,7 +1351,7 @@ char * playlist_get_filename(int pos)
 	char *ret;
 	PlaylistEntry *entry;
 	GList *node;
-	
+
 	PL_LOCK();
 	if (!playlist)
 	{
@@ -1365,7 +1365,7 @@ char * playlist_get_filename(int pos)
 		return NULL;
 	}
 	entry = node->data;
-	
+
 	ret = g_strdup(entry->filename);
 	PL_UNLOCK();
 
@@ -1393,7 +1393,7 @@ char * playlist_get_songtitle(int pos)
 	entry = node->data;
 
 	filename = g_strdup(entry->filename);
-	
+
 	if (entry->title == NULL && entry->length == -1)
 	{
 		if (playlist_get_info_entry(entry))
@@ -1420,7 +1420,7 @@ int playlist_get_songtime(int pos)
 	int retval = -1;
 	PlaylistEntry *entry;
 	GList *node;
-	
+
 	PL_LOCK();
 	if (!playlist)
 	{
@@ -1555,7 +1555,7 @@ static int playlist_sort_by_date_cmpfunc(PlaylistEntry * a, PlaylistEntry * b)
 {
 	struct stat buf;
 	time_t modtime;
-	
+
 	if (!lstat(a->filename, &buf))
 	{
 		modtime = buf.st_mtime;
@@ -1608,12 +1608,12 @@ static GList* playlist_sort_selected(GList *list, GCompareFunc cmpfunc)
 		}
 		list1 = list2;
 	}
-	
+
 	if (cmpfunc)
 		temp_list = g_list_sort(temp_list, cmpfunc);
 	else
 		temp_list = playlist_shuffle_list(temp_list);
-		
+
 	list1 = temp_list;
 	list2 = index_list;
 
@@ -1640,7 +1640,7 @@ static GList* playlist_sort_selected(GList *list, GCompareFunc cmpfunc)
 
 void playlist_sort_selected_by_title(void)
 {
-	PL_LOCK();	
+	PL_LOCK();
 	playlist = playlist_sort_selected(playlist, (GCompareFunc) playlist_sort_by_title_cmpfunc);
 	PL_UNLOCK();
 }
@@ -1693,7 +1693,7 @@ static GList *playlist_shuffle_list(GList *list)
 	for (node = list, i = 0; i < len; node = g_list_next(node), i++)
 		ptrs[i] = node;
 
-	j = (int)(random() / (RAND_MAX + 1.0) * len); 
+	j = (int)(random() / (RAND_MAX + 1.0) * len);
 	list = ptrs[j];
 	ptrs[j]->next = NULL;
 	ptrs[j] = ptrs[0];
@@ -1760,7 +1760,7 @@ int playlist_get_num_selected(void)
 	PL_UNLOCK();
 	return num;
 }
-	
+
 
 static void playlist_generate_shuffle_list(void)
 {
@@ -1784,7 +1784,7 @@ static void __playlist_generate_shuffle_list(void)
 
 	if (!cfg.shuffle || !playlist)
 		return;
-	
+
 	shuffle_list = playlist_shuffle_list(g_list_copy(playlist));
 	numsongs = g_list_length(shuffle_list);
 
@@ -1801,7 +1801,7 @@ void playlist_fileinfo(int pos)
 {
 	char *path = NULL;
 	GList *node;
-	
+
 	PL_LOCK();
 	if ((node = g_list_nth(get_playlist(), pos)) != NULL)
 	{
@@ -1820,7 +1820,7 @@ void playlist_fileinfo_current(void)
 {
 	char *path = NULL;
 	PL_LOCK();
-	
+
 	if (get_playlist() && playlist_position)
 		path = g_strdup(playlist_position->filename);
 	PL_UNLOCK();
@@ -1913,7 +1913,7 @@ static void *playlist_get_info_func(void *arg)
 				xmms_usleep(1000000);
 				continue;
 			}
-			
+
 			for (node = g_list_nth(get_playlist(), playlistwin_get_toprow());
 			     node && playlistwin_item_visible(g_list_position(get_playlist(), node));
 			     node = g_list_next(node))
@@ -1986,7 +1986,7 @@ void playlist_remove_dead_files(void)
 	GList *node, *next_node, *temp = NULL;
 	PlaylistEntry *entry;
 	gboolean list_changed = FALSE;
-	
+
 	PL_LOCK();
 	node = playlist;
 	while (node)
@@ -2032,12 +2032,12 @@ void playlist_get_total_time(gulong *total_time, gulong *selection_time, gboolea
 {
 	GList *list;
 	PlaylistEntry *entry;
-	
+
 	*total_time = 0;
 	*selection_time = 0;
 	*total_more = FALSE;
 	*selection_more = FALSE;
-	
+
 	PL_LOCK();
 	list = get_playlist();
 	while (list)
@@ -2062,7 +2062,7 @@ void playlist_get_total_time(gulong *total_time, gulong *selection_time, gboolea
 void playlist_select_all(gboolean set)
 {
 	GList *list;
-	
+
 	PL_LOCK();
 	list = get_playlist();
 	while (list)
@@ -2077,7 +2077,7 @@ void playlist_select_all(gboolean set)
 void playlist_select_invert_all(void)
 {
 	GList *list;
-	
+
 	PL_LOCK();
 	list = get_playlist();
 	while (list)
@@ -2105,7 +2105,7 @@ gboolean playlist_select_invert(int num)
 
 	return retv;
 }
-	
+
 
 void playlist_select_range(int min, int max, gboolean sel)
 {

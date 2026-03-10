@@ -52,12 +52,12 @@ static void configure_win_ok_cb(GtkWidget * w, gpointer data)
 
 	if (oss_cfg.use_alt_audio_device)
 		/* do a minimum of sanity checking */
-		if (oss_cfg.alt_audio_device[0] != '/') 
+		if (oss_cfg.alt_audio_device[0] != '/')
 			oss_cfg.use_alt_audio_device = FALSE;
 	if (oss_cfg.use_alt_mixer_device)
-		if (oss_cfg.alt_mixer_device[0] != '/') 
+		if (oss_cfg.alt_mixer_device[0] != '/')
 			oss_cfg.use_alt_mixer_device = FALSE;
-	
+
 	cfgfile = xmms_cfg_open_default_file();
 
 	xmms_cfg_write_int(cfgfile, "OSS", "audio_device", oss_cfg.audio_device);
@@ -168,7 +168,7 @@ void oss_configure(void)
 	GtkWidget *audio_alt_box, *mixer_alt_box;
 	GtkWidget *bbox, *ok, *cancel;
 	GtkWidget *mixer_table, *mixer_frame;
-	
+
 	if (configure_win)
 	{
 		gdk_window_raise(configure_win->window);
@@ -181,19 +181,19 @@ void oss_configure(void)
 	gtk_window_set_policy(GTK_WINDOW(configure_win), FALSE, FALSE, FALSE);
 	gtk_window_set_position(GTK_WINDOW(configure_win), GTK_WIN_POS_MOUSE);
 	gtk_container_border_width(GTK_CONTAINER(configure_win), 10);
-	
+
 	vbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_add(GTK_CONTAINER(configure_win), vbox);
-	
+
 	notebook = gtk_notebook_new();
 	gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
-	
+
 	dev_vbox = gtk_vbox_new(FALSE, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(dev_vbox), 5);
 
 	adevice_frame = gtk_frame_new(_("Audio device:"));
 	gtk_box_pack_start(GTK_BOX(dev_vbox), adevice_frame, FALSE, FALSE, 0);
-	
+
 	adevice_box = gtk_vbox_new(FALSE, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(adevice_box), 5);
 	gtk_container_add(GTK_CONTAINER(adevice_frame), adevice_box);
@@ -227,7 +227,7 @@ void oss_configure(void)
 
 	mdevice_frame = gtk_frame_new(_("Mixer device:"));
 	gtk_box_pack_start(GTK_BOX(dev_vbox), mdevice_frame, FALSE, FALSE, 0);
-	
+
 	mdevice_box = gtk_vbox_new(FALSE, 0);
 	gtk_container_set_border_width(GTK_CONTAINER(mdevice_box), 5);
 	gtk_container_add(GTK_CONTAINER(mdevice_frame), mdevice_box);

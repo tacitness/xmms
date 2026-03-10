@@ -58,6 +58,6 @@ char *xmms_urldecode_path(char *encoded_path)
 	strcat(tmp, cur);
 	strcpy(encoded_path, tmp);
 	g_free(tmp);
-	
+
 	return encoded_path;
 }

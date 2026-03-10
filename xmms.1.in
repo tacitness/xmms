@@ -8,7 +8,7 @@ XMMS \- an audio player for X.
 [\-t] [\-\-play\-pause] [\-f] [\-\-fwd] [\-e] [\-\-enqueue] [\-S]
 [\-\-toggle\-shuffle] [\-R] [\-\-toggle\-repeat] [\-A]
 [\-\-toggle\-advance] [\-m] [\-\-show\-main\-window] [\-q] [\-\-quit]
-[\-i \fI<session id>\fP] [\-\-sm-client-id=\fI<session id>\fP] 
+[\-i \fI<session id>\fP] [\-\-sm-client-id=\fI<session id>\fP]
 [\-v] [\-\-version] [\fIfilename\fP]...
 .SH DESCRIPTION
 \fIXMMS\fP is the X Multimedia System.  It is used to play audio and
@@ -77,7 +77,7 @@ Print version number and exit.
 Close remote session.
 .SH SKINS
 XMMS supports WinAmp style skins.  Skins may be stored in either
-archived (\fI.zip\fP, \fI.wsz\fP, \fI.tgz\fP, \fI.tar.gz\fP, 
+archived (\fI.zip\fP, \fI.wsz\fP, \fI.tgz\fP, \fI.tar.gz\fP,
 or \fI.tar.bz2\fP) or unarchived format.  XMMS looks for skinfiles in
 @datadir@/xmms/Skins, ~/.xmms/Skins, and locations specified by the
 \fBSKINSDIR\fP variable.
@@ -189,7 +189,7 @@ Insert	Add file dialog
 Shift + Insert	Add directory dialog
 .br
 Alt + Insert	Add url dialog
-.in -2 
+.in -2
 
 Equalizer shade mode specific:
 
@@ -211,11 +211,11 @@ Users xmms configuration.
 ~/.xmms/xmms.m3u
 Default playlist usually loaded on startup.
 .TP
-~/.xmms/gtkrc 
+~/.xmms/gtkrc
 Users set of xmms-specific GTK config settings. Options such as widget
 color and fonts sizes can be set here.
 .TP
-~/.xmms/menurc 
+~/.xmms/menurc
 Users set of keybindings.
 .TP
 ~/.xmms/Skins, @datadir@/xmms/Skins

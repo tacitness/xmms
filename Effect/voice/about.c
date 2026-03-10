@@ -23,10 +23,10 @@
 void voice_about(void)
 {
 	static GtkWidget *dialog;
-	
+
 	if (dialog != NULL)
 		return;
-	
+
 	dialog = xmms_show_message(
 		_("About Voice Removal Plugin"),
 		_("XMMS Voice Removal Plugin\n\n"

@@ -73,7 +73,7 @@ int ir_open_port(char *filename)
 
 	/* now we have read the old attributes for the port, we can restore them
 	 * upon exit. if we had done this bfore, and exited beore reading in the
-	 * old attributes, we would have overwritten the old settings with zeros.  
+	 * old attributes, we would have overwritten the old settings with zeros.
 	 *
 	 * this way, if we do exit before we get here, we simply rely on the OS closing
 	 * the port for us, which is fine as we haven't changed anything yet.

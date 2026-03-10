@@ -14,4 +14,3 @@ extern BlurScopeConfig bscope_cfg;
 void generate_cmap(void);
 
 #endif
-

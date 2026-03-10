@@ -1,8 +1,8 @@
 /*  Joystick plugin for xmms by Tim Ferguson (timf@dgs.monash.edu.au
  *                                  http://www.dgs.monash.edu.au/~timf/) ...
- *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>) 
+ *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>)
  *  XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -111,19 +111,19 @@ void joyapp_save_buttoncmd(void)
 	ConfigFile *cfile;
 	gchar *button;
 	int i;
-    
+
 	cfile = xmms_cfg_open_default_file();
-		
+
 	for (i = 0; i < joy_cfg.num_buttons; i++)
 	{
 		button = g_strdup_printf("button%d", i+1);
 		xmms_cfg_write_int (cfile, "joystick", button, joy_cfg.button_cmd[i]);
 		g_free(button);
 	}
-	
+
 	xmms_cfg_write_default_file(cfile);
 	xmms_cfg_free(cfile);
-}	
+}
 
 /* ---------------------------------------------------------------------- */
 void joyapp_save_config(void)
@@ -145,7 +145,7 @@ void joyapp_save_config(void)
 	xmms_cfg_write_int(cfile, "joystick", "alt_right", joy_cfg.alt_right);
 	xmms_cfg_write_default_file(cfile);
 	xmms_cfg_free(cfile);
-	
+
 	joyapp_save_buttoncmd();
 }
 
@@ -167,9 +167,9 @@ static void init(void)
 
 	joy_cfg.num_buttons = joy_buttons;
 	joy_cfg.button_cmd = g_malloc(joy_buttons * sizeof(int));
-    
+
 	joyapp_read_buttoncmd();
-    
+
 	keep_going = TRUE;
 	pthread_create(&joyapp_thread, NULL, xmms_joyapp_routine, NULL);
 }
@@ -376,5 +376,3 @@ static void *xmms_joyapp_routine(void *arg)
 
 	pthread_exit(NULL);
 }
-
-

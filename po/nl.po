@@ -1,4 +1,4 @@
-# translation of nl.po to 
+# translation of nl.po to
 # translation of nl.po to
 # XMMS (X MultiMedia System) Translation
 # Copyright (C) 1999,2003, 2004 Free Software Foundation, Inc.

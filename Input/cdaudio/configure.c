@@ -125,7 +125,7 @@ static void cdda_configurewin_ok_cb(GtkWidget * w, gpointer data)
 	xmms_cfg_write_int(cfgfile, "CDDA", "readmode", drive->dae);
 
 /*  	xmms_cfg_write_boolean(cfgfile, "CDDA", "use_oss_mixer", cdda_cfg.use_oss_mixer); */
-	
+
 	for (node = cdda_cfg.drives->next, i = 1; node; node = node->next, i++)
 	{
 		char label[20];
@@ -133,7 +133,7 @@ static void cdda_configurewin_ok_cb(GtkWidget * w, gpointer data)
 
 		sprintf(label, "device%d", i);
 		xmms_cfg_write_string(cfgfile, "CDDA", label, drive->device);
-		
+
 		sprintf(label, "directory%d", i);
 		xmms_cfg_write_string(cfgfile, "CDDA", label, drive->directory);
 
@@ -185,7 +185,7 @@ static void configurewin_add_page(GtkButton *w, gpointer data)
 	GtkNotebook *nb = GTK_NOTEBOOK(data);
 	GtkWidget *box = configurewin_add_drive(NULL, nb);
 	char *label = g_strdup_printf(_("Drive %d"), g_list_length(drives));
-	
+
 	gtk_widget_show_all(box);
 	gtk_notebook_append_page(GTK_NOTEBOOK(nb), box,
 				 gtk_label_new(label));
@@ -196,7 +196,7 @@ static void redo_nb_labels(GtkNotebook *nb)
 {
 	int i;
 	GtkWidget *child;
-	
+
 	for (i = 0; (child = gtk_notebook_get_nth_page(nb, i)) != NULL; i++)
 	{
 		char *label = g_strdup_printf(_("Drive %d"), i + 1);
@@ -205,7 +205,7 @@ static void redo_nb_labels(GtkNotebook *nb)
 		g_free(label);
 	}
 }
-	
+
 
 static void configurewin_remove_page(GtkButton *w, gpointer data)
 {
@@ -332,9 +332,9 @@ static void configurewin_check_drive(GtkButton *w, gpointer data)
 						    "to access it."),
 						  directory);
 		}
-				
+
 	}
-			
+
 	window = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_window_set_transient_for(GTK_WINDOW(window),
 				     GTK_WINDOW(cdda_configure_win));
@@ -373,7 +373,7 @@ static GtkWidget* configurewin_add_drive(struct driveinfo *drive, void *nb)
 
 	vbox = gtk_vbox_new(FALSE, 5);
 	gtk_container_set_border_width(GTK_CONTAINER(vbox), 5);
-	
+
 	dev_frame = gtk_frame_new(_("Device:"));
 	gtk_box_pack_start(GTK_BOX(vbox), dev_frame, FALSE, FALSE, 0);
 	dev_table = gtk_table_new(2, 2, FALSE);
@@ -408,12 +408,12 @@ static GtkWidget* configurewin_add_drive(struct driveinfo *drive, void *nb)
 
 	readmode_analog = gtk_radio_button_new_with_label(NULL, _("Analog"));
 	gtk_box_pack_start(GTK_BOX(readmode_box), readmode_analog, FALSE, FALSE, 0);
-	
+
 	d->dae = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(readmode_analog), _("Digital audio extraction"));
 	gtk_box_pack_start(GTK_BOX(readmode_box), d->dae, FALSE, FALSE, 0);
 #ifndef CDDA_HAS_READAUDIO
 	gtk_widget_set_sensitive(readmode_frame, FALSE);
-#endif	
+#endif
 
 	/*
 	 * Volume config
@@ -503,7 +503,7 @@ void cdda_configure(void)
 
 	if (cdda_configure_win)
 		return;
-	
+
 	cdda_configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_signal_connect(GTK_OBJECT(cdda_configure_win), "destroy",
 			   GTK_SIGNAL_FUNC(gtk_widget_destroyed),
@@ -551,7 +551,7 @@ void cdda_configure(void)
 	GTK_WIDGET_SET_FLAGS(add_drive, GTK_CAN_DEFAULT);
 	gtk_box_pack_start(GTK_BOX(add_bbox), add_drive, FALSE, FALSE, 0);
 
-	
+
 	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), dev_vbox,
 				 gtk_label_new(_("Device")));
 

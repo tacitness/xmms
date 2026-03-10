@@ -65,10 +65,3 @@ static int get_time(void);
 static void get_song_info(char *filename, char **title, int *length);
 
 #endif
-
-
-
-
-
-
-

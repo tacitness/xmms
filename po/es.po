@@ -5,7 +5,7 @@
 # Fabian Mandelbaum <fabman@mandrakesoft.com>, 2000,2003, 2004.
 # Juan Manuel García Molina <juanma_gm@wanadoo.es>, 2000-2002.
 # Jordi Mallach <jordi@sindominio.net>, 2001.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: es\n"

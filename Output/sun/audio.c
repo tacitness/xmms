@@ -48,7 +48,7 @@ static guint64 written;
 
 /*
  * The format of the data from the input plugin
- * This will never change during a song. 
+ * This will never change during a song.
  */
 struct sun_format input;
 
@@ -120,7 +120,7 @@ static int sun_format(AFormat fmt)
 static void sun_setformat(AFormat fmt, int rate, int nch)
 {
 	int sun;
-	
+
 	sun = sun_format(fmt);
 
 	effect.format.sun = sun;
@@ -245,7 +245,7 @@ static inline int sun_used(void)
 {
 	if (realtime)
 		return 0;
-	
+
 	if (wr_index >= rd_index)
 		return (wr_index - rd_index);
 
@@ -270,7 +270,7 @@ int sun_free(void)
 {
 	if (realtime)
 		return (audio.paused ? 0 : 1000000);
-	
+
 	if (remove_prebuffer && prebuffer)
 	{
 		prebuffer = FALSE;
@@ -321,7 +321,7 @@ static inline void sun_write_audio(gpointer data, int length)
 	if (effects_enabled() && ep && ep->query_format)
 		ep->query_format(&new_format, &new_frequency, &new_channels);
 
-	if (new_format != effect.format.xmms || 
+	if (new_format != effect.format.xmms ||
 	    new_frequency != effect.frequency ||
 	    new_channels != effect.channels)
 	{

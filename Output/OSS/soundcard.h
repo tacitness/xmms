@@ -280,7 +280,7 @@ struct patch_info
   int len;			/* Size of the wave data in bytes */
   int loop_start, loop_end;	/* Byte offsets from the beginning */
 
-/* 
+/*
  * The base_freq and base_note fields are used when computing the
  * playback speed for a note. The base_note defines the tone frequency
  * which is heard if the sample is played using the base_freq as the
@@ -309,7 +309,7 @@ struct patch_info
   unsigned char env_rate[6];	/* GUS HW ramping rate */
   unsigned char env_offset[6];	/* 255 == 100% */
 
-  /* 
+  /*
    * The tremolo, vibrato and scale info are not supported yet.
    * Enable by setting the mode bits WAVE_TREMOLO, WAVE_VIBRATO or
    * WAVE_SCALE
@@ -347,7 +347,7 @@ struct sysex_info
  * /dev/sequencer input events.
  *
  * The data written to the /dev/sequencer is a stream of events. Events
- * are records of 4 or 8 bytes. The first byte defines the size. 
+ * are records of 4 or 8 bytes. The first byte defines the size.
  * Any number of events can be written with a write call. There
  * is a set of macros for sending these events. Use these macros if you
  * want to maximize portability of your program.
@@ -484,13 +484,13 @@ struct sysex_info
  *	of the associated synthesizer device. There is no limit to the size
  *	of the extended events. These events are not queued but executed
  *	immediately when the write() is called (execution can take several
- *	seconds of time). 
+ *	seconds of time).
  *
  *	When a SEQ_FULLSIZE message is written to the device, it must
  *	be written using exactly one write() call. Other events cannot
  *	be mixed to the same write.
- *	
- *	For FM synths (YM3812/OPL3) use struct sbi_instrument and write it to the 
+ *
+ *	For FM synths (YM3812/OPL3) use struct sbi_instrument and write it to the
  *	/dev/sequencer. Don't write other data together with the instrument structure
  *	Set the key field of the structure to FM_PATCH. The device field is used to
  *	route the patch to the corresponding device.
@@ -680,7 +680,7 @@ audio_buf_info;
 #	define DSP_CAP_ADMASK		0x00f00000
 /*
  * NOTE! (capabilities & DSP_CAP_ADMASK)==0 means just that the
- * digital/analog interface control features are not supported by the 
+ * digital/analog interface control features are not supported by the
  * device/driver. However the device still supports analog, digital or
  * both inputs/outputs (depending on the device). See the OSS Programmer's
  * Guide for full details.
@@ -698,7 +698,7 @@ audio_buf_info;
  * the initial setup. However the user should be able to override this
  * selection.
  *
- * To find out which modes are actually supported the application should 
+ * To find out which modes are actually supported the application should
  * try to select them using SNDCTL_DSP_CHANNELS.
  */
 #	define DSP_CH_MASK			0x06000000	/* Mask */
@@ -738,7 +738,7 @@ buffmem_desc;
 
 /*
  * Application's profile defines the way how playback underrun situations should be handled.
- * 
+ *
  *	APF_NORMAL (the default) and APF_NETWORK make the driver to cleanup the
  *	playback buffer whenever an underrun occurs. This consumes some time
  *	prevents looping the existing buffer.
@@ -814,7 +814,7 @@ typedef struct oss_digital_control
 #define VAL_OUTBITS		0x00000100
 #define VAL_REQUEST		0x00000200
 #define VAL_OUTSEL		0x00000400
-  
+
 #define VAL_OUTMASK (VAL_CBITOUT|VAL_UBITOUT|VAL_ORATE|VAL_OUTBITS|VAL_OUTSEL)
 
   unsigned int request, param;
@@ -855,7 +855,7 @@ typedef struct oss_digital_control
 #define INERR_QCODE_CRC			0x0002
 #define INERR_PARITY			0x0004
 #define INERR_BIPHASE			0x0008
-  
+
   int srate_in, srate_out;
   int bits_in, bits_out;
 
@@ -939,11 +939,11 @@ oss_syncgroup;
  * IOCTL commands for /dev/mixer
  */
 
-/* 
+/*
  * Mixer devices
  *
  * There can be up to 20 different analog mixer channels. The
- * SOUND_MIXER_NRDEVICES gives the currently supported maximum. 
+ * SOUND_MIXER_NRDEVICES gives the currently supported maximum.
  * The SOUND_MIXER_READ_DEVMASK returns a bitmask which tells
  * the devices supported by the particular mixer.
  */
@@ -963,7 +963,7 @@ oss_syncgroup;
 #define SOUND_MIXER_RECLEV	11	/* Recording level */
 #define SOUND_MIXER_IGAIN	12	/* Input gain */
 #define SOUND_MIXER_OGAIN	13	/* Output gain */
-/* 
+/*
  * The AD1848 codec and compatibles have three line level inputs
  * (line, aux1 and aux2). Since each card manufacturer have assigned
  * different meanings to these inputs, it's inpractical to assign
@@ -1183,7 +1183,7 @@ mixer_vol_table;
 #define SOUND_MIXER_GETLEVELS		__SIOWR('M', 116, mixer_vol_table)
 #define SOUND_MIXER_SETLEVELS		__SIOWR('M', 117, mixer_vol_table)
 
-/* 
+/*
  * An ioctl for identifying the driver version. It will return value
  * of the SOUND_VERSION macro used when compiling the driver.
  * This call was introduced in OSS version 3.6 and it will not work
@@ -1338,7 +1338,7 @@ oss_audioinfo;
 
 /*
  * The 4 most significant bits of byte 0 specify the class of
- * the event: 
+ * the event:
  *
  *	0x8X = system level events,
  *	0x9X = device/port specific events, event[1] = device/port,
@@ -1476,16 +1476,16 @@ EXTERNC int OSS_write_patch2 (int fd, unsigned char *buf, int len);
 /*
  * This variation of the sequencer macros is used just to format one event
  * using fixed buffer.
- * 
+ *
  * The program using the macro library must define the following macros before
  * using this library.
  *
- * #define _seqbuf 		 name of the buffer (unsigned char[]) 
+ * #define _seqbuf 		 name of the buffer (unsigned char[])
  * #define _SEQ_ADVBUF(len)	 If the applic needs to know the exact
  *				 size of the event, this macro can be used.
  *				 Otherwise this must be defined as empty.
  * #define _seqbufptr		 Define the name of index variable or 0 if
- *				 not required. 
+ *				 not required.
  */
 #define _SEQ_NEEDBUF(len)	/* empty */
 #endif
@@ -1546,7 +1546,7 @@ EXTERNC int OSS_write_patch2 (int fd, unsigned char *buf, int len);
  * sending any MIDI bytes but it's absolutely not possible. Trying to do
  * so _will_ cause problems with MPU401 intelligent mode).
  *
- * Sysex messages are sent in blocks of 1 to 6 bytes. Longer messages must be 
+ * Sysex messages are sent in blocks of 1 to 6 bytes. Longer messages must be
  * sent by calling SEQ_SYSEX() several times (there must be no other events
  * between them). First sysex fragment must have 0xf0 in the first byte
  * and the last byte (buf[len-1] of the last fragment must be 0xf7. No byte
@@ -1648,7 +1648,7 @@ EXTERNC int OSS_write_patch2 (int fd, unsigned char *buf, int len);
 #define SEQ_PLAYAUDIO3(devmask)		_LOCAL_EVENT(LOCL_STARTAUDIO3, devmask)
 #define SEQ_PLAYAUDIO4(devmask)		_LOCAL_EVENT(LOCL_STARTAUDIO4, devmask)
 /*
- * Events for the level 1 interface only 
+ * Events for the level 1 interface only
  */
 
 #define SEQ_MIDIOUT(device, byte)	{_SEQ_NEEDBUF(4);\
@@ -1713,7 +1713,7 @@ typedef struct copr_debug_buf {
 		int command;	/* Used internally. Set to 0 */
 		int parm1;
 		int parm2;
-		int flags;	
+		int flags;
 		int len;	/* Length of data in bytes */
 	} copr_debug_buf;
 

@@ -132,7 +132,7 @@ char* xmms_charset_from_utf8(const char *string)
 	len = strlen(string) + 1;
 	ascii = g_malloc0(len);
 	c = ascii;
-	
+
 	while (*utf != 0)
 	{
 		if (*utf < 0x80)
@@ -141,7 +141,7 @@ char* xmms_charset_from_utf8(const char *string)
 		{
 			char u = *utf++ << 1;
 			*c++ = '?';
-			
+
 			/*
 			 * Skip the entire utf8 character.
 			 */

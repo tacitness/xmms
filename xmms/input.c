@@ -82,7 +82,7 @@ static void convert_to_s16_ne(AFormat fmt, gpointer ptr, gint16 *left, gint16 *r
 	guint16 *ptru16;
 	guint8 *ptru8;
 	int i;
-	
+
 	switch (fmt)
 	{
 		case FMT_U8:
@@ -196,7 +196,7 @@ InputVisType input_get_vis_type()
 {
 	return INPUT_VIS_OFF;
 }
-	
+
 void input_add_vis(int time, unsigned char *s, InputVisType type)
 {
 
@@ -218,7 +218,7 @@ void input_add_vis_pcm(int time, AFormat fmt, int nch, int length, void *ptr)
 	vis_node->nch = nch;
 	vis_node->length = max;
 	convert_to_s16_ne(fmt,ptr,vis_node->data[0],vis_node->data[1],nch,max);
-	
+
 	pthread_mutex_lock(&vis_mutex);
 	vis_list = g_list_append(vis_list, vis_node);
 	pthread_mutex_unlock(&vis_mutex);
@@ -387,7 +387,7 @@ static void input_general_file_info_box(char *filename, InputPlugin *ip)
 	GtkWidget *bbox, *cancel;
 
 	char *title, *iplugin;
-		
+
 	window = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_window_set_policy(GTK_WINDOW(window), FALSE, TRUE, FALSE);
 	title = g_strdup_printf(_("File Info - %s"), g_basename(filename));
@@ -554,7 +554,7 @@ void input_update_vis(int time)
 	else
 		vis_send_data(NULL, 0, 0);
 }
-	
+
 
 gchar *input_get_info_text(void)
 {

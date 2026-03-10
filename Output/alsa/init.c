@@ -54,7 +54,7 @@ void alsa_init(void)
 	alsa_cfg.thread_buffer_time = CLAMP(alsa_cfg.thread_buffer_time,
 					    THREAD_BUFFER_TIME_MIN,
 					    THREAD_BUFFER_TIME_MAX);
-	
+
 	xmms_cfg_read_boolean(cfgfile, "ALSA", "soft_volume",
 			      &alsa_cfg.soft_volume);
 	xmms_cfg_read_int(cfgfile, "ALSA", "volume_left", &alsa_cfg.vol.left);

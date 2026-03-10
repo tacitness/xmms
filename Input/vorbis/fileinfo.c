@@ -174,7 +174,7 @@ static char** add_tag(char **list, char *label, char *tag)
 				for (str = ptr; *str; str++)
 					*str = *(str + 1);
 			}
-			
+
 		}
 		else
 			ptr++;
@@ -206,7 +206,7 @@ static void fail(char *error)
 {
 	char *errorstring;
 	errorstring = g_strdup_printf(_("An error occurred:\n%s"), error);
-	
+
 	xmms_show_message(_("Error!"), errorstring, _("OK"), FALSE, NULL, NULL);
 
 	g_free(errorstring);
@@ -229,7 +229,7 @@ static void save_cb(GtkWidget * w, gpointer data)
 
 	if (!g_strncasecmp(vte.filename, "http://", 7))
 		return;
-	
+
 	state = vcedit_new_state();
 
 	pthread_mutex_lock(&vf_mutex);
@@ -242,9 +242,9 @@ static void save_cb(GtkWidget * w, gpointer data)
 	comment = vcedit_comments(state);
 
 	comment_list = get_comment_list(comment);
-	
+
 	vorbis_comment_clear(comment);
-	
+
 	track_name = gtk_entry_get_text(GTK_ENTRY(title_entry));
 	performer = gtk_entry_get_text(GTK_ENTRY(performer_entry));
 	album_name = gtk_entry_get_text(GTK_ENTRY(album_entry));
@@ -289,9 +289,9 @@ static void save_cb(GtkWidget * w, gpointer data)
 	add_list(comment, comment_list);
 	g_strfreev(comment_list);
 
-	if (close_files(state) < 0) 
+	if (close_files(state) < 0)
 		fail(_("Failed to modify tag"));
-	
+
 close:
 	vcedit_clear(state);
 	pthread_mutex_unlock(&vf_mutex);
@@ -319,7 +319,7 @@ static void remove_cb(GtkWidget * w, gpointer data)
 
 	vorbis_comment_clear(comment);
 
-	if (close_files(state) < 0) 
+	if (close_files(state) < 0)
 		fail(_("Failed to modify tag"));
 
 close:
@@ -372,7 +372,7 @@ static gint close_files(vcedit_state *state)
 	int retval = 0, ofh;
 	char *tmpfn;
 	FILE* out;
-	
+
 	tmpfn = g_strdup_printf("%s.XXXXXX", vte.filename);
 
 	if ((ofh = mkstemp(tmpfn)) < 0)
@@ -453,7 +453,7 @@ void vorbis_file_info_box(char *fn)
 
 	g_free(vte.filename);
 	vte.filename = g_strdup(fn);
-	
+
 	if (!window)
 	{
 		GtkWidget *info_frame, *info_box;
@@ -463,7 +463,7 @@ void vorbis_file_info_box(char *fn)
 
 		window = gtk_window_new(GTK_WINDOW_DIALOG);
 		gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
-		gtk_signal_connect(GTK_OBJECT(window), "destroy", 
+		gtk_signal_connect(GTK_OBJECT(window), "destroy",
 			GTK_SIGNAL_FUNC(gtk_widget_destroyed), &window);
 		gtk_signal_connect(GTK_OBJECT(window), "key_press_event",
 				   keypress_cb, NULL);
@@ -475,7 +475,7 @@ void vorbis_file_info_box(char *fn)
 		filename_hbox = gtk_hbox_new(FALSE, 5);
 		gtk_box_pack_start(GTK_BOX(vbox), filename_hbox, FALSE,
 				   TRUE, 0);
-		
+
 		label = gtk_label_new(_("Filename:"));
 		gtk_box_pack_start(GTK_BOX(filename_hbox), label, FALSE,
 				   TRUE, 0);
@@ -486,7 +486,7 @@ void vorbis_file_info_box(char *fn)
 
 		hbox = gtk_hbox_new(FALSE, 10);
 		gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
-		
+
 		left_vbox = gtk_vbox_new(FALSE, 10);
 		gtk_box_pack_start(GTK_BOX(hbox), left_vbox, FALSE, FALSE, 0);
 
@@ -497,12 +497,12 @@ void vorbis_file_info_box(char *fn)
 		table = gtk_table_new(5, 5, FALSE);
 		gtk_container_set_border_width(GTK_CONTAINER(table), 5);
 		gtk_container_add(GTK_CONTAINER(tag_frame), table);
-		
+
 		label = gtk_label_new(_("Title:"));
 		gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
 		gtk_table_attach(GTK_TABLE(table), label, 0, 1, 0, 1,
 				 GTK_FILL, GTK_FILL, 5, 5);
-		
+
 		title_entry = gtk_entry_new();
 		gtk_table_attach(GTK_TABLE(table), title_entry, 1, 4, 0, 1,
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK,
@@ -512,7 +512,7 @@ void vorbis_file_info_box(char *fn)
 		gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
 		gtk_table_attach(GTK_TABLE(table), label, 0, 1, 1, 2,
 				 GTK_FILL, GTK_FILL, 5, 5);
-		
+
 		performer_entry = gtk_entry_new();
 		gtk_table_attach(GTK_TABLE(table), performer_entry, 1, 4, 1, 2,
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK,
@@ -522,7 +522,7 @@ void vorbis_file_info_box(char *fn)
 		gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
 		gtk_table_attach(GTK_TABLE(table), label, 0, 1, 2, 3,
 				 GTK_FILL, GTK_FILL, 5, 5);
-		
+
 		album_entry = gtk_entry_new();
 		gtk_table_attach(GTK_TABLE(table), album_entry, 1, 4, 2, 3,
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK,
@@ -548,12 +548,12 @@ void vorbis_file_info_box(char *fn)
 		gtk_table_attach(GTK_TABLE(table), date_entry, 1, 2, 4, 5,
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK,
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0, 5);
-		
+
 		label = gtk_label_new(_("Track number:"));
 		gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
 		gtk_table_attach(GTK_TABLE(table), label, 2, 3, 4, 5,
 				 GTK_FILL, GTK_FILL, 5, 5);
-		
+
 		tracknumber_entry = gtk_entry_new_with_max_length(4);
 		gtk_widget_set_usize(tracknumber_entry, 20, -1);
 		gtk_table_attach(GTK_TABLE(table), tracknumber_entry, 3, 4, 4,
@@ -564,7 +564,7 @@ void vorbis_file_info_box(char *fn)
 		gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
 		gtk_table_attach(GTK_TABLE(table), label, 0, 1, 5, 6,
 				 GTK_FILL, GTK_FILL, 5, 5);
-		
+
 		genre_combo = gtk_combo_new();
 		if (!genre_list)
 		{
@@ -691,14 +691,14 @@ void vorbis_file_info_box(char *fn)
 				 GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0, 5);
 
 
-		bbox = gtk_hbutton_box_new(); 
+		bbox = gtk_hbutton_box_new();
 		gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox),
 					  GTK_BUTTONBOX_END);
 		gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
 		gtk_box_pack_start(GTK_BOX(left_vbox), bbox, FALSE, FALSE, 0);
-		
+
 		save_button = gtk_button_new_with_label(_("Save"));
-		gtk_signal_connect(GTK_OBJECT(save_button), "clicked", 
+		gtk_signal_connect(GTK_OBJECT(save_button), "clicked",
 				   GTK_SIGNAL_FUNC(save_cb), NULL);
 		GTK_WIDGET_SET_FLAGS(save_button, GTK_CAN_DEFAULT);
 		gtk_box_pack_start(GTK_BOX(bbox), save_button, TRUE, TRUE, 0);
@@ -706,14 +706,14 @@ void vorbis_file_info_box(char *fn)
 
 		remove_button = gtk_button_new_with_label(_("Remove Tag"));
 		gtk_signal_connect_object(GTK_OBJECT(remove_button),
-					  "clicked", 
+					  "clicked",
 					  GTK_SIGNAL_FUNC(remove_cb), NULL);
 		GTK_WIDGET_SET_FLAGS(remove_button, GTK_CAN_DEFAULT);
 		gtk_box_pack_start(GTK_BOX(bbox),remove_button, TRUE, TRUE, 0);
 
 		cancel_button = gtk_button_new_with_label(_("Cancel"));
 		gtk_signal_connect_object(GTK_OBJECT(cancel_button),
-					  "clicked", 
+					  "clicked",
 					  GTK_SIGNAL_FUNC(gtk_widget_destroy),
 					  GTK_OBJECT(window));
 		GTK_WIDGET_SET_FLAGS(cancel_button, GTK_CAN_DEFAULT);
@@ -740,7 +740,7 @@ void vorbis_file_info_box(char *fn)
 				      GTK_JUSTIFY_LEFT);
 		gtk_box_pack_start(GTK_BOX(info_box), avgbitrate_label, FALSE,
 				   FALSE, 0);
-		
+
 		rate_label = gtk_label_new("");
 		gtk_misc_set_alignment(GTK_MISC(rate_label), 0, 0);
 		gtk_label_set_justify(GTK_LABEL(rate_label), GTK_JUSTIFY_LEFT);
@@ -767,7 +767,7 @@ void vorbis_file_info_box(char *fn)
 				      GTK_JUSTIFY_LEFT);
 		gtk_box_pack_start(GTK_BOX(info_box), filesize_label, FALSE,
 				   FALSE, 0);
-	
+
 		vendor_label = gtk_label_new("");
 		gtk_misc_set_alignment(GTK_MISC(vendor_label), 0, 0);
 		gtk_label_set_justify(GTK_LABEL(vendor_label),
@@ -795,7 +795,7 @@ void vorbis_file_info_box(char *fn)
 				      GTK_JUSTIFY_LEFT);
 		gtk_box_pack_start(GTK_BOX(info_box), peak_label, FALSE,
 				   FALSE, 0);
-		
+
 		gtk_widget_show_all(window);
 	} else
 		gdk_window_raise(window->window);
@@ -803,7 +803,7 @@ void vorbis_file_info_box(char *fn)
 	if (!g_strncasecmp(vte.filename, "http://", 7))
 		gtk_widget_set_sensitive(tag_frame, FALSE);
 	else
-		gtk_widget_set_sensitive(tag_frame, TRUE);		
+		gtk_widget_set_sensitive(tag_frame, TRUE);
 
 	gtk_label_set_text(GTK_LABEL(bitrate_label), "");
 	gtk_label_set_text(GTK_LABEL(avgbitrate_label), "");
@@ -841,7 +841,7 @@ void vorbis_file_info_box(char *fn)
 				rate = 0;
 				channels = 0;
 			}
-	
+
 			time = ov_time_total(&vf, -1);
 			minutes = time / 60;
 			seconds = time % 60;

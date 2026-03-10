@@ -2,7 +2,7 @@ XMMS - X Multimedia System (C) 1997-2004
 
 A Cross platform Multimedia Player
 
-Peter Alm, Thomas Nilsson, Olle Hallnas, Håvard Kvålen
+Peter Alm, Thomas Nilsson, Olle Hallnas, Hï¿½vard Kvï¿½len
 
 
 TABLE OF CONTENTS
@@ -618,7 +618,7 @@ Device:
 	Device
 		The actual device of your CD-ROM unit. On my system
 		I use /dev/cdrom which is a symlink to /dev/hdc.
-			
+
 	Directory
 		This is where XMMS will "hijack" the filerequester and present
 		the content of the CD. On my system I have it set to
@@ -634,14 +634,14 @@ Play mode:
 
 	Digital audio extraction
 		This allows XMMS to pass the sounddata through the effect and
-		visualization plugins. 
+		visualization plugins.
 
 Volume control:
 	This section is only active when you're using analog playback.
-	
+
 	No mixer
 		You can't control the volume at all.
-		
+
 	CDROM drive
 		The volume is controled directly on the CDROM, not all drives
 		support this though.
@@ -670,27 +670,27 @@ CDDB:
 	You can set the enviroment variable "XMMS_CDDB_CLIENT_NAME" to change
 	how XMMS presents itself to the CDDB server. Default value is
 	"XMMS 1.2.8"
-	
+
 	Use CDDB:
 		Enable CDDB use.
-		
+
 	Show network window:
 		Will open up a window containing useful debug information when
-		XMMS tries to do a CDDB lookup. 
-		
+		XMMS tries to do a CDDB lookup.
+
 	Get server list:
 		Press this button to get a list of alternative servers from the
 		server you've configured below.
-	
+
 	CDDB server:
 		The CDDB server XMMS will use, default is 'freedb.freedb.org'
-	
+
 Track names:
 
 	Override generic titles:
 		By enabling this, the plugin will ignore the 'Title' settings
 		from XMMS (section 3.5.6).
-	
+
 	Name format:
 		Works as explained in section 3.5.6 but you only have 4
 		available variables.
@@ -1007,7 +1007,7 @@ Controls
 		Example:
 
 		To enter 115 you press the +100 button, then within 2 seconds
-		press the 1 button, then within 2 seconds press the 5 button.	
+		press the 1 button, then within 2 seconds press the 5 button.
 
 	Playlist
 		This tells the XMMS IRman plugin that you are about to enter
@@ -1021,7 +1021,7 @@ Controls
 		track, simply press the corresponding number and it will begin
 		playing the specified track number. To enter numbers larger
 		than 9, you have 2 seconds between each number press to enter
-		the next number. 
+		the next number.
 
 		Example:
 
@@ -1259,6 +1259,6 @@ http://bugs.xmms.org and let us know.
 ------------------
 
 Peter Alm      (developer)     peter at xmms.org
-Håvard Kvålen  (developer)     havardk at xmms.org
+Hï¿½vard Kvï¿½len  (developer)     havardk at xmms.org
 Thomas Nilsson (docs, support) thomas at xmms.org
-Olle Hällnäs   (docs, support) olle at xmms.org
+Olle Hï¿½llnï¿½s   (docs, support) olle at xmms.org

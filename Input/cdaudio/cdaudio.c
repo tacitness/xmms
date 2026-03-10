@@ -141,7 +141,7 @@ static struct {
 	pthread_t thread;
 	gboolean audio_error, eof;
 	int seek;
-	
+
 } dae_data;
 
 static gboolean is_paused;
@@ -200,7 +200,7 @@ static void cdda_init(void)
 
 		sprintf(label, "device%d", i);
 		xmms_cfg_read_string(cfgfile, "CDDA", label, &drive->device);
-		
+
 		sprintf(label, "directory%d", i);
 		xmms_cfg_read_string(cfgfile, "CDDA", label, &drive->directory);
 
@@ -235,7 +235,7 @@ static void cdda_init(void)
 struct driveinfo* cdda_find_drive(char *filename)
 {
 	GList *node;
-	
+
 	for (node = cdda_cfg.drives; node; node = node->next)
 	{
 		struct driveinfo *d = node->data;
@@ -317,7 +317,7 @@ static gboolean is_mounted(char * device_name)
 	else
 		strncpy(devname, device_name, 256);
 
-#if defined(HAVE_MNTENT_H)		
+#if defined(HAVE_MNTENT_H)
 	if ((mounts = setmntent(MOUNTED, "r")) == NULL)
 		return TRUE;
 
@@ -334,14 +334,14 @@ static gboolean is_mounted(char * device_name)
  	entries = getmntinfo(&fsp, MNT_NOWAIT);
  	if (entries < 0)
  		return FALSE;
-	
+
 	while (entries-- > 0)
 	{
 		if (!strcmp(fsp->f_mntfromname, devname))
 			return TRUE;
 		fsp++;
 	}
-#endif                            
+#endif
 #endif
 	return FALSE;
 }
@@ -504,7 +504,7 @@ static void play_file(char *filename)
 	cdda_ip.set_info(cdda_get_title(&cdda_playing.cd_toc, track),
 			 (track_len  * 1000) / 75, 44100 * 2 * 2 * 8, 44100, 2);
 
-	memcpy(&cdda_playing.drive, drive, sizeof (struct driveinfo)); 
+	memcpy(&cdda_playing.drive, drive, sizeof (struct driveinfo));
 #ifndef CDDA_HAS_READAUDIO
 	cdda_playing.drive.dae = FALSE;
 #endif
@@ -531,13 +531,13 @@ static char * cdda_get_title(cdda_disc_toc_t *toc, int track)
 	char *title;
 
 	disc_id = cdda_cddb_compute_discid(toc);
-	
+
 	/*
 	 * We want to avoid looking up a album from two threads simultaneously.
 	 * This can happen since we are called both from the main-thread and
 	 * from the playlist-thread.
 	 */
-	
+
 	pthread_mutex_lock(&title_mutex);
 	if (!(disc_id == cached_id && cdinfo.is_valid))
 	{
@@ -561,9 +561,9 @@ static char * cdda_get_title(cdda_disc_toc_t *toc, int track)
 	cdda_cdinfo_get(&cdinfo, track, &input->performer, &input->album_name,
 			&input->track_name);
 	pthread_mutex_unlock(&title_mutex);
-	
+
 	input->track_number = track;
-	input->file_name = input->file_path = 
+	input->file_name = input->file_path =
 	    g_strdup_printf(_("CD Audio Track %02u"), track);
 	input->file_ext = "cda";
 	title =  xmms_get_titlestring(cdda_cfg.title_override ?
@@ -599,7 +599,7 @@ static void stop(void)
 		return;
 
 	cdda_playing.playing = FALSE;
-	
+
 	if (cdda_playing.drive.dae)
 	{
 		pthread_join(dae_data.thread, NULL);
@@ -649,7 +649,7 @@ static void cdda_pause(short p)
 static void play_ioctl(struct cdda_msf *start, struct cdda_msf *end)
 {
 	struct cdrom_msf msf;
-	
+
 	msf.cdmsf_min0 = start->minute;
 	msf.cdmsf_sec0 = start->second;
 	msf.cdmsf_frame0 = start->frame;
@@ -725,13 +725,13 @@ int read_audio_data(int fd, int pos, int num, void *buf)
 #if 1
 	cdra.addr.lba = pos - CDDA_MSF_OFFSET;
 	cdra.addr_format = CDROM_LBA;
-#else	
+#else
 	cdra.addr.msf.minute = pos / (60 * 75);
 	cdra.addr.msf.second = (pos / 75) % 60;
 	cdra.addr.msf.frame = pos % 75;
 	cdra.addr_format = CDROM_MSF;
 #endif
-	
+
 	cdra.nframes = num;
 	cdra.buf = buf;
 
@@ -768,7 +768,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 		return FALSE;
 
 	for (i = tochdr.cdth_trk0; i <= tochdr.cdth_trk1; i++)
-	{		
+	{
 		tocentry.cdte_format = CDROM_MSF;
 		tocentry.cdte_track = i;
 		if (ioctl(fd, CDROMREADTOCENTRY, &tocentry))
@@ -788,7 +788,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 	info->leadout.minute = tocentry.cdte_addr.msf.minute;
 	info->leadout.second = tocentry.cdte_addr.msf.second;
 	info->leadout.frame = tocentry.cdte_addr.msf.frame;
-	
+
 	info->first_track = tochdr.cdth_trk0;
 	info->last_track = tochdr.cdth_trk1;
 
@@ -839,7 +839,7 @@ static int get_current_frame(void)
 static void drive_get_volume(int *l, int *r)
 {
 	struct ioc_vol vol;
-	
+
 	if (cdda_playing.fd != -1)
 	{
 		ioctl(cdda_playing.fd, CDIOCGETVOL, &vol);
@@ -881,14 +881,14 @@ int read_audio_data(int fd, int pos, int num, void *buf)
 # else
 /* Digital extraction with ATAng */
 int read_audio_data(int fd, int pos, int num, void *buf)
-{	
+{
 	int bsize = 2352;
 
 	if (ioctl(fd, CDRIOCSETBLOCKSIZE, &bsize) == -1)
 		return -errno;
 	if (pread(fd, buf, num*bsize, (pos - 150)*bsize) != num*bsize)
 		return 0;
-	return num;	 	
+	return num;
 }
 # endif /* CDIOCREADAUDIO */
 #endif
@@ -906,7 +906,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 		return FALSE;
 
 	for (i = tochdr.starting_track; i <= tochdr.ending_track; i++)
-	{		
+	{
 		tocentry.address_format = CD_MSF_FORMAT;
 
 		tocentry.starting_track = i;
@@ -932,7 +932,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 	info->leadout.minute = tocentry.data->addr.msf.minute;
 	info->leadout.second = tocentry.data->addr.msf.second;
 	info->leadout.frame = tocentry.data->addr.msf.frame;
-	
+
 	info->first_track = tochdr.starting_track;
 	info->last_track = tochdr.ending_track;
 
@@ -951,7 +951,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 		return FALSE;
 
 	for (i = tochdr.starting_track; i <= tochdr.ending_track; i++)
-	{		
+	{
 		tocentry.address_format = CD_MSF_FORMAT;
 
 		tocentry.starting_track = i;
@@ -989,7 +989,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 		return FALSE;
 
 	for (i = tochdr.starting_track; i <= tochdr.ending_track; i++)
-	{		
+	{
 		tocentry.address_format = CD_MSF_FORMAT;
 
 		tocentry.track = i;
@@ -1011,7 +1011,7 @@ static gboolean cdda_get_toc_lowlevel(int fd, cdda_disc_toc_t *info)
 	info->leadout.minute = tocentry.entry.addr.msf.minute;
 	info->leadout.second = tocentry.entry.addr.msf.second;
 	info->leadout.frame = tocentry.entry.addr.msf.frame;
-	
+
 	info->first_track = tochdr.starting_track;
 	info->last_track = tochdr.ending_track;
 
@@ -1034,7 +1034,7 @@ static void seek(int time)
 			xmms_usleep(20000);
 		return;
 	}
-	
+
 	start.minute = (cdda_playing.cd_toc.track[track].minute * 60 +
 			cdda_playing.cd_toc.track[track].second + time) / 60;
 	start.second = (cdda_playing.cd_toc.track[track].second + time) % 60;
@@ -1045,7 +1045,7 @@ static void seek(int time)
 		end = &cdda_playing.cd_toc.track[track + 1];
 
 	play_ioctl(&start, end);
-	
+
 	if (is_paused)
 	{
 		cdda_pause(TRUE);
@@ -1065,7 +1065,7 @@ static int get_time_analog(void)
 
 	if (frame == -1)
 		return -1;
-	
+
 	start_frame = LBA(cdda_playing.cd_toc.track[track]);
 	length = cdda_calculate_track_length(&cdda_playing.cd_toc, track);
 
@@ -1114,14 +1114,14 @@ static void get_song_info(char *filename, char **title, int *len)
 		tmp++;
 	else
 		tmp = filename;
-	
+
 	if (!sscanf(tmp, "Track %d.cda", &t))
 		return;
 	if (!cdda_get_toc(&toc, drive->device))
 		return;
 	if (t < toc.first_track || t > toc.last_track || toc.track[t].flags.data_track)
 		return;
-	
+
 	*len = (cdda_calculate_track_length(&toc, t) * 1000) / 75;
 	*title = cdda_get_title(&toc, t);
 }

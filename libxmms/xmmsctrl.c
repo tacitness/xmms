@@ -315,7 +315,7 @@ void xmms_remote_playlist(int session, char ** list, int num, gboolean enqueue)
 
 	g_return_if_fail(list != NULL);
 	g_return_if_fail(num > 0);
-	
+
 	if (!enqueue)
 		xmms_remote_playlist_clear(session);
 
@@ -368,7 +368,7 @@ void xmms_remote_playlist_add(int session, GList * list)
 	int i, num;
 
 	g_return_if_fail(list != NULL);
-	
+
 	num = g_list_length(list);
 	str_list = g_malloc0(num * sizeof (char *));
 	for (i = 0, node = list; i < num && node; i++, node = g_list_next(node))
@@ -447,7 +447,7 @@ void xmms_remote_playqueue_clear(gint session)
 {
 	remote_cmd(session, CMD_PLAYQUEUE_CLEAR);
 }
-		
+
 gint xmms_remote_get_playqueue_length(gint session)
 {
 	return remote_get_gint(session, CMD_GET_PLAYQUEUE_LENGTH);
@@ -532,7 +532,7 @@ void xmms_remote_set_main_volume(int session, int v)
 	b = xmms_remote_get_balance(session);
 
 	v = CLAMP(v, 0, 100);
-	
+
 	if (b < 0)
 	{
 		vl = v;

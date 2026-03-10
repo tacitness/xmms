@@ -359,7 +359,7 @@ char *id3_get_comment(struct id3_frame *frame)
 
 	/* Skip language id */
 	offset = 3;
-	
+
 	/* Skip the description */
 	offset += id3_string_size(ID3_TEXT_FRAME_ENCODING(frame),
 				  ID3_TEXT_FRAME_PTR(frame) + offset);

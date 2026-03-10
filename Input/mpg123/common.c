@@ -81,8 +81,8 @@ void mpg123_stream_close(void)
 }
 
 #if 0
-/**************************************** 
- * HACK,HACK,HACK: step back <num> frames 
+/****************************************
+ * HACK,HACK,HACK: step back <num> frames
  * can only work if the 'stream' isn't a real stream but a file
  */
 static int stream_back_bytes(int bytes)
@@ -281,7 +281,7 @@ static gboolean read_id3v2_tag(unsigned long head)
 				g_free(songname);
 		}
 		else
-		{			
+		{
 			mpg123_title =
 				mpg123_format_song_title(tag, mpg123_filename);
 		}
@@ -311,7 +311,7 @@ int mpg123_head_check(unsigned long head)
 		return FALSE;
 	if ((head & 0xffff0000) == 0xfffe0000)
 		return FALSE;
-	
+
 	return TRUE;
 }
 
@@ -342,7 +342,7 @@ int mpg123_read_frame(struct frame *fr)
 			}
 			else if (!stream_head_shift(&newhead))
 				return FALSE;
-			
+
 			if (try > MAX_SKIP_LENGTH)
 				return FALSE;
 		}

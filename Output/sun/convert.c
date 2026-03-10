@@ -229,7 +229,7 @@ int (*sun_get_convert_func(int output, int input))(void **, int)
 	      (output == AUDIO_ENCODING_SLINEAR_LE &&
 	       input == AUDIO_ENCODING_ULINEAR_BE))))
 		return convert_swap_sign_and_endian_to_native;
-		
+
 	if ((!IS_BIG_ENDIAN &&
 	     ((output == AUDIO_ENCODING_ULINEAR_BE &&
 	      input == AUDIO_ENCODING_SLINEAR_LE) ||

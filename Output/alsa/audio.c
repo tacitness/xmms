@@ -210,7 +210,7 @@ int alsa_free(void)
 	}
 	if (prebuffer)
 		remove_prebuffer = TRUE;
-	
+
 	return thread_buffer_size - get_thread_buffer_filled() - 1;
 }
 
@@ -732,9 +732,9 @@ void alsa_write(gpointer data, int length)
 {
 	int cnt;
 	char *src = (char *)data;
-	
+
 	remove_prebuffer = FALSE;
-	
+
 	alsa_total_written += length;
 	while (length > 0)
 	{
@@ -899,7 +899,7 @@ int alsa_open(AFormat fmt, int rate, int nch)
 	wr_index = rd_index = 0;
 	pause_request = FALSE;
 	flush_request = -1;
-	
+
 	pthread_create(&audio_thread, NULL, alsa_loop, NULL);
 	return 1;
 }

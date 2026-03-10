@@ -114,7 +114,7 @@ void pbutton_set_button_data(PButton *b, gint nx, gint ny, gint px, gint py)
 	if(py>-1)
 		b->pb_py = py;
 }
-	
+
 
 PButton *create_pbutton_ex(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h, gint nx, gint ny, gint px, gint py, void (*cb) (void), SkinIndex si1, SkinIndex si2)
 {

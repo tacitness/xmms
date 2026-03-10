@@ -39,4 +39,3 @@ void sun_about(void)
 			   GTK_SIGNAL_FUNC(gtk_widget_destroyed),
 			   &dialog);
 }
-

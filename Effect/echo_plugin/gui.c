@@ -121,10 +121,10 @@ void echo_configure(void)
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(surround_btn),
 				     echo_surround_enable);
 	gtk_widget_show(surround_btn);
-	
+
 	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(conf_dialog)->vbox), surround_btn,
 			   TRUE, TRUE, 5);
-	
+
 	bbox = gtk_hbutton_box_new();
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
 	gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);

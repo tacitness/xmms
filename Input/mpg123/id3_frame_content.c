@@ -138,7 +138,7 @@ static GSList* id3_get_content_v24(struct id3_frame *frame)
 {
 	GSList *list = NULL;
 	int offset = 0;
-	
+
 	while (offset < frame->fr_size - 1)
 	{
 		int num;
@@ -197,7 +197,7 @@ char *id3_get_content(struct id3_frame *frame)
 
 	if (len == 0)
 		return g_strdup("");
-	
+
 	str_array = g_malloc0(sizeof (char *) * (len + 1));
 
 	while (len-- && list)

@@ -36,7 +36,7 @@
  *
  * 2000-12-28  Håvard Kvålen <havardk@xmms.org>:
  * Stripped down to only mkdtemp() and made more portable
- * 
+ *
  */
 
 #ifndef HAVE_MKDTEMP

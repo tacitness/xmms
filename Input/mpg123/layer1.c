@@ -1,11 +1,11 @@
 
-/* 
- * Mpeg Layer-1 audio decoder 
+/*
+ * Mpeg Layer-1 audio decoder
  * --------------------------
  * copyright (c) 1995 by Michael Hipp, All rights reserved. See also 'README'
  * near unoptimzed ...
  *
- * may have a few bugs after last optimization ... 
+ * may have a few bugs after last optimization ...
  *
  */
 

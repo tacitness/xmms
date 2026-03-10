@@ -12,7 +12,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 #include <stdio.h>
 #include <ogg/ogg.h>
@@ -55,7 +55,6 @@ extern char *   vcedit_error(vcedit_state *state);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif /* __VCEDIT_H */
-

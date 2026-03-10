@@ -164,14 +164,14 @@ void cdda_cdinfo_write_file(guint32 cddb_discid, cdinfo_t *cdinfo)
 	 * We currently identify cdinfo on disk with the CDDB-discid.
 	 * Maybe it would be smarter to use the cdindex id instead?
 	 */
-	
+
 	char *filename;
 	ConfigFile *cfg;
 	char sectionname[10], trackstr[16];
 	int i, numtracks = CLAMP(cddb_discid & 0xff, 0, 99);
 
 	sprintf(sectionname, "%08x", cddb_discid);
-	
+
 	filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
 	if ((cfg = xmms_cfg_open_file(filename)) == NULL)
 		cfg = xmms_cfg_new();
@@ -218,7 +218,7 @@ gboolean cdda_cdinfo_read_file(guint32 cddb_discid, cdinfo_t *cdinfo)
 	gboolean track_found;
 
 	sprintf(sectionname, "%08x", cddb_discid);
-	
+
 	filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
 	if ((cfg = xmms_cfg_open_file(filename)) == NULL)
 	{

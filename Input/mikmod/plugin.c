@@ -14,7 +14,7 @@
    (5) 2/2/99 Added back in mikmod_going (it is needed)
    (6) 2/2/99 Repaired SEGV on playlist goes to next song, bad
    printf when the mod cannot be loaded and xmms is in repeat mode.
-   Also made the absured channel display code work 
+   Also made the absured channel display code work
    (7) 2/5/99 Removed some old useless stuff
    (8) 2/5/99 Added about -- (doesn't work .. not in xmms yet)
    (9) 2/8/99 Added configure -- (about and configure work now w/a2)
@@ -225,7 +225,7 @@ static int is_our_file(char *filename)
 
 	tmp = strrchr(filename, '/');
 	ext = strrchr(filename, '.');
-	
+
 	if (ext)
 	{
 		if (!strcasecmp(ext, ".669"))
@@ -316,9 +316,9 @@ static void play_file(char *filename)
 	int channelcnt = 1;
 	int format = FMT_U8;
 	FILE *f;
-	
+
 	gchar *titletemp;
-	
+
 	if(!(f = fopen(filename,"rb")))
 	{
 		mikmod_going = 0;
@@ -362,7 +362,7 @@ static void play_file(char *filename)
 		md_mode |= DMODE_INTERP;
 	}
 	md_pansep = mikmod_cfg.def_pansep;
-	
+
 #if (LIBMIKMOD_VERSION > 0x30106)
 	MikMod_Init("");
 #else
@@ -381,7 +381,7 @@ static void play_file(char *filename)
 	mf->fadeout = mikmod_cfg.volumefadeout;
 
 	Player_Start(mf);
-	
+
 	if (mf->volume > uservolume)
 		Player_SetVolume(uservolume);
 
@@ -393,7 +393,7 @@ static void play_file(char *filename)
         /* Supply the info */
 	mikmod_ip.set_info(titletemp, -1, ((mf->bpm * 1000)), md_mixfreq, channelcnt);
 	free(titletemp);
-	
+
 	pthread_create(&decode_thread, NULL, play_loop, NULL);
 	return;
 
@@ -585,7 +585,7 @@ static void configure()
 		gtk_box_pack_start(GTK_BOX(vbox6), Titles_Check, TRUE, TRUE, 0);
 		if (mikmod_cfg.filename_titles == 1)
 			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(Titles_Check), TRUE);
-		
+
 		pansep_label = gtk_label_new(_("Default panning separation"));
 		gtk_widget_show(pansep_label);
 		gtk_box_pack_start(GTK_BOX(vbox6), pansep_label, TRUE, TRUE, 0);

@@ -48,7 +48,7 @@ VisPlugin sanalyzer_vp =
 	0,
 	NULL, /* Description */
 	0,
-	1,		
+	1,
 	sanalyzer_init, /* init */
 	sanalyzer_cleanup, /* cleanup */
 	NULL, /* about */
@@ -93,14 +93,14 @@ static void sanalyzer_init(void)
 	gtk_widget_set_usize(window, WIDTH, HEIGHT);
 	gc = gdk_gc_new(window->window);
 	draw_pixmap = gdk_pixmap_new(window->window,WIDTH,HEIGHT,gdk_rgb_get_visual()->depth);
-	
+
 	bar = gdk_pixmap_new(window->window,25, HEIGHT, gdk_rgb_get_visual()->depth);
 	for(i = 0; i < HEIGHT / 2; i++)
 	{
 		color.red = 0xFFFF;
 		color.green = ((i * 255) / (HEIGHT / 2)) << 8;
 		color.blue = 0;
-		
+
 		gdk_color_alloc(gdk_colormap_get_system(),&color);
 		gdk_gc_set_foreground(gc,&color);
 		gdk_draw_line(bar,gc,0,i,24,i);
@@ -110,7 +110,7 @@ static void sanalyzer_init(void)
 		color.red = (255 - ((i * 255) / (HEIGHT / 2))) <<8;
 		color.green = 0xFFFF;
 		color.blue = 0;
-		
+
 		gdk_color_alloc(gdk_colormap_get_system(),&color);
 		gdk_gc_set_foreground(gc,&color);
 		gdk_draw_line(bar,gc,0,i + (HEIGHT / 2),24,i + (HEIGHT / 2));
@@ -118,12 +118,12 @@ static void sanalyzer_init(void)
 	scale = HEIGHT / log(256);
 	gdk_color_black(gdk_colormap_get_system(),&color);
 	gdk_gc_set_foreground(gc,&color);
-	
+
 	area = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(window),area);
 	gtk_widget_realize(area);
 	gdk_window_set_back_pixmap(area->window,bg_pixmap,0);
-	
+
 	gtk_widget_show(area);
 	gtk_widget_show(window);
 	gdk_window_clear(window->window);
@@ -161,17 +161,17 @@ static void sanalyzer_cleanup(void)
 static gint draw_func(gpointer data)
 {
 	gint i;
-	
+
 	if(!window)
 	{
 		timeout_tag = 0;
 		return FALSE;
 	}
-	
+
 	GDK_THREADS_ENTER();
 	gdk_draw_rectangle(draw_pixmap,gc,TRUE,0,0,WIDTH,HEIGHT);
 
-	
+
 	for(i = 0; i < NUM_BANDS; i++)
 	{
 		/*if(bar_heights[i] > 4)
@@ -179,11 +179,11 @@ static gint draw_func(gpointer data)
 		else
 			bar_heights[i] = 0;*/
 		gdk_draw_pixmap(draw_pixmap,gc,bar, 0,HEIGHT - 1 - bar_heights[i], i * (WIDTH / NUM_BANDS), HEIGHT - 1 - bar_heights[i], (WIDTH / NUM_BANDS) - 1, bar_heights[i]);
-		
+
 	}
 	gdk_window_clear(area->window);
 	GDK_THREADS_LEAVE();
-	
+
 	return TRUE;
 }
 
@@ -213,7 +213,7 @@ static void sanalyzer_render_freq(gint16 data[2][256])
 	gint y;
 
 	gint xscale[] = {0, 1, 2, 3, 5, 7, 10, 14, 20, 28, 40, 54, 74, 101, 137, 187, 255};
-	
+
 	if(!window)
 		return;
 	for(i = 0; i < NUM_BANDS; i++)
@@ -230,15 +230,15 @@ static void sanalyzer_render_freq(gint16 data[2][256])
 			if(y > HEIGHT - 1)
 				y = HEIGHT - 1;
 		}
- 
+
 		if(y > bar_heights[i])
 			bar_heights[i] = y;
 		else if(bar_heights[i] > 4)
 			bar_heights[i] -= 4;
 		else
 			bar_heights[i] = 0;
-		
+
 	}
 	draw_func(NULL);
-	return;			
+	return;
 }

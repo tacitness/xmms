@@ -57,4 +57,3 @@ void xmms_fullscreen_modelist_free(GSList *modes);
 
 
 #endif
-

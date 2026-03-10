@@ -33,7 +33,7 @@ static GtkWidget *prefswin_eplugins_list, *prefswin_eplugins_config;
 static GtkWidget *prefswin_eplugins_about, *prefswin_eplugins_use_cbox;
 
 static GtkWidget *prefswin_options_sd_entry, *prefswin_options_pbs_entry;
-	
+
 static GtkWidget *prefswin_options_font_entry, *prefswin_options_font_browse;
 static GtkWidget *prefswin_options_fontset, *prefswin_mainwin_font_entry;
 static GtkWidget *prefswin_mainwin_xfont, *prefswin_options_mouse_spin;
@@ -375,7 +375,7 @@ void prefswin_apply_changes(void)
 		playlistwin_shade->pb_allow_draw = TRUE;
 		playlistwin_close->pb_allow_draw = TRUE;
 	}
-	
+
 	if (cfg.get_info_on_load)
 		playlist_start_get_info_scan();
 
@@ -422,7 +422,7 @@ void prefswin_font_browse_ok(GtkWidget * w, gpointer data)
 	gchar *fontname;
 
 	fontname = gtk_font_selection_dialog_get_font_name(fontsel);
-	
+
 	if (fontname)
 		gtk_entry_set_text(GTK_ENTRY(prefswin_options_font_entry), fontname);
 
@@ -512,7 +512,7 @@ void prefswin_vplugins_rescan(void)
 	if(sel != -1)
 		gtk_clist_select_row(clist, sel, 0);
 }
-		
+
 void prefswin_vplugins_use_cb(GtkToggleButton * w, gpointer data)
 {
 	gint sel;
@@ -522,9 +522,9 @@ void prefswin_vplugins_use_cb(GtkToggleButton * w, gpointer data)
 		return;
 
 	sel = GPOINTER_TO_INT(clist->selection->data);
-	
+
 	enable_vis_plugin(sel, gtk_toggle_button_get_active(w));
-	
+
 	prefswin_vplugins_rescan();
 }
 
@@ -547,7 +547,7 @@ void prefswin_eplugins_rescan(void)
 	if(sel != -1)
 		gtk_clist_select_row(clist, sel, 0);
 }
-		
+
 void prefswin_eplugins_use_cb(GtkToggleButton * w, gpointer data)
 {
 	gint sel;
@@ -686,11 +686,11 @@ void create_prefs_window(void)
 	GtkWidget *prefswin_eplugins_hbbox, *prefswin_gplugins_hbbox;
 	GtkWidget *prefswin_gplugins_frame, *prefswin_gplugins_vbox;
 	GtkWidget *prefswin_gplugins_hbox, *prefswin_gplugins_list;
-	
+
 	GtkWidget *prefswin_vplugins_box, *prefswin_vplugins_vbox;
 	GtkWidget *prefswin_vplugins_frame, *prefswin_vplugins_hbox;
 	GtkWidget *prefswin_vplugins_hbbox;
-	
+
 	GtkWidget *prefswin_options_frame, *prefswin_options_vbox;
 	GtkWidget *prefswin_mainwin_frame, *prefswin_mainwin_vbox;
 	GtkWidget *prefswin_fonts_vbox, *prefswin_fonts_playlist_frame;
@@ -780,7 +780,7 @@ void create_prefs_window(void)
 	gtk_signal_connect(GTK_OBJECT(prefswin_audio_ie_cbox), "toggled", GTK_SIGNAL_FUNC(prefswin_ip_toggled), prefswin_audio_ilist);
 	gtk_box_pack_start(GTK_BOX(prefswin_audio_ihbox), prefswin_audio_ie_cbox, FALSE, FALSE, 10);
 
-	/* 
+	/*
 	 * Output plugin
 	 */
 
@@ -835,7 +835,7 @@ void create_prefs_window(void)
 	gtk_box_pack_start(GTK_BOX(prefswin_eplugins_vbox), scrolled_win, TRUE, TRUE, 0);
 
 	prefswin_eplugins_hbox = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(prefswin_eplugins_vbox), prefswin_eplugins_hbox, FALSE, FALSE, 5);	
+	gtk_box_pack_start(GTK_BOX(prefswin_eplugins_vbox), prefswin_eplugins_hbox, FALSE, FALSE, 5);
 
 	prefswin_eplugins_hbbox = gtk_hbutton_box_new();
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(prefswin_eplugins_hbbox), GTK_BUTTONBOX_START);
@@ -905,9 +905,9 @@ void create_prefs_window(void)
 	/*
 	 * Visualization plugins page
 	 */
-	
+
 	prefswin_vplugins_box = gtk_vbox_new(FALSE, 0);
-	
+
 	prefswin_vplugins_frame = gtk_frame_new(_("Visualization Plugins"));
 	gtk_container_border_width(GTK_CONTAINER(prefswin_vplugins_frame), 5);
 	gtk_box_pack_start(GTK_BOX(prefswin_vplugins_box), prefswin_vplugins_frame, TRUE, TRUE, 0);
@@ -1043,7 +1043,7 @@ void create_prefs_window(void)
         gtk_widget_set_usize(prefswin_options_mouse_spin, 45, -1);
 	gtk_box_pack_start(GTK_BOX(options_mouse_box), prefswin_options_mouse_spin, FALSE, FALSE, 0);
 	gtk_table_attach_defaults(GTK_TABLE(options_table), options_mouse_box, 0, 1, 8, 9);
-	
+
 	opt = prefswin_option_new_with_label_to_table(&cfg.use_pl_metadata,
 						      _("Use meta-data in playlists"),
 						      GTK_TABLE(options_table), 1, 8);
@@ -1051,7 +1051,7 @@ void create_prefs_window(void)
 			     _("Store information such as song title and "
 			       "length to playlists"), NULL);
 
-	
+
 	gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), prefswin_options_vbox, gtk_label_new(_("Options")));
 
 	/*
@@ -1066,7 +1066,7 @@ void create_prefs_window(void)
 	gtk_container_add(GTK_CONTAINER(prefswin_fonts_options_frame), prefswin_fonts_options_vbox);
 	prefswin_options_fontset = prefswin_option_new_with_label(&cfg.use_fontsets, _("Use fontsets (Enable for multi-byte charset support)"));
 	gtk_box_pack_start_defaults(GTK_BOX(prefswin_fonts_options_vbox), prefswin_options_fontset);
-	
+
 	prefswin_fonts_playlist_frame = gtk_frame_new(_("Playlist"));
 	gtk_container_set_border_width(GTK_CONTAINER(prefswin_fonts_playlist_frame), 5);
 	gtk_box_pack_start(GTK_BOX(prefswin_fonts_vbox), prefswin_fonts_playlist_frame, FALSE, FALSE, 0);
@@ -1146,8 +1146,8 @@ void create_prefs_window(void)
 	gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), prefswin_title_vbox, gtk_label_new(_("Title")));
 
 
-	/* 
-	 * OK, Cancel & Apply 
+	/*
+	 * OK, Cancel & Apply
 	 */
 
 	prefswin_hbox = gtk_hbutton_box_new();
@@ -1404,5 +1404,3 @@ void prefswin_show_vis_plugins_page(void)
 {
 	gtk_notebook_set_page(GTK_NOTEBOOK(prefswin_notebook), 3);
 }
-
-

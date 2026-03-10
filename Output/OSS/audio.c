@@ -52,7 +52,7 @@ struct format_info {
 
 /*
  * The format of the data from the input plugin
- * This will never change during a song. 
+ * This will never change during a song.
  */
 struct format_info input;
 
@@ -161,7 +161,7 @@ static void oss_setup_format(AFormat fmt, int rate, int nch)
 	output.bps = oss_calc_bitrate(output.format.oss, output.frequency,
 				      output.channels);
 }
-	
+
 
 gint oss_get_written_time(void)
 {
@@ -256,17 +256,17 @@ static void oss_write_audio(gpointer data, int length)
 	AFormat new_format;
 	int new_frequency, new_channels;
 	EffectPlugin *ep;
-	
+
 	new_format = input.format.xmms;
 	new_frequency = input.frequency;
 	new_channels = input.channels;
-	
+
 	ep = get_current_effect_plugin();
 	if(effects_enabled() && ep && ep->query_format)
 	{
 		ep->query_format(&new_format,&new_frequency,&new_channels);
 	}
-	
+
 	if (new_format != effect.format.xmms ||
 	    new_frequency != effect.frequency ||
 	    new_channels != effect.channels)
@@ -545,7 +545,7 @@ void *oss_loop(void *arg)
 					cnt = MIN(length,buffer_size-rd_index);
 					oss_write_audio(buffer + rd_index, cnt);
 					rd_index=(rd_index+cnt)%buffer_size;
-					length-=cnt;				
+					length-=cnt;
 				}
 				if (!oss_used())
 					ioctl(fd, SNDCTL_DSP_POST, 0);
@@ -641,7 +641,7 @@ void oss_set_audio_params(void)
 	 * drivers won't work properly without a select and some won't
 	 * work with a select :/
 	 */
-	
+
 	tv.tv_sec = 0;
 	tv.tv_usec = 50000;
 	FD_ZERO(&set);
@@ -679,9 +679,9 @@ gint oss_open(AFormat fmt, gint rate, gint nch)
 	input.bps = oss_calc_bitrate(oss_get_format(fmt), rate, nch);
 
 	oss_setup_format(fmt, rate, nch);
-	
+
 	realtime = xmms_check_realtime_priority();
-	
+
 	if(!realtime)
 	{
 		buffer_size = (oss_cfg.buffer_size * input.bps) / 1000;

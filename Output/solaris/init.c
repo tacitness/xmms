@@ -8,9 +8,9 @@ static void set_chan_mode(ConfigFile *cfg, int flag, char* name, int def_val);
 void abuffer_init(void)
 {
 	ConfigFile *cfgfile;
-    
+
 	memset(&sun_cfg, 0, sizeof(SunConfig));
-    
+
 	sun_cfg.audio_device = getenv("AUDIODEV");
 	if (! sun_cfg.audio_device)
 		sun_cfg.audio_device = "/dev/audio";
@@ -23,7 +23,7 @@ void abuffer_init(void)
 	sun_cfg.buffer_size=500;
 	sun_cfg.prebuffer=25;
 	sun_cfg.channel_flags = 0;
-    
+
 	cfgfile = xmms_cfg_open_default_file();
 	xmms_cfg_read_string(cfgfile,"Sun","audio_device",
 			     &sun_cfg.audio_device);

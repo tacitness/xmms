@@ -1,7 +1,7 @@
 # Lithuanian translation of xmms
 # Copyright (c) 2000-2001 Free Software Foundation, Inc.
 # Gediminas Paulauskas <menesis@delfi.lt>, 2000-2001
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: xmms 1.2.5\n"

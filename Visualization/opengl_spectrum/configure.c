@@ -14,9 +14,9 @@ static GtkWidget *bbox, *ok, *cancel;
 
 static void configure_ok(GtkWidget *w, gpointer data)
 {
-	ConfigFile *cfg;	
+	ConfigFile *cfg;
 	gchar *filename;
-	
+
 	oglspectrum_cfg.tdfx_mode = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(options_3dfx_fullscreen));
 
 	filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
@@ -27,7 +27,7 @@ static void configure_ok(GtkWidget *w, gpointer data)
 	xmms_cfg_write_file(cfg, filename);
 	xmms_cfg_free(cfg);
 	g_free(filename);
-	
+
 	gtk_widget_destroy(configure_win);
 }
 
@@ -75,7 +75,7 @@ void oglspectrum_configure (void)
 	GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
 	gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
 	gtk_widget_show(ok);
-	
+
 
 	cancel = gtk_button_new_with_label(_("Cancel"));
 	gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
@@ -84,7 +84,7 @@ void oglspectrum_configure (void)
 	gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 	gtk_widget_show(cancel);
 	gtk_widget_show(bbox);
-	
+
 	gtk_container_add(GTK_CONTAINER(configure_win), vbox);
 	gtk_widget_show(vbox);
 	gtk_widget_show(configure_win);

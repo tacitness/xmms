@@ -21,14 +21,14 @@
 
 ///
 /// Replacement of synth_1to1() with AMD's 3DNow! SIMD operations support
-/// 
+///
 /// Syuuhei Kashiyama <squash@mb.kcom.ne.jp>
-/// 
+///
 /// The author of this program disclaim whole expressed or implied
 /// warranties with regard to this program, and in no event shall the
 /// author of this program liable to whatever resulted from the use of
 /// this program. Use it at your own risk.
-/// 
+///
 
 	.local	buffs.40
 	.comm	buffs.40,4352,32
@@ -56,7 +56,7 @@ mpg123_synth_1to1_3dnow:
 	movl %esi,16(%esp)
 
 	femms
-		
+
 ///	/ disable equalizer by Osamu Kayasono
 ///	cmpl $0,equalfile
 ///	je .L25
@@ -165,7 +165,7 @@ mpg123_synth_1to1_3dnow:
 	addl $4,%edi
 	decl %ecx
 	jnz .L33
-	
+
 	movd (%ebx),%mm0
 	movd (%edx),%mm1
 	punpckldq 8(%ebx),%mm0
@@ -207,7 +207,7 @@ mpg123_synth_1to1_3dnow:
 	punpckldq 4(%ebx),%mm0
 	punpckldq -8(%edx),%mm1
 	.align 32
-.L46:						
+.L46:
 	movd 8(%ebx),%mm3
 	movd -12(%edx),%mm4
 	pfmul %mm1,%mm0
@@ -222,19 +222,19 @@ mpg123_synth_1to1_3dnow:
 	movd 24(%ebx),%mm1
 	movd -28(%edx),%mm2
 	pfmul %mm6,%mm5
-	punpckldq 28(%ebx),%mm1	
+	punpckldq 28(%ebx),%mm1
 	punpckldq -32(%edx),%mm2
 	pfadd %mm5,%mm0
 	movd 32(%ebx),%mm3
 	movd -36(%edx),%mm4
 	pfmul %mm2,%mm1
-	punpckldq 36(%ebx),%mm3	
+	punpckldq 36(%ebx),%mm3
 	punpckldq -40(%edx),%mm4
 	pfadd %mm1,%mm0
 	movd 40(%ebx),%mm5
 	movd -44(%edx),%mm6
 	pfmul %mm4,%mm3
-	punpckldq 44(%ebx),%mm5	
+	punpckldq 44(%ebx),%mm5
 	punpckldq -48(%edx),%mm6
 	pfadd %mm3,%mm0
 	movd 48(%ebx),%mm1
@@ -246,7 +246,7 @@ mpg123_synth_1to1_3dnow:
 	movd 56(%ebx),%mm3
 	movd -60(%edx),%mm4
 	pfmul %mm2,%mm1
-	punpckldq 60(%ebx),%mm3	
+	punpckldq 60(%ebx),%mm3
 	punpckldq (%edx),%mm4
 	pfadd %mm1,%mm5
 	addl $-128,%edx

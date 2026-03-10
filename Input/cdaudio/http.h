@@ -40,5 +40,3 @@ gint http_read_first_line(gint sock, gchar * buf, gint size);
 gchar * http_get(gchar * url);
 
 #endif
-
-

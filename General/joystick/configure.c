@@ -1,9 +1,9 @@
 
 /*  Joystick plugin for xmms by Tim Ferguson (timf@dgs.monash.edu.au
  *                                  http://www.dgs.monash.edu.au/~timf/) ...
- *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>) 
+ *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>)
  *  XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -99,13 +99,13 @@ void joy_configure(void)
 		/* -------------------------------------------------- */
 		hbox = gtk_hbox_new(FALSE, 10);
 		gtk_container_add(GTK_CONTAINER(joyconf_mainwin), hbox);
-		
+
 		vbox = gtk_vbox_new(FALSE, 10);
 		gtk_container_add(GTK_CONTAINER(hbox), vbox);
 
         vbox2 = gtk_vbox_new(FALSE, 10);
         gtk_container_add(GTK_CONTAINER(hbox), vbox2);
-                
+
 		box = gtk_vbox_new(FALSE, 5);
 		gtk_container_set_border_width(GTK_CONTAINER(box), 5);
 		gtk_box_pack_start(GTK_BOX(vbox), box, TRUE, TRUE, 0);
@@ -113,7 +113,7 @@ void joy_configure(void)
         box2 = gtk_vbox_new(FALSE, 5);
         gtk_container_set_border_width(GTK_CONTAINER(box2), 5);
         gtk_box_pack_start(GTK_BOX(vbox2), box2, TRUE, TRUE, 0);
-        
+
 		/* -------------------------------------------------- */
 		frame = gtk_frame_new(_("Devices:"));
 		gtk_box_pack_start(GTK_BOX(box), frame, FALSE, FALSE, 0);

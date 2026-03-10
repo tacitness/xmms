@@ -33,7 +33,7 @@ void oss_init(void)
 	oss_cfg.use_alt_audio_device = FALSE;
 	oss_cfg.alt_audio_device = NULL;
 	oss_cfg.use_master=0;
-	
+
 	if ((cfgfile = xmms_cfg_open_default_file()))
 	{
 		xmms_cfg_read_int(cfgfile, "OSS", "audio_device", &oss_cfg.audio_device);

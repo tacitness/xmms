@@ -1,6 +1,6 @@
 
-/* 
- * Mpeg Layer-3 audio decoder 
+/*
+ * Mpeg Layer-3 audio decoder
  * --------------------------
  * copyright (c) 1995-1999 by Michael Hipp.
  * All rights reserved. See also 'README'
@@ -115,8 +115,8 @@ static unsigned int i_slen2[256];	/* MPEG 2.0 slen for intensity stereo */
 static real tan1_1[16], tan2_1[16], tan1_2[16], tan2_2[16];
 static real pow1_1[2][16], pow2_1[2][16], pow1_2[2][16], pow2_2[2][16];
 
-/* 
- * init tables for layer-3 
+/*
+ * init tables for layer-3
  */
 void mpg123_init_layer3(int down_sample_sblimit)
 {
@@ -666,8 +666,8 @@ static int III_dequantize_sample(real xr[SBLIMIT][SSLIMIT], int *scf,
 
 		l3 = ((576 >> 1) - bv) >> 1;
 /*
- * we may lose the 'odd' bit here !! 
- * check this later again 
+ * we may lose the 'odd' bit here !!
+ * check this later again
  */
 		if (bv <= region1)
 		{
@@ -694,7 +694,7 @@ static int III_dequantize_sample(real xr[SBLIMIT][SSLIMIT], int *scf,
 	if (gr_info->block_type == 2)
 	{
 		/*
-		 * decoding with short or mixed mode BandIndex table 
+		 * decoding with short or mixed mode BandIndex table
 		 */
 		int i, max[4];
 		int step = 0, lwin = 3, cb = 0;
@@ -880,7 +880,7 @@ static int III_dequantize_sample(real xr[SBLIMIT][SSLIMIT], int *scf,
 				/* HACK Prevent overflowing the xr buffer */
 				if (mc * 6 > &xr[SBLIMIT][SSLIMIT] - xrpnt)
 					return 1;
-					
+
 				for (; mc > 0; mc--)
 				{
 					*xrpnt = 0.0;
@@ -1096,7 +1096,7 @@ static int III_dequantize_sample(real xr[SBLIMIT][SSLIMIT], int *scf,
 	return 0;
 }
 
-/* 
+/*
  * III_stereo: calculate real channel values for Joint-I-Stereo-mode
  */
 static void III_i_stereo(real xr_buf[2][SBLIMIT][SSLIMIT], int *scalefac, struct gr_info_s *gr_info, int sfreq, int ms_stereo, int lsf)
@@ -1185,7 +1185,7 @@ static void III_i_stereo(real xr_buf[2][SBLIMIT][SSLIMIT], int *scalefac, struct
 			}
 
 #if 1
-/* in the original: copy 10 to 11 , here: copy 11 to 12 
+/* in the original: copy 10 to 11 , here: copy 11 to 12
    maybe still wrong??? (copy 12 to 13?) */
 			is_p = scalefac[11 * 3 + lwin - gr_info->mixed_block_flag];	/* scale: 0-15 */
 			sb = bi->shortDiff[12];
@@ -1210,7 +1210,7 @@ static void III_i_stereo(real xr_buf[2][SBLIMIT][SSLIMIT], int *scalefac, struct
 		}		/* end for(lwin; .. ; . ) */
 
 /* also check l-part, if ALL bands in the three windows are 'empty'
- * and mode = mixed_mode 
+ * and mode = mixed_mode
  */
 		if (do_l)
 		{
@@ -1312,7 +1312,7 @@ static void III_antialias(real xr[SBLIMIT][SSLIMIT], struct gr_info_s *gr_info)
 
 		if (sblim < 1 || sblim > SBLIMIT)
 			return;
-		
+
 		for (sb = sblim; sb; sb--, xr1 += 10)
 		{
 			int ss;
@@ -1330,7 +1330,7 @@ static void III_antialias(real xr[SBLIMIT][SSLIMIT], struct gr_info_s *gr_info)
 	}
 }
 
-/* 
+/*
  This is an optimized DCT from Jeff Tsay's maplay 1.2+ package.
  Saved one multiplication by doing the 'twiddle factor' stuff
  together with the window mul. (MH)
@@ -1555,7 +1555,7 @@ do {						\
 						\
 	in2 *= COS6_1;				\
 	in3 *= COS6_1;				\
-} while (0) 
+} while (0)
 
 #define DCT12_PART2()				\
 do {						\

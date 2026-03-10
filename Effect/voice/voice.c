@@ -1,4 +1,4 @@
-/* A voice removal plugin 
+/* A voice removal plugin
    by Anders Carlsson <andersca@gnu.org> */
 
 #include "voice.h"
@@ -33,7 +33,7 @@ static int mod_samples(gpointer * d, gint length, AFormat afmt, gint srate, gint
 	if (!(afmt == FMT_S16_NE || (afmt == FMT_S16_LE && G_BYTE_ORDER == G_LITTLE_ENDIAN) || (afmt == FMT_S16_BE && G_BYTE_ORDER == G_BIG_ENDIAN)) || nch != 2)
 		return length;
 
-	
+
 	for (x = 0; x < length; x += 4)
 	{
 		left = dataptr[1] - dataptr[0];

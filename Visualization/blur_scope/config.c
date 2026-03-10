@@ -13,12 +13,12 @@ static GtkWidget *bbox, *ok, *cancel;
 
 static void configure_ok(GtkWidget *w, gpointer data)
 {
-	ConfigFile *cfg;	
+	ConfigFile *cfg;
 	gchar *filename;
-	gdouble color[3]; 
-	
-	
-	
+	gdouble color[3];
+
+
+
 	filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
 	cfg = xmms_cfg_open_file(filename);
 	if (!cfg)
@@ -26,7 +26,7 @@ static void configure_ok(GtkWidget *w, gpointer data)
 	gtk_color_selection_get_color(GTK_COLOR_SELECTION(options_colorpicker), color);
 	bscope_cfg.color = ((guint32)(255.0*color[0])<<16) |
 		              ((guint32)(255.0*color[1])<<8) |
-		              ((guint32)(255.0*color[2])); 
+		              ((guint32)(255.0*color[2]));
 	xmms_cfg_write_int(cfg, "BlurScope", "color", bscope_cfg.color);
 	xmms_cfg_write_file(cfg, filename);
 	xmms_cfg_free(cfg);
@@ -44,7 +44,7 @@ static void configure_cancel(GtkWidget *w, gpointer data)
 
 static void color_changed(GtkWidget *w, gpointer data)
 {
-	gdouble color[3]; 
+	gdouble color[3];
 	gtk_color_selection_get_color(GTK_COLOR_SELECTION(options_colorpicker), color);
 	bscope_cfg.color = ((guint32)(255.0*color[0])<<16) |
 		              ((guint32)(255.0*color[1])<<8) |
@@ -62,7 +62,7 @@ void bscope_configure (void)
 	color[0]=((gdouble)(bscope_cfg.color /0x10000))/256;
 	color[1]=((gdouble)((bscope_cfg.color %0x10000)/0x100))/256;
 	color[2]=((gdouble)(bscope_cfg.color %0x100))/256;
-	
+
 	configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
 	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 	gtk_window_set_title(GTK_WINDOW(configure_win), _("Color Entry"));
@@ -85,8 +85,8 @@ void bscope_configure (void)
 
 	gtk_box_pack_start(GTK_BOX(options_vbox), options_colorpicker, FALSE, FALSE, 0);
         gtk_widget_show(options_colorpicker);
-	
-	
+
+
 	gtk_container_add(GTK_CONTAINER(options_frame), options_vbox);
 	gtk_widget_show(options_vbox);
 
@@ -104,7 +104,7 @@ void bscope_configure (void)
 	GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
 	gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
 	gtk_widget_show(ok);
-	
+
 
 	cancel = gtk_button_new_with_label(_("Cancel"));
 	gtk_signal_connect(GTK_OBJECT(cancel), "clicked",
@@ -114,15 +114,9 @@ void bscope_configure (void)
 	gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 	gtk_widget_show(cancel);
 	gtk_widget_show(bbox);
-	
+
 	gtk_container_add(GTK_CONTAINER(configure_win), vbox);
 	gtk_widget_show(vbox);
 	gtk_widget_show(configure_win);
 	gtk_widget_grab_default(ok);
 }
-
-
-
-
-
-

@@ -13,7 +13,7 @@ Developers TODO list: [#bugzilla id]
 * Ability to load playlists without the .m3u extension at startup
   eg. xmms -pl playlistname
 
-* Add a new enqueue function to XMMS from the command line, -ep, which 
+* Add a new enqueue function to XMMS from the command line, -ep, which
   enqueues the file and plays it.
 
 * Shortkey/menu item to open currently used input plugin preferences.
@@ -21,8 +21,8 @@ Developers TODO list: [#bugzilla id]
 
 * Parse dirs in m3u files to load all files in that dir (recursive?) when
   XMMS loads the playlist. [#82]
-  
-* Parse m3u files in m3u files (protect against endless recursion?) [#262]  
+
+* Parse m3u files in m3u files (protect against endless recursion?) [#262]
 
 * Read playlists from http [#125]
 

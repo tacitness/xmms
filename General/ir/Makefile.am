@@ -12,6 +12,6 @@ irman.h \
 configure.c \
 about.c \
 irio.c \
-irfunc.c 
+irfunc.c
 
 INCLUDES = @GTK_CFLAGS@ -I$(top_builddir)/intl -I$(top_srcdir)

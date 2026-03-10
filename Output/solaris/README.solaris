@@ -1,12 +1,12 @@
 
                               Solaris XMMS plugin
-                                       
+
    NEW: Version 0.6.4 is out. This version is compatible with XMMS 1.2.0.
-   
+
    WARNING! This version changes the installation method. You no longer
    have to patch the XMMS source tree. Check the install guide below.
      _________________________________________________________________
-   
+
 Current status
 
    The code has developed such that few problems are now reported; the
@@ -15,18 +15,18 @@ Current status
    list). Development is done under SPARC Solaris 7, but has been
    reported to work succesfully on both x86 Solaris and older versions.
      _________________________________________________________________
-   
+
 Download
 
-   Current version is 0.6.4; Download via http at 
+   Current version is 0.6.4; Download via http at
    http://www.scms.rgu.ac.uk/staff/jr/comp/unix/xmms/xmms-solaris-0.6.4.tar.gz
    or via FTP at ftp://ftp.scms.rgu.ac.uk/pub/staff/jr/xmms-solaris-0.6.4.tar.gz
-   
+
    Binary packages still have to be made. Ideally, these will be set up
    so that you can install the bare XMMS installation and then add
    plugins, eg, esd, openGL as you want.
      _________________________________________________________________
-   
+
 Installation
 
    To install, perform the following steps:
@@ -47,11 +47,11 @@ Installation
        may have to set the output plugin under preferences as it defaults
        to the disk writer plugin.
      _________________________________________________________________
-   
+
 Known problems
 
   Running errors
-  
+
      * GTK/GLIB require a lot of shared memory, more than the 1MB default
        under Solaris. A symptom of this is a 'shmat' error on starting
        XMMS. This causes the player to not work. To fix this, add the
@@ -141,14 +141,14 @@ mpg123.so: symbol __umoddi3: referenced symbol not found
        devices (which rely on AUDIODEV). Simply go to Preferences,
        configure the Solaris plugin and select the check box marked
        "Always use AUDIODEV environment variable".
-       
+
    If you have any problems, please mail me at jr@scms.rgu.ac.uk and I'll do
    my best to help. I'm also interested to get any input files which don't work
    under xmms-solaris but work ok under linux/FreeBSD. This will help me
    find any bugs in the code. Do not mail me the files without giving me
    simple mail first to see if I am working on the problem or not.
      _________________________________________________________________
-   
+
 TODO
 
      * Try to optimise code

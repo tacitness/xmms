@@ -1,6 +1,6 @@
 /*  XMMS - ALSA output plugin
  *    Copyright (C) 2001-2003 Matthieu Sozeau <mattam@altern.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -25,7 +25,7 @@ void alsa_about(void)
 
 	if (dialog != NULL)
 		return;
-	
+
 	dialog = xmms_show_message(
 		_("About ALSA Driver"),
 		_("XMMS ALSA Driver\n\n "

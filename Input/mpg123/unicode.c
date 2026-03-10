@@ -43,7 +43,7 @@ static char* to_ascii(const unsigned char *utf16, int le)
 	unsigned int i, len, c;
 
 	len = utf16_strlen(utf16) / 2 + 1;
-	
+
 	ascii = g_malloc(len + 1);
 
 	for (i = 0, c = 0; i < len; i++)
@@ -59,18 +59,18 @@ static char* to_ascii(const unsigned char *utf16, int le)
 		/* Skip BOM and surrogate pairs */
 		if (uc == 0xfeff || (uc >= 0xd800 && uc <= 0xdfff))
 			continue;
-		
+
 		if (uc < 0x80)
 			ascii[c] = uc;
-		else 
+		else
 			ascii[c] = '?';
 		c++;
 	}
-	
+
 	ascii[c] = 0;
 	return ascii;
 }
-	
+
 char *convert_from_utf16(const unsigned char *utf16)
 {
 	int le = FALSE;

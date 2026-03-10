@@ -23,4 +23,3 @@ INCLUDES = @GTK_CFLAGS@ -I$(top_builddir)/intl -I$(top_srcdir)
 libsun_la_LDFLAGS = @PLUGIN_LDFLAGS@
 libsun_la_LIBADD = @GTK_LIBS@ @PTHREAD_LIBS@
 libsun_la_SOURCES= $(sunsources)
-

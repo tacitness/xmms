@@ -129,4 +129,3 @@ void sun_cleanup(void)
 		pthread_mutex_destroy(&audio.mixer_mutex);
 	}
 }
-

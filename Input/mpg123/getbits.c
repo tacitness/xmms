@@ -18,7 +18,7 @@ void mpg123_backbits(int number_of_bits)
 	bsi.bitindex    &= 0x7;
 }
 
-int mpg123_getbitoffset(void) 
+int mpg123_getbitoffset(void)
 {
 	return (-bsi.bitindex)&0x7;
 }
@@ -26,7 +26,7 @@ int mpg123_getbitoffset(void)
 int mpg123_getbyte(void)
 {
 #ifdef DEBUG_GETBITS
-	if(bsi.bitindex) 
+	if(bsi.bitindex)
 		fprintf(stderr,"getbyte called unsynched!\n");
 #endif
 	return *bsi.wordpointer++;
@@ -56,7 +56,7 @@ unsigned int mpg123_getbits(int number_of_bits)
 
 		rval <<= bsi.bitindex;
 		rval &= 0xffffff;
-		
+
 		bsi.bitindex += number_of_bits;
 
 		rval >>= (24-number_of_bits);
@@ -123,4 +123,3 @@ unsigned int mpg123_get1bit(void)
 
 	return rval>>7;
 }
-

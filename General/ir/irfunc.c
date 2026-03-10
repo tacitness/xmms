@@ -34,7 +34,7 @@ static char ir_hexdigit[16] =
 
 static unsigned char *ir_read_code(unsigned long timeout)
 {
-	static unsigned char codebuf[IR_MAX_CODE_LEN]; 
+	static unsigned char codebuf[IR_MAX_CODE_LEN];
 	int i, datum;
 
 	datum = ir_read_char(timeout);

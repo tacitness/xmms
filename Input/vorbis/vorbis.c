@@ -74,7 +74,7 @@ static int ovcb_seek(void *datasource, int64_t offset, int whence);
 static int ovcb_close(void *datasource);
 static long ovcb_tell(void *datasource);
 
-ov_callbacks vorbis_callbacks = 
+ov_callbacks vorbis_callbacks =
 {
 	ovcb_read,
 	ovcb_seek,
@@ -123,7 +123,7 @@ static volatile int seekneeded = -1;
 static int samplerate, channels;
 pthread_mutex_t vf_mutex = PTHREAD_MUTEX_INITIALIZER;
 static gboolean output_error;
-	
+
 
 InputPlugin *get_iplugin_info(void)
 {
@@ -147,10 +147,10 @@ static int vorbis_check_file(char *filename)
 		}
 		return FALSE;
 	}
-   
+
 	if ((stream = fopen(filename, "r")) == NULL)
 		return FALSE;
-   
+
 	/*
 	 * The open function performs full stream detection and machine
 	 * initialization.  If it returns zero, the stream *is* Vorbis and
@@ -187,7 +187,7 @@ static void vorbis_jump_to_time(long time)
 
 	vorbis_ip.output->flush(time * 1000);
 	ov_time_seek(&vf, time);
-	
+
 	pthread_mutex_unlock(&vf_mutex);
 }
 
@@ -275,7 +275,7 @@ static int vorbis_process_data(int last_section, gboolean use_rg, float rg_scale
 			pthread_mutex_unlock(&vf_mutex);
 			return current_section;
 		}
-		
+
 
 		if (vi->rate != samplerate || vi->channels != channels)
 		{
@@ -298,9 +298,9 @@ static int vorbis_process_data(int last_section, gboolean use_rg, float rg_scale
 	}
 	pthread_mutex_unlock(&vf_mutex);
 
-	vorbis_ip.add_vis_pcm(vorbis_ip.output->written_time(), 
+	vorbis_ip.add_vis_pcm(vorbis_ip.output->written_time(),
 			      FMT_S16_NE, channels, bytes, pcmout);
-     
+
 	while (vorbis_ip.output->buffer_free() < bytes)
 	{
 		xmms_usleep(20000);
@@ -362,7 +362,7 @@ static void *vorbis_play_loop(void *arg)
 	}
 	vi = ov_info(&vf, -1);
 
-	if (vorbis_is_streaming) 
+	if (vorbis_is_streaming)
 		time = -1;
 	else
 		time = ov_time_total(&vf, -1) * 1000;
@@ -375,7 +375,7 @@ static void *vorbis_play_loop(void *arg)
 
 	samplerate = vi->rate;
 	channels = vi->channels;
-   
+
 	title = vorbis_generate_title(&vf, filename);
 	use_rg = vorbis_update_replaygain(&rg_scale);
 
@@ -394,7 +394,7 @@ static void *vorbis_play_loop(void *arg)
 	}
 
 	seekneeded = -1;
-   
+
 	/*
 	 * Note that chaining changes things here; A vorbis file may
 	 * be a mix of different channels, bitrates and sample rates.
@@ -414,7 +414,7 @@ static void *vorbis_play_loop(void *arg)
 			xmms_usleep(20000);
 			continue;
 		}
-			
+
 		current_section = vorbis_process_data(last_section,
 						      use_rg, rg_scale);
 
@@ -436,7 +436,7 @@ static void *vorbis_play_loop(void *arg)
 				time = ov_time_total(&vf, -1) * 1000;
 
 			vorbis_ip.set_info(title, time,
-					   ov_bitrate(&vf, current_section), 
+					   ov_bitrate(&vf, current_section),
 					   samplerate, channels);
 			pthread_mutex_unlock(&vf_mutex);
 			timercount = vorbis_ip.output->output_time();
@@ -453,7 +453,7 @@ static void *vorbis_play_loop(void *arg)
 			 * often
 			 */
 			long br;
-			
+
 			pthread_mutex_lock(&vf_mutex);
 			br = ov_bitrate_instant(&vf);
 			pthread_mutex_unlock(&vf_mutex);
@@ -494,7 +494,7 @@ static void vorbis_play(char *filename)
 	dopause = FALSE;
 	pthread_create(&tid, NULL, vorbis_play_loop, g_strdup(filename));
 }
- 
+
 static void vorbis_stop(void)
 {
 	if (vorbis_playing)
@@ -535,11 +535,11 @@ static void vorbis_get_song_info(char *filename, char **title, int *length)
 {
 	FILE *stream;
 	OggVorbis_File vf; /* avoid thread interaction */
-	
+
 	if (strncasecmp(filename, "http://", 7)) {
 		if ((stream = fopen(filename, "r")) == NULL)
 			return;
-   
+
 		/*
 		 * The open function performs full stream detection and
 		 * machine initialization.  If it returns zero, the stream
@@ -552,13 +552,13 @@ static void vorbis_get_song_info(char *filename, char **title, int *length)
 			fclose(stream);
 			return;
 		}
-	
+
 		/* Retrieve the length */
 		*length = ov_time_total(&vf, -1) * 1000;
-	
+
 		*title = NULL;
 		*title = vorbis_generate_title(&vf, filename);
-  	 
+
 		/*
 		 * once the ov_open succeeds, the stream belongs to
 		 * vorbisfile.a.  ov_clear will fclose it
@@ -611,12 +611,12 @@ static gboolean vorbis_update_replaygain(float *scale)
 		if (!rg_gain)
 			/* Obsolete name */
 			rg_gain = vorbis_comment_query(comment, "rg_radio", 0);
-		
+
 		/* FIXME: Make sure this string is the correct format first? */
 		if (rg_gain)
 			*scale = pow(10., atof(rg_gain)/20);
 	}
-	
+
 	if (vorbis_cfg.use_anticlip)
 	{
 		if (vorbis_cfg.replaygain_mode == REPLAYGAIN_MODE_ALBUM)
@@ -640,7 +640,7 @@ static gboolean vorbis_update_replaygain(float *scale)
 		if (*scale * rg_peak > 1.0)
 			*scale = 1.0 / rg_peak;
 	}
-	
+
 	if (*scale != 1.0 || (vorbis_cfg.use_booster && rg_gain)) {
 		if (*scale > 15.0)
 			*scale = 15.0;
@@ -660,30 +660,30 @@ static long vorbis_process_replaygain(float **pcm, int samples, int ch, char *pc
 		{
 			float sample = pcm[j][i] * rg_scale;
 			int value;
-				
+
 			if (vorbis_cfg.use_booster)
 			{
 				sample *= 2;
-				
+
 				/* hard 6dB limiting */
 				if (sample < -0.5)
 					sample = tanh((sample + 0.5) / 0.5) * 0.5 - 0.5;
 				else if (sample > 0.5)
 					sample = tanh((sample - 0.5) / 0.5) * 0.5 + 0.5;
 			}
-				
+
 			value = sample * 32767;
 			if (value > 32767)
 				value = 32767;
 			else if (value < -32767)
 				value = -32767;
-			
+
 			*pcmout++ = GET_BYTE1(value);
 			*pcmout++ = GET_BYTE2(value);
 		}
 
 	return 2 * ch * samples;
-}			
+}
 
 static char *vorbis_generate_title(OggVorbis_File *vorbisfile, char *fn)
 {

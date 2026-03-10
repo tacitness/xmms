@@ -4,8 +4,8 @@
 # Jan Matis <damned@hq.alert.sk>, 2000
 # Pavol Cvengros <orpheus@hq.alert.sk>, 2000-2002
 # Peter Cernak <pcernak@naex.sk>, 2004
-# 
-# 
+#
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: xmms 1.2.10\n"

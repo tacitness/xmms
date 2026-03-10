@@ -13,7 +13,7 @@ alsabuildsources = $(alsasources)
 else
 
 alsaltlibs =
-alsabuildsources = 
+alsabuildsources =
 
 endif
 

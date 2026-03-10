@@ -146,7 +146,7 @@ void clear_widget_list_redraw(GList * wlist)
 	/*
 	 * The widget list should be locked before calling this
 	 */
-	
+
 	GList *wl;
 	Widget *w;
 

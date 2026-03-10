@@ -106,7 +106,7 @@ static void load_def_pixmap(SkinPixmap *skinpixmap, gchar **skindata)
 static void skin_query_color(GdkColormap *cm, GdkColor *c)
 {
 	XColor xc = {0};
-	
+
 	xc.pixel = c->pixel;
 	XQueryColor(GDK_COLORMAP_XDISPLAY(cm), GDK_COLORMAP_XCOLORMAP(cm), &xc);
 	c->red = xc.red;
@@ -125,7 +125,7 @@ static void skin_get_textcolors(GdkPixmap *text, GdkColor *bgc, GdkColor *fgc)
 	 * Try to extract reasonable background and foreground colors
 	 * from the font pixmap
 	 */
-	
+
 	GdkImage *gi;
 	GdkColormap *cm;
 	int i;
@@ -270,7 +270,7 @@ GdkColor *load_skin_color(const gchar * path, const gchar * file, const gchar * 
 			if (len >= 2)
 				color->blue = hex_chars_to_int(*ptr,
 							       *(ptr + 1));
-				
+
 
 			gdk_color_alloc(gdk_window_get_colormap(playlistwin->window), color);
 			g_free(value);
@@ -327,7 +327,7 @@ GdkBitmap *skin_create_transparent_mask(const gchar * path, const gchar * file, 
 		g_free(filename);
 		return NULL;
 	}
-		
+
 	if ((point = read_ini_array(filename, section, "PointList")) == NULL)
 	{
 		g_array_free(num, TRUE);
@@ -337,13 +337,13 @@ GdkBitmap *skin_create_transparent_mask(const gchar * path, const gchar * file, 
 
 	mask = gdk_pixmap_new(window, width, height, 1);
 	gc = gdk_gc_new(mask);
-	
+
 	pattern.pixel = 0;
 	gdk_gc_set_foreground(gc, &pattern);
 	gdk_draw_rectangle(mask, gc, TRUE, 0, 0, width, height);
 	pattern.pixel = 1;
 	gdk_gc_set_foreground(gc, &pattern);
-		
+
 	j = 0;
 	for (i = 0; i < num->len; i++)
 	{
@@ -411,7 +411,7 @@ void load_skin_viscolor(const gchar * path, const gchar * file)
 		}
 		else
 			break;
-		
+
 	}
 	fclose(f);
 	g_free(filename);
@@ -557,7 +557,7 @@ static void skin_load_pixmaps(const char *path)
 	skin->mask_eq_ds = skin_create_transparent_mask(path, "region.txt", "Equalizer", equalizerwin->window, 550, 232, TRUE);
 	skin->mask_eq_shade = skin_create_transparent_mask(path, "region.txt", "EqualizerWS", equalizerwin->window, 275, 14, FALSE);
 	skin->mask_eq_shade_ds = skin_create_transparent_mask(path, "region.txt", "EqualizerWS", equalizerwin->window, 550, 28, TRUE);
-	
+
 	load_skin_viscolor(path, "viscolor.txt");
 }
 
@@ -632,7 +632,7 @@ static char * skin_decompress_skin(const char* path)
 	g_free(tmp);
 	return tempdir;
 }
-	
+
 
 static void _load_skin(const gchar * path, gboolean force)
 {
@@ -741,7 +741,7 @@ static SkinPixmap *get_skin_pixmap(SkinIndex si)
 GdkBitmap* skin_get_mask(MaskIndex mi, gboolean doublesize, gboolean shaded)
 {
 	GdkBitmap *ret = NULL;
-	
+
 	switch (mi)
 	{
 		case SKIN_MASK_MAIN:
@@ -909,7 +909,7 @@ void skin_get_eq_spline_colors(guint32 (*colors)[19])
 		pixmap = skin->eqmain.def_pixmap;
 
 	img = gdk_image_get(pixmap, 115, 294, 1, 19);
-	
+
 	for (i = 0; i < 19; i++)
 		(*colors)[i] = gdk_image_get_pixel(img, 0, i);
 

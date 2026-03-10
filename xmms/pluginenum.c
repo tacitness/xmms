@@ -221,7 +221,7 @@ static void* open_dynamic_lib(char *filename)
 	 * Use shl_load family of functions on HP-UX. HP-UX does not
 	 * support dlopen on 32-bit PA-RISC executables
 	 */
-	return shl_load(filename, BIND_DEFERRED, 0); 
+	return shl_load(filename, BIND_DEFERRED, 0);
 #else
 	return dlopen(filename, RTLD_NOW);
 #endif
@@ -260,7 +260,7 @@ static void* find_dynamic_symbol(void *handle, char *symbol)
 static void dynamic_lib_error(void)
 {
 #ifdef HPUX
-	perror("Error loading plugin!"); 
+	perror("Error loading plugin!");
 #else
 	fprintf(stderr, "%s\n", dlerror());
 #endif
@@ -311,7 +311,7 @@ void add_plugin(char * filename)
 
 	if (plugin_check_duplicate(filename))
 		return;
-	
+
 	if ((h = open_dynamic_lib(filename)) == NULL)
 	{
 		dynamic_lib_error();
@@ -456,7 +456,7 @@ void cleanup_plugins(void)
 	GDK_THREADS_LEAVE();
 	while(g_main_iteration(FALSE));
 	GDK_THREADS_ENTER();
-	
+
 	node = gp_data->general_list;
 	while (node)
 	{
@@ -477,11 +477,11 @@ void cleanup_plugins(void)
 		node = next;
 	}
 	g_list_free(vp_data->enabled_list);
-	
+
 	GDK_THREADS_LEAVE();
 	while(g_main_iteration(FALSE));
 	GDK_THREADS_ENTER();
-	
+
 	node = vp_data->vis_list;
 	while (node)
 	{

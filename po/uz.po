@@ -2,7 +2,7 @@
 # Support for Uzbek language in xmms.
 # Copyright (C) 200,2003, 2004 Free Software Foundation, Inc.
 # Mashrab Kuvatov <kmashrab@uni-bremen.de>, 2003, 2004.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: xmms\n"

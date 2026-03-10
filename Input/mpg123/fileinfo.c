@@ -288,7 +288,7 @@ void mpg123_file_info_box(char *filename)
 		GtkWidget *mpeg_frame, *mpeg_box;
 		GtkWidget *label, *filename_hbox;
 		GtkWidget *bbox, *save, *remove_id3, *cancel;
-		
+
 		window = gtk_window_new(GTK_WINDOW_DIALOG);
 		gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
 		gtk_signal_connect(GTK_OBJECT(window), "destroy",
@@ -311,10 +311,10 @@ void mpg123_file_info_box(char *filename)
 		gtk_editable_set_editable(GTK_EDITABLE(filename_entry), FALSE);
 		gtk_box_pack_start(GTK_BOX(filename_hbox),
 				   filename_entry, TRUE, TRUE, 0);
-		
+
 		hbox = gtk_hbox_new(FALSE, 10);
 		gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
-		
+
 		left_vbox = gtk_vbox_new(FALSE, 10);
 		gtk_box_pack_start(GTK_BOX(hbox), left_vbox, FALSE, FALSE, 0);
 
@@ -563,12 +563,12 @@ void mpg123_file_info_box(char *filename)
 						      tag.u.v1_0.comment, 30);
 					gtk_entry_set_text(GTK_ENTRY(tracknum_entry), "");
 				}
-				
+
 				gtk_list_select_item(GTK_LIST(GTK_COMBO(genre_combo)->list), genre_find_index(genre_list, tag.genre));
 			}
 		}
 		rewind(fh);
-		
+
 		if (!mpg123_get_first_frame(fh, &frm, &buf))
 		{
 			fclose(fh);

@@ -112,7 +112,7 @@ static gchar *basic_authentication_encode (const gchar *user, const gchar *passw
 	res = g_strdup_printf("%s: Basic %s\r\n", header, t2);
 	g_free(t2);
 	g_free(t1);
-	
+
 	return res;
 }
 
@@ -162,7 +162,7 @@ static void parse_url(const gchar * url, gchar ** user, gchar ** pass, gchar ** 
 		*port = 80;
 	}
 	*host = g_strdup(h);
-	
+
 	if (f)
 		*filename = g_strdup(f + 1);
 	else
@@ -346,7 +346,7 @@ static void *http_buffer_loop(void *arg)
 	do
 	{
 		redirect=FALSE;
-	
+
 		g_strstrip(url);
 
 		parse_url(url, &user, &pass, &host, &port, &filename);
@@ -460,7 +460,7 @@ static void *http_buffer_loop(void *arg)
 
 						mpg123_ip.set_info_text(NULL);
 						eof = TRUE;
-						
+
 					}
 					break;
 				}
@@ -474,12 +474,12 @@ static void *http_buffer_loop(void *arg)
 				if (mpg123_cfg.use_udp_channel)
 				{
 					udp_port = udp_establish_listener (&udp_sock);
-					if (udp_port > 0) 
+					if (udp_port > 0)
 						sprintf (udpspace, "x-audiocast-udpport: %d\r\n", udp_port);
 					else
 						udp_sock = 0;
 				}
-					
+
 				if(user && pass)
 					auth = basic_authentication_encode(user, pass, "Authorization");
 
@@ -499,11 +499,11 @@ static void *http_buffer_loop(void *arg)
 						       "Host: %s\r\n"
 						       "User-Agent: %s/%s\r\n"
 						       "%s%s%s%s\r\n",
-						       file, host, PACKAGE, VERSION, 
+						       file, host, PACKAGE, VERSION,
 						       proxy_auth ? proxy_auth : "", auth ? auth : "",
 						       mpg123_cfg.cast_title_streaming ? "Icy-MetaData:1\r\n" : "",
 						       mpg123_cfg.use_udp_channel ? udpspace : "");
-				
+
 				g_free(file);
 				if(proxy_auth)
 					g_free(proxy_auth);
@@ -546,7 +546,7 @@ static void *http_buffer_loop(void *arg)
 												break;
 											}
 										}
-									}			
+									}
 									redirect=TRUE;
 									break;
 								}
@@ -587,7 +587,7 @@ static void *http_buffer_loop(void *arg)
 #endif
 /*  								udp_serverport = atoi (line + 20); */
 							}
-							
+
 						}
 						else
 						{
@@ -599,7 +599,7 @@ static void *http_buffer_loop(void *arg)
 				}
 			}
 		}
-	
+
 		if(redirect)
 		{
 			if (output_file)
@@ -612,9 +612,9 @@ static void *http_buffer_loop(void *arg)
 			g_free(pass);
 			g_free(host);
 			g_free(filename);
-		}		
+		}
 	} while(redirect);
-	
+
 	if (mpg123_cfg.save_http_stream)
 	{
 		char *output_name, *fname, *temp;
@@ -715,7 +715,7 @@ static void *http_buffer_loop(void *arg)
 	g_free(filename);
 	g_free(buffer);
 	g_free(url);
-	
+
 	pthread_exit(NULL);
 }
 
@@ -762,11 +762,11 @@ static int udp_establish_listener(int *sock)
 	struct sockaddr_in sin;
 	socklen_t sinlen = sizeof (struct sockaddr_in);
 #endif
-	
+
 #ifdef DEBUG_UDP
 	fprintf (stderr,"Establishing udp listener\n");
 #endif
-	
+
 #ifdef USE_IPV6
 	if ((*sock = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
 #else
@@ -786,7 +786,7 @@ static int udp_establish_listener(int *sock)
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = g_htonl(INADDR_ANY);
 #endif
-			
+
 	if (bind(*sock, (struct sockaddr *)&sin, sinlen) < 0)
 	{
 		g_log(NULL, G_LOG_LEVEL_CRITICAL,
@@ -814,7 +814,7 @@ static int udp_establish_listener(int *sock)
 #ifdef DEBUG_UDP
 	fprintf (stderr,"Listening on local %s:%d\n", inet_ntoa(sin.sin_addr), g_ntohs(sin.sin_port));
 #endif
-	
+
 #ifdef USE_IPV6
 	return g_ntohs(sin.sin6_port);
 #else
@@ -836,7 +836,7 @@ static int udp_check_for_data(int sock)
 	socklen_t fromlen;
 
 	fromlen = sizeof(from);
-	
+
 	if ((len = recvfrom(sock, buf, 1024, 0, (struct sockaddr *)&from, &fromlen)) < 0)
 	{
 		if (errno != EAGAIN)
@@ -854,24 +854,24 @@ static int udp_check_for_data(int sock)
 	lines = g_strsplit(buf, "\n", 0);
 	if (!lines)
 		return 0;
-	
+
 	for (i = 0; lines[i]; i++)
 	{
 		while ((lines[i][strlen(lines[i]) - 1] == '\n') ||
 		       (lines[i][strlen(lines[i]) - 1] == '\r'))
 			lines[i][strlen(lines[i]) - 1] = '\0';
-		
+
 		valptr = strchr(lines[i], ':');
-		
+
 		if (!valptr)
 			continue;
 		else
 			valptr++;
-		
+
 		g_strstrip(valptr);
 		if (!strlen(valptr))
 			continue;
-		
+
 		if (strstr(lines[i], "x-audiocast-streamtitle") != NULL)
 		{
 			title = g_strdup_printf ("%s (%s)", valptr, icy_name);
@@ -887,7 +887,7 @@ static int udp_check_for_data(int sock)
 				mpg123_ip.set_info(NULL, atoi(valptr), mpg123_bitrate * 1000, mpg123_frequency, mpg123_stereo);
 		}
 #endif
-				
+
 		else if (strstr(lines[i], "x-audiocast-streammsg") != NULL)
 		{
 			/*  mpg123_ip.set_info(title, -1, mpg123_bitrate * 1000, mpg123_frequency, mpg123_stereo); */

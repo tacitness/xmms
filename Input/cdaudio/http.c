@@ -112,7 +112,7 @@ gint http_read_first_line(gint sock, gchar * buf, gint size)
 {
 	/* Skips the HTTP-header, if there is one, and reads the first line into buf.
 	   Returns number of bytes read. */
-	
+
 	gint i;
 	/* Skip the HTTP-header */
 	if ((i = http_read_line(sock, buf, size)) < 0)
@@ -124,7 +124,7 @@ gint http_read_first_line(gint sock, gchar * buf, gint size)
 		if ((i = http_read_line(sock, buf, size)) < 0)
 			return -1;
 	}
-	
+
 	return i;
 }
 
@@ -187,7 +187,7 @@ gchar * http_get(gchar * url)
 		http_close_connection(sock);
 		return NULL;
 	}
-	
+
 	/*
 	 * Start receiving result.
 	 */

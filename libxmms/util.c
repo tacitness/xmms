@@ -107,7 +107,7 @@ void xmms_usleep(gint usec)
 	nanosleep(&req, NULL);
 #else
 	struct timeval tv;
-	
+
 	tv.tv_sec = usec / 1000000;
 	usec -= tv.tv_sec * 1000000;
 	tv.tv_usec = usec;

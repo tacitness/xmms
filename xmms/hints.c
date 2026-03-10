@@ -191,7 +191,7 @@ static gboolean gnome_wm_found(void)
 	gdk_error_trap_push();
 
 	support_check = gdk_atom_intern("_WIN_SUPPORTING_WM_CHECK", FALSE);
-	
+
 	p = XGetWindowProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(), support_check,
 			       0, 1, False, XA_CARDINAL, &r_type, &r_format,
 			       &count, &bytes_remain, &prop);
@@ -242,7 +242,7 @@ static gboolean net_wm_found(void)
 		p = XGetWindowProperty(GDK_DISPLAY(), n, support_check, 0, 1,
 				       False, XA_WINDOW, &r_type, &r_format,
 				       &count, &bytes_remain, &prop2);
-	
+
 		if (p == Success && prop2 && *prop2 == *prop &&
 		    r_type == XA_WINDOW && r_format == 32 && count == 1)
 			ret = TRUE;
@@ -277,7 +277,7 @@ static void net_wm_set_property(GtkWidget * window, char *atom, gboolean state)
 	xev.xclient.data.l[0] = set;
 	xev.xclient.data.l[1] = property;
 	xev.xclient.data.l[2] = 0;
-	
+
 	XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False,
 		   SubstructureNotifyMask, &xev);
 }
@@ -335,7 +335,7 @@ static void net_wm_set_desktop(GtkWidget * window, gboolean all)
 	xev.xclient.message_type = gdk_atom_intern("_NET_WM_DESKTOP", FALSE);
 	xev.xclient.format = 32;
 	xev.xclient.data.l[0] = current_desktop;
-	
+
 	XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False,
 		   SubstructureNotifyMask, &xev);
 }
@@ -379,12 +379,12 @@ static void net_wm_move_resize(GtkWidget *window, int x, int y, gboolean move)
 	xev.xclient.data.l[1] = y;
 	xev.xclient.data.l[2] = dir;
 	xev.xclient.data.l[3] = 1;    /* button */
-	
-	
+
+
 	XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False,
 		   SubstructureNotifyMask, &xev);
 }
-			       
+
 static gboolean find_atom(Atom *atoms, int n, const char *name)
 {
 	Atom a = gdk_atom_intern(name, FALSE);

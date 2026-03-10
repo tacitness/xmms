@@ -63,14 +63,14 @@ VisPlugin *get_vplugin_info(void)
 	return &bscope_vp;
 }
 
-#define WIDTH 256 
+#define WIDTH 256
 #define HEIGHT 128
 #define min(x,y) ((x)<(y)?(x):(y))
 #define BPL	((WIDTH + 2))
 
 static guchar rgb_buf[(WIDTH + 2) * (HEIGHT + 2)];
-static GdkRgbCmap *cmap = NULL; 
-	
+static GdkRgbCmap *cmap = NULL;
+
 static void inline draw_pixel_8(guchar *buffer,gint x, gint y, guchar c)
 {
 	buffer[((y + 1) * BPL) + (x + 1)] = c;
@@ -87,7 +87,7 @@ void bscope_read_config(void)
 		bscope_cfg.color = 0xFF3F7F;
 		filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
 		cfg = xmms_cfg_open_file(filename);
-		
+
 		if (cfg)
 		{
 			xmms_cfg_read_int(cfg, "BlurScope", "color", &bscope_cfg.color);
@@ -104,7 +104,7 @@ void bscope_blur_8(guchar *ptr,gint w, gint h, gint bpl)
 {
 	register guint i,sum;
 	register guchar *iptr;
-	
+
 	iptr = ptr + bpl + 1;
 	i = bpl * h;
 	while(i--)
@@ -114,8 +114,8 @@ void bscope_blur_8(guchar *ptr,gint w, gint h, gint bpl)
 			sum -= 2;
 		*(iptr++) = sum;
 	}
-	
-	
+
+
 }
 #else
 extern void bscope_blur_8(guchar *ptr,gint w, gint h, gint bpl);
@@ -162,14 +162,14 @@ static void bscope_init(void)
 	gtk_signal_connect(GTK_OBJECT(window),"destroy",GTK_SIGNAL_FUNC(bscope_destroy_cb),NULL);
 	gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed), &window);
 	gtk_widget_set_usize(window, WIDTH, HEIGHT);
-	
+
 	area = gtk_drawing_area_new();
 	gtk_container_add(GTK_CONTAINER(window),area);
 	gtk_widget_realize(area);
 	gdk_window_set_back_pixmap(area->window,bg_pixmap,0);
 	generate_cmap();
 	memset(rgb_buf,0,(WIDTH + 2) * (HEIGHT + 2));
-		
+
 	gtk_widget_show(area);
 	gtk_widget_show(window);
 	gdk_window_clear(window->window);
@@ -218,7 +218,7 @@ static inline void draw_vert_line(guchar *buffer, gint x, gint y1, gint y2)
 static void bscope_render_pcm(gint16 data[2][512])
 {
 	gint i,y, prev_y;
-	
+
 	if(!window)
 		return;
 	bscope_blur_8(rgb_buf, WIDTH, HEIGHT, BPL);
@@ -233,9 +233,9 @@ static void bscope_render_pcm(gint16 data[2][512])
 		draw_vert_line(rgb_buf,i,prev_y,y);
 		prev_y = y;
 	}
-				
+
 	GDK_THREADS_ENTER();
 	gdk_draw_indexed_image(area->window,area->style->white_gc,0,0,WIDTH,HEIGHT,GDK_RGB_DITHER_NONE,rgb_buf + BPL + 1,(WIDTH + 2),cmap);
 	GDK_THREADS_LEAVE();
-	return;			
+	return;
 }

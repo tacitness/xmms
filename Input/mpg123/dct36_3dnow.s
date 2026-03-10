@@ -14,17 +14,17 @@
 / by KIMURA Takuhiro <kim@hannah.ipc.miyakyo-u.ac.jp> - until 31.Mar.1999
 /                    <kim@comtec.co.jp>               - after  1.Apr.1999
 /
-	
+
 ///
 /// Replacement of dct36() with AMD's 3DNow! SIMD operations support
-/// 
+///
 /// Syuuhei Kashiyama <squash@mb.kcom.ne.jp>
-/// 
+///
 /// The author of this program disclaim whole expressed or implied
 /// warranties with regard to this program, and in no event shall the
 /// author of this program liable to whatever resulted from the use of
 /// this program. Use it at your own risk.
-/// 
+///
 
 	.globl dct36_3dnow
 	.type	 dct36_3dnow,@function

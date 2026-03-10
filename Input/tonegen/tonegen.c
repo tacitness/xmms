@@ -175,7 +175,7 @@ static char* tone_title(char *filename)
 
 	return title;
 }
-	
+
 
 static void tone_play(char *filename)
 {
@@ -231,7 +231,7 @@ static void tone_song_info(char *filename, char **title, int *length)
 	*title = tone_title(filename);
 }
 
-static InputPlugin tone_ip = 
+static InputPlugin tone_ip =
 {
 	NULL,
 	NULL,

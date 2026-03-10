@@ -13,7 +13,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
@@ -63,14 +63,14 @@ void id3_init_tag(struct id3_tag *id3)
 int id3_read_tag(struct id3_tag *id3)
 {
 	char *buf;
-	
+
 	/*
 	 * We know that the tag will be at least this big.
 	 *
 	 * tag header + "ID3"
 	 */
 	id3->id3_tagsize = ID3_TAGHDR_SIZE + 3;
-	
+
 	if (!(id3->id3_oflags & ID3_OPENF_NOCHK))
 	{
 		/*
@@ -79,7 +79,7 @@ int id3_read_tag(struct id3_tag *id3)
 		char *id = id3->id3_read(id3, NULL, 3);
 		if (id == NULL)
 			return -1;
-		
+
 		if (id[0] != 'I' || id[1] != 'D' || id[2] != '3')
 		{
 			/*
@@ -89,21 +89,21 @@ int id3_read_tag(struct id3_tag *id3)
 			return -1;
 		}
 	}
-	
+
 	/*
 	 * Read ID3 tag-header.
 	 */
 	buf = id3->id3_read(id3, NULL, ID3_TAGHDR_SIZE);
 	if (buf == NULL)
 		return -1;
-	
+
 	id3->id3_version = buf[0];
 	id3->id3_revision = buf[1];
 	id3->id3_flags = buf[2];
 	id3->id3_tagsize = ID3_GET_SIZE28(buf[3], buf[4], buf[5], buf[6]);
 	id3->id3_newtag = 0;
 	id3->id3_pos = 0;
-	
+
 	if (id3->id3_version < 2 || id3->id3_version > 4)
 		return -1;
 
@@ -116,7 +116,7 @@ int id3_read_tag(struct id3_tag *id3)
 		if (buf == NULL)
 			return -1;
 	}
-	
+
 	/*
 	 * Parse frames.
 	 */
@@ -128,6 +128,6 @@ int id3_read_tag(struct id3_tag *id3)
 
 	if (id3->id3_frame == NULL)
 		return -1;
-	
+
 	return 0;
 }

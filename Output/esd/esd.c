@@ -1,9 +1,9 @@
 
 /*      xmms - esound outputmkdir  plugin
  *    Copyright (C) 1999      Galex Yen
- *      
+ *
  *      this program is free software
- *      
+ *
  *      Description:
  *              This program is an output plugin for xmms v0.9 or greater.
  *              The program uses the esound daemon to output audio in order

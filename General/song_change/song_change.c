@@ -217,7 +217,7 @@ static void configure(void)
 	GtkWidget *configure_bbox, *configure_ok, *configure_cancel;
 	GtkWidget *song_frame, *song_vbox;
 	char *temp;
-	
+
 	if (configure_win)
 		return;
 
@@ -229,7 +229,7 @@ static void configure(void)
 			   &configure_win);
 	gtk_window_set_title(GTK_WINDOW(configure_win),
 			     _("Song Change Configuration"));
-	
+
 	gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 
 	configure_vbox = gtk_vbox_new(FALSE, 10);
@@ -240,7 +240,7 @@ static void configure(void)
 	song_vbox = gtk_vbox_new(FALSE, 10);
 	gtk_container_set_border_width(GTK_CONTAINER(song_vbox), 5);
 	gtk_container_add(GTK_CONTAINER(song_frame), song_vbox);
-	
+
 	cmd_desc = gtk_label_new(_(
 		   "Shell-command to run when xmms starts a new song."));
 	gtk_label_set_justify(GTK_LABEL(cmd_desc), GTK_JUSTIFY_LEFT);
@@ -502,7 +502,7 @@ static int timeout_func(gpointer data)
 	playing = xmms_remote_is_playing(sc_gp.xmms_session);
 	pos = xmms_remote_get_playlist_pos(sc_gp.xmms_session);
 	current_file = xmms_remote_get_playlist_file(sc_gp.xmms_session, pos);
-	
+
 	if ((pos != previous_song ||
 	     (!previous_file && current_file) ||
 	     (previous_file && !current_file) ||

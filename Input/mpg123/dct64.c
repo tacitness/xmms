@@ -8,7 +8,7 @@
 
 /*
  * TODO: write an optimized version for the down-sampling modes
- *       (in these modes the bands 16-31 (2:1) or 8-31 (4:1) are zero 
+ *       (in these modes the bands 16-31 (2:1) or 8-31 (4:1) are zero
  */
 
 #include "mpg123.h"

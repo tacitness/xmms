@@ -1,9 +1,9 @@
 /*      xmms - esound output plugin
  *    Copyright (C) 1999      Galex Yen
  *      3/9/99
- *      
+ *
  *      this program is free software
- *      
+ *
  *      Description:
  *              This program is an output plugin for xmms v0.9 or greater.
  *              The program uses the esound daemon to output audio in order
@@ -24,7 +24,7 @@ void esdout_about(void)
 
 	if (dialog != NULL)
 		return;
-	
+
 	dialog = xmms_show_message(
 		_("About ESounD Plugin"),
 		_("XMMS ESounD Plugin\n\n "

@@ -337,7 +337,7 @@ void *ctrlsocket_func(void *arg)
 					ctrl_write_gint(pkt->fd, playlist_get_songtime(*((guint32 *) pkt->data)));
 				else
 					ctrl_write_gint(pkt->fd, -1);
-				
+
 				ctrl_ack_packet(pkt);
 				break;
 			case CMD_GET_INFO:
@@ -366,7 +366,7 @@ void *ctrlsocket_func(void *arg)
 					while ((len = *dataptr) > 0)
 					{
 						gchar *filename;
-						
+
 						dataptr++;
 						filename = g_malloc0(len);
 						memcpy(filename, dataptr, len);

@@ -1,12 +1,12 @@
 if HAVE_OPENGL
 
 oglspectrumltlibs = libogl_spectrum.la
-oglspectrumsources = opengl_spectrum.c opengl_spectrum.h configure.c 
+oglspectrumsources = opengl_spectrum.c opengl_spectrum.h configure.c
 
 else
 
-oglspectrumltlibs = 
-oglspectrumsources = 
+oglspectrumltlibs =
+oglspectrumsources =
 
 endif
 

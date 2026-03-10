@@ -1,7 +1,7 @@
 
 /*
  * Discrete Cosine Tansform (DCT) for subband synthesis
- * optimized for machines with no auto-increment. 
+ * optimized for machines with no auto-increment.
  * The performance is highly compiler dependend. Maybe
  * the mpg123_dct64.c version for 'normal' processor may be faster
  * even for Intel processors.

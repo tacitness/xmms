@@ -91,8 +91,8 @@ static void mpg123_configurewin_ok(GtkWidget * widget, gpointer data)
 	mpg123_cfg.proxy_pass = NULL;
 	if(strlen(gtk_entry_get_text(GTK_ENTRY(streaming_proxy_auth_pass_entry))) > 0)
 		mpg123_cfg.proxy_pass = g_strdup(gtk_entry_get_text(GTK_ENTRY(streaming_proxy_auth_pass_entry)));
-	
-	
+
+
 	mpg123_cfg.save_http_stream = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_save_use));
 	if (mpg123_cfg.save_http_path)
 		g_free(mpg123_cfg.save_http_path);
@@ -100,7 +100,7 @@ static void mpg123_configurewin_ok(GtkWidget * widget, gpointer data)
 
 	mpg123_cfg.cast_title_streaming = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_cast_title));
 	mpg123_cfg.use_udp_channel = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_udp_title));
-	
+
 	mpg123_cfg.title_override = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(title_override));
 	mpg123_cfg.disable_id3v2 = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(title_id3v2_disable));
 	g_free(mpg123_cfg.id3_format);
@@ -162,7 +162,7 @@ static void proxy_use_cb(GtkWidget * w, gpointer data)
 
 	use_proxy = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_use));
 	use_proxy_auth = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use));
-		
+
 	gtk_widget_set_sensitive(streaming_proxy_hbox, use_proxy);
 	gtk_widget_set_sensitive(streaming_proxy_auth_use, use_proxy);
 	gtk_widget_set_sensitive(streaming_proxy_auth_hbox, use_proxy && use_proxy_auth);
@@ -337,7 +337,7 @@ void mpg123_configure(void)
 
 	decoder_3dnow = gtk_radio_button_new_with_label(NULL, _("3DNow! optimized decoder"));
 	gtk_box_pack_start(GTK_BOX(decoder_vbox), decoder_3dnow, FALSE, FALSE, 0);
-		
+
 	decoder_mmx = gtk_radio_button_new_with_label_from_widget(
 		GTK_RADIO_BUTTON(decoder_3dnow), _("MMX optimized decoder"));
 	gtk_box_pack_start(GTK_BOX(decoder_vbox), decoder_mmx, FALSE, FALSE, 0);
@@ -468,7 +468,7 @@ void mpg123_configure(void)
 	gtk_entry_set_text(GTK_ENTRY(streaming_proxy_port_entry), temp);
 	g_free(temp);
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_hbox), streaming_proxy_port_entry, FALSE, FALSE, 0);
-	
+
 	streaming_proxy_auth_use = gtk_check_button_new_with_label(_("Use authentication"));
 	gtk_widget_set_sensitive(streaming_proxy_auth_use, mpg123_cfg.use_proxy);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use), mpg123_cfg.proxy_use_auth);
@@ -478,7 +478,7 @@ void mpg123_configure(void)
 	streaming_proxy_auth_hbox = gtk_hbox_new(FALSE, 5);
 	gtk_widget_set_sensitive(streaming_proxy_auth_hbox, mpg123_cfg.use_proxy && mpg123_cfg.proxy_use_auth);
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_hbox, FALSE, FALSE, 0);
-	
+
 	streaming_proxy_auth_user_label = gtk_label_new(_("Username:"));
 	gtk_box_pack_start(GTK_BOX(streaming_proxy_auth_hbox), streaming_proxy_auth_user_label, FALSE, FALSE, 0);
 
@@ -534,7 +534,7 @@ void mpg123_configure(void)
 
 	streaming_cast_vbox = gtk_vbox_new(5, FALSE);
 	gtk_container_add(GTK_CONTAINER(streaming_cast_frame), streaming_cast_vbox);
-	
+
 	streaming_cast_title = gtk_check_button_new_with_label(_("Enable SHOUT/Icecast title streaming"));
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_cast_title), mpg123_cfg.cast_title_streaming);
 	gtk_box_pack_start(GTK_BOX(streaming_cast_vbox), streaming_cast_title, FALSE, FALSE, 0);

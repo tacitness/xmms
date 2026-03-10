@@ -128,9 +128,9 @@ static void set_synth_functions(struct frame *fr)
 
 #ifdef USE_SIMD
 	fr->dct36 = funcs_dct36[0];
-   
+
 	if (CPU_HAS_3DNOW() && !p8 &&
-	    (mpg123_cfg.default_synth == SYNTH_3DNOW || 
+	    (mpg123_cfg.default_synth == SYNTH_3DNOW ||
 	     mpg123_cfg.default_synth == SYNTH_AUTO))
 	{
 		fr->synth = funcs[3][ds]; /* 3DNow! optimized synth_1to1() */
@@ -315,11 +315,11 @@ static int is_our_file(char *filename)
 	if (!strncasecmp(filename, "http://", 7))
 	{			/* We assume all http:// (except those ending in .ogg) are mpeg -- why do we do that? */
 		ext = strrchr(filename, '.');
-		if (ext) 
+		if (ext)
 		{
-			if (!strncasecmp(ext, ".ogg", 4)) 
+			if (!strncasecmp(ext, ".ogg", 4))
 				return FALSE;
-			if (!strncasecmp(ext, ".rm", 3) || 
+			if (!strncasecmp(ext, ".rm", 3) ||
 			    !strncasecmp(ext, ".ra", 3)  ||
 			    !strncasecmp(ext, ".rpm", 4)  ||
 			    !strncasecmp(ext, ".fla", 4)  ||
@@ -416,7 +416,7 @@ struct id3v2tag_t* mpg123_id3v1_to_id3v2(struct id3v1tag_t *v1)
 	v2->album = g_strstrip(g_strndup(v1->album, 30));
 	v2->comment = g_strstrip(g_strndup(v1->u.v1_0.comment, 30));
 	v2->genre = g_strstrip(g_strdup(mpg123_get_id3_genre(v1->genre)));
-	
+
 	year = g_strndup(v1->year, 4);
 	v2->year = atoi(year);
 	g_free(year);
@@ -521,7 +521,7 @@ static char* id3v2_get_text(struct id3_tag *id3d, int id)
  * Function mpg123_get_id3v2 (id3d, tag)
  *
  *    Get desired contents from the indicated id3tag and store it in
- *    `tag'. 
+ *    `tag'.
  *
  */
 struct id3v2tag_t* mpg123_id3v2_get(struct id3_tag *id3d)
@@ -638,7 +638,7 @@ static int head_read(FILE *f, guint32 *head)
 		return FALSE;
 	*head = tmp[0] << 24 | tmp[1] << 16 | tmp[2] << 8 | tmp[3];
 	return TRUE;
-}	
+}
 
 static int head_shift(FILE *f, guint32 *head)
 {
@@ -648,7 +648,7 @@ static int head_shift(FILE *f, guint32 *head)
 		return FALSE;
 	*head |= tmp[0];
 	return TRUE;
-}	
+}
 
 /*
  * Check if we are at the beginning of a id3v2 tag and skip it if we
@@ -659,13 +659,13 @@ static int skip_id3v2(FILE *f, guint32 head)
 {
 	guint32 id3v2size;
 	guint8 tmp[6];
-	
+
 	if (!((head & 0xffffff00) == (('I' << 24) | ('D' << 16) | ('3' << 8))))
 		return TRUE;
 
 	if (fread(tmp, 1, 6, f) != 6)
 		return FALSE;
-		
+
 	id3v2size = ID3_GET_SIZE28(tmp[2], tmp[3], tmp[4], tmp[5]);
 
 	if (tmp[1] & 0x10)
@@ -702,7 +702,7 @@ gboolean mpg123_get_first_frame(FILE *fh, struct frame *frm, guint8 **buffer)
 	{
 		int offset;
 		struct frame tmp;
-		
+
 		while (!mpg123_head_check(h) ||
 		       !mpg123_decode_header(frm, h))
 		{
@@ -717,7 +717,7 @@ gboolean mpg123_get_first_frame(FILE *fh, struct frame *frm, guint8 **buffer)
 		offset = frm->framesize;
 		if (fseek(fh, offset, SEEK_CUR) || !head_read(fh, &h2))
 			return FALSE;
-		
+
 		if (fseek(fh, -(offset + 4), SEEK_CUR))
 			return FALSE;
 
@@ -730,7 +730,7 @@ gboolean mpg123_get_first_frame(FILE *fh, struct frame *frm, guint8 **buffer)
 			if (buffer)
 			{
 				*buffer = g_malloc(offset + 4);
-				if (fread(*buffer, 1, offset + 4, fh) != offset + 4 || 
+				if (fread(*buffer, 1, offset + 4, fh) != offset + 4 ||
 				    fseek(fh, -(offset + 4), SEEK_CUR))
 				{
 					g_free(*buffer);
@@ -816,7 +816,7 @@ static int open_output(struct frame fr)
 static int mpg123_seek(struct frame *fr, xing_header_t *xh, gboolean vbr, int time)
 {
 	int jumped = -1;
-	
+
 	if (xh)
 	{
 		int percent = ((double) time * 100.0) /
@@ -984,7 +984,7 @@ static void *decode_loop(void *arg)
 							mpg123_info->output_audio = FALSE;
 							continue;
 						}
-						
+
 					}
 				}
 				if(mpg123_freqs[fr.sampling_frequency] != mpg123_frequency || mpg123_stereo != fr.stereo)
@@ -1022,12 +1022,12 @@ static void *decode_loop(void *arg)
 							mpg123_info->output_audio = FALSE;
 							continue;
 						}
-					}					
+					}
 				}
-				
+
 				if (tabsel_123[fr.lsf][fr.lay - 1][fr.bitrate_index] != mpg123_bitrate)
 					mpg123_bitrate = tabsel_123[fr.lsf][fr.lay - 1][fr.bitrate_index];
-				
+
 				if (!disp_count)
 				{
 					disp_count = 20;
@@ -1143,7 +1143,7 @@ static void aboutbox(void)
 
 	if (aboutbox != NULL)
 		return;
-	
+
 	aboutbox = xmms_show_message(
 		_("About MPEG Layer 1/2/3 plugin"),
 		_("mpg123 decoding engine by Michael Hipp <mh@mpg123.de>\n"

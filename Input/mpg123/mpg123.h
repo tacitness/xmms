@@ -1,5 +1,5 @@
 /*
- * mpg123 defines 
+ * mpg123 defines
  * used source: musicout.h from mpegaudio package
  */
 

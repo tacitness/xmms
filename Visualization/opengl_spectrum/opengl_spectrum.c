@@ -18,7 +18,7 @@
 
 /*
  *  Wed May 24 10:49:37 CDT 2000
- *  Fixes to threading/context creation for the nVidia X4 drivers by 
+ *  Fixes to threading/context creation for the nVidia X4 drivers by
  *  Christian Zander <phoenix@minion.de>
  */
 
@@ -74,7 +74,7 @@ VisPlugin oglspectrum_vp =
 	0,
 	NULL, /* Description */
 	0,
-	1,		
+	1,
 	oglspectrum_init, /* init */
 	oglspectrum_cleanup, /* cleanup */
 	NULL, /* about */
@@ -145,17 +145,17 @@ VisPlugin *get_vplugin_info(void)
 
 void oglspectrum_read_config(void)
 {
-	ConfigFile *cfg;	
+	ConfigFile *cfg;
 	gchar *filename;
 
 	oglspectrum_cfg.tdfx_mode = FALSE;
-	
+
 	filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
 	cfg = xmms_cfg_open_file(filename);
-	
+
 	if (cfg)
 	{
-		xmms_cfg_read_boolean(cfg, "OpenGL Spectrum", "tdfx_fullscreen", &oglspectrum_cfg.tdfx_mode);		
+		xmms_cfg_read_boolean(cfg, "OpenGL Spectrum", "tdfx_fullscreen", &oglspectrum_cfg.tdfx_mode);
 		xmms_cfg_free(cfg);
 	}
 	g_free(filename);
@@ -165,11 +165,11 @@ static void draw_rectangle(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLflo
 {
 	if(y1 == y2)
 	{
-	
+
 		glVertex3f(x1, y1, z1);
 		glVertex3f(x2, y1, z1);
 		glVertex3f(x2, y2, z2);
-		
+
 		glVertex3f(x2, y2, z2);
 		glVertex3f(x1, y2, z2);
 		glVertex3f(x1, y1, z1);
@@ -179,7 +179,7 @@ static void draw_rectangle(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLflo
 		glVertex3f(x1, y1, z1);
 		glVertex3f(x2, y1, z2);
 		glVertex3f(x2, y2, z2);
-		
+
 		glVertex3f(x2, y2, z2);
 		glVertex3f(x1, y2, z1);
 		glVertex3f(x1, y1, z1);
@@ -193,16 +193,16 @@ static void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat
 	glColor3f(red,green,blue);
 	draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1);
 	draw_rectangle(x_offset, 0, z_offset, x_offset + width, 0, z_offset + 0.1);
-	
+
 	glColor3f(0.5 * red, 0.5 * green, 0.5 * blue);
 	draw_rectangle(x_offset, 0.0, z_offset + 0.1, x_offset + width, height, z_offset + 0.1);
 	draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset );
 
 	glColor3f(0.25 * red, 0.25 * green, 0.25 * blue);
-	draw_rectangle(x_offset, 0.0, z_offset , x_offset, height, z_offset + 0.1);	
+	draw_rectangle(x_offset, 0.0, z_offset , x_offset, height, z_offset + 0.1);
 	draw_rectangle(x_offset + width, 0.0, z_offset , x_offset + width, height, z_offset + 0.1);
 
-	
+
 }
 
 static void draw_bars(void)
@@ -210,13 +210,13 @@ static void draw_bars(void)
 	gint x,y;
 	GLfloat x_offset, z_offset, r_base, b_base;
 
-	
+
 
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glPushMatrix();
-	glTranslatef(0.0,-0.5,-5.0);	      
+	glTranslatef(0.0,-0.5,-5.0);
 	glRotatef(x_angle,1.0,0.0,0.0);
 	glRotatef(y_angle,0.0,1.0,0.0);
 	glRotatef(z_angle,0.0,0.0,1.0);
@@ -228,11 +228,11 @@ static void draw_bars(void)
 
 		b_base = y * (1.0 / 15);
 		r_base = 1.0 - b_base;
-			
+
 		for(x = 0; x < 16; x++)
 		{
-			x_offset = -1.6 + (x * 0.2);			
-				
+			x_offset = -1.6 + (x * 0.2);
+
 			draw_bar(x_offset, z_offset, heights[y][x], r_base - (x * (r_base / 15.0)), x * (1.0 / 15), b_base);
 		}
 	}
@@ -259,7 +259,7 @@ void *draw_thread_func(void *arg)
 		g_log(NULL, G_LOG_LEVEL_CRITICAL, __FILE__ ": unable to create window");
 		pthread_exit(NULL);
 	}
-	
+
 	XMapWindow(dpy, window);
 
 	glMatrixMode(GL_PROJECTION);
@@ -275,10 +275,10 @@ void *draw_thread_func(void *arg)
 	{
 		struct sched_param sparam;
 		sparam.sched_priority = sched_get_priority_max(SCHED_OTHER);
-		pthread_setschedparam(pthread_self(), SCHED_OTHER, &sparam);		
+		pthread_setschedparam(pthread_self(), SCHED_OTHER, &sparam);
 	}
 #endif
-	
+
 	while(going)
 	{
 		while(XPending(dpy))
@@ -286,7 +286,7 @@ void *draw_thread_func(void *arg)
 			XEvent event;
 			KeySym keysym;
 			char buf[16];
-			
+
 			XNextEvent(dpy, &event);
 			switch(event.type)
 			{
@@ -294,7 +294,7 @@ void *draw_thread_func(void *arg)
 				glViewport(0,0,event.xconfigure.width, event.xconfigure.height);
 				if(oglspectrum_cfg.tdfx_mode && !grabbed_pointer)
 				{
-					
+
 					XGrabPointer(dpy, window,
 						     True, ButtonPressMask,
 						     GrabModeAsync,
@@ -306,12 +306,12 @@ void *draw_thread_func(void *arg)
 				break;
 			case KeyPress:
 
-				
+
 				XLookupString (&event.xkey, buf, 16, &keysym, NULL);
 				switch(keysym)
 				{
 				case XK_Escape:
-					
+
 					/* Ugly hack to get the disable_plugin call in the main thread. */
 					GDK_THREADS_ENTER();
 					gtk_idle_add(disable_func, NULL);
@@ -332,12 +332,12 @@ void *draw_thread_func(void *arg)
 				case XK_b:
 					xmms_remote_playlist_next(oglspectrum_vp.xmms_session);
 					break;
-				case XK_Up:					
+				case XK_Up:
 					x_speed -= 0.1;
 					if(x_speed < -3.0)
 						x_speed = -3.0;
 					break;
-				case XK_Down:					
+				case XK_Down:
 					x_speed += 0.1;
 					if(x_speed > 3.0)
 						x_speed = 3.0;
@@ -346,7 +346,7 @@ void *draw_thread_func(void *arg)
 					y_speed -= 0.1;
 					if(y_speed < -3.0)
 						y_speed = -3.0;
-					
+
 					break;
 				case XK_Right:
 					y_speed += 0.1;
@@ -370,9 +370,9 @@ void *draw_thread_func(void *arg)
 					x_angle = 20.0;
 					y_angle = 45.0;
 					z_angle = 0.0;
-					break;					
+					break;
 				}
-				
+
 				break;
 			case ClientMessage:
 				if ((Atom)event.xclient.data.l[0] == wm_delete_window_atom)
@@ -389,7 +389,7 @@ void *draw_thread_func(void *arg)
 			x_angle += x_speed;
 			if(x_angle >= 360.0)
 				x_angle -= 360.0;
-			
+
 			y_angle += y_speed;
 			if(y_angle >= 360.0)
 				y_angle -= 360.0;
@@ -431,7 +431,7 @@ static void start_display(void)
 		putenv("MESA_GLX_FX=fullscreen");
 	else
 		putenv("MESA_GLX_FX=""");
-	
+
 	for(x = 0; x < 16; x++)
 	{
 		for(y = 0; y < 16; y++)
@@ -480,7 +480,7 @@ static void oglspectrum_init(void)
 
 	if(!oglspectrum_cfg.tdfx_mode)
 		start_display();
-}	
+}
 
 static void oglspectrum_cleanup(void)
 {
@@ -521,7 +521,7 @@ static void oglspectrum_render_freq(gint16 data[2][256])
 			heights[y][i] = heights[y - 1][i];
 		}
 	}
-	
+
 	for(i = 0; i < NUM_BANDS; i++)
 	{
 		for(c = xscale[i], y = 0; c < xscale[i + 1]; c++)
@@ -535,10 +535,9 @@ static void oglspectrum_render_freq(gint16 data[2][256])
 		else
 			val = 0;
 
-				
+
 		heights[0][i] = val;
-   
-		
+
+
 	}
 }
-

@@ -187,7 +187,7 @@ static struct id3_framedesc22 framedesc22[] = {
 
 	{ID3_SLT, ID3_SYLT}, /* Synchronized lyric/text */
 	{ID3_STC, ID3_SYTC}, /* Synced tempo codes */
- 
+
 	{ID3_TAL, ID3_TALB}, /* Album/Movie/Show title */
 	{ID3_TBP, ID3_TBPM}, /* BPM (Beats Per Minute) */
 	{ID3_TCM, ID3_TCOM}, /* Composer */

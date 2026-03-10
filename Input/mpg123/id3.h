@@ -52,7 +52,7 @@ struct id3_tag {
 
 	int id3_tagsize;	/* Total size of ID3 tag */
 	int id3_pos;		/* Current position within tag */
-    
+
 	char *id3_error_msg;	/* Last error message */
 
 	char id3_buffer[256];	/* Used for various strings */
@@ -241,7 +241,7 @@ struct id3_framedesc {
 #define ID3_WXXX	ID3_FRAME_ID('W','X','X','X')
 
 /*
- * Version 2.2.0 
+ * Version 2.2.0
  */
 
 #define ID3_FRAME_ID_22(a, b, c)   ((a << 16) | (b << 8) | c)

@@ -181,12 +181,12 @@ static void esdout_setup_format(AFormat fmt,gint rate, gint nch)
 	else
 		esd_format |= ESD_STEREO;
 	esd_format |= ESD_STREAM | ESD_PLAY;
-	
+
 	latency = ((get_latency() * frequency) / 44100) * channels;
 	if (format != FMT_U8 && format != FMT_S8)
 		latency *= 2;
 }
-	
+
 
 gint esdout_get_written_time(void)
 {
@@ -205,7 +205,7 @@ gint esdout_get_output_time(void)
 	bytes = output_bytes;
 	if (!paused)
 		bytes -= (bytes < latency ? bytes : latency);
-	
+
 	return output_time_offset + (bytes * 1000) / ebps;
 }
 
@@ -261,17 +261,17 @@ static void esdout_write_audio(gpointer data,gint length)
 	AFormat new_format;
 	gint new_frequency,new_channels;
 	EffectPlugin *ep;
-	
+
 	new_format = input_format;
 	new_frequency = input_frequency;
 	new_channels = input_channels;
-	
+
 	ep = get_current_effect_plugin();
 	if(effects_enabled() && ep && ep->query_format)
 	{
 		ep->query_format(&new_format,&new_frequency,&new_channels);
 	}
-	
+
 	if(new_format != format || new_frequency != frequency || new_channels != channels)
 	{
 		output_time_offset += (output_bytes * 1000) / ebps;
@@ -316,7 +316,7 @@ void esdout_write(gpointer ptr, gint length)
 			return;
 		esdout_write_audio(ptr,length);
 		written += length;
-		
+
 	}
 
 }
@@ -364,7 +364,7 @@ void esdout_pause(short p)
 void *esdout_loop(void *arg)
 {
 	gint length, cnt;
-	
+
 
 	while (going)
 	{
@@ -378,7 +378,7 @@ void *esdout_loop(void *arg)
 				cnt = MIN(length,buffer_size-rd_index);
 				esdout_write_audio((gchar *)buffer + rd_index, cnt);
 				rd_index=(rd_index+cnt)%buffer_size;
-				length-=cnt;				
+				length-=cnt;
 			}
 		}
 		else
@@ -419,14 +419,14 @@ int esdout_open(AFormat fmt, int rate, int nch)
 	static unsigned int playercnt = 0;
 
 	esdout_setup_format(fmt,rate,nch);
-	
+
 	input_format = format;
 	input_channels = channels;
 	input_frequency = frequency;
 	input_bps = bps;
 
 	realtime = xmms_check_realtime_priority();
-	
+
 	if (!realtime)
 	{
 		buffer_size = (esd_cfg.buffer_size * input_bps) / 1000;
@@ -453,7 +453,7 @@ int esdout_open(AFormat fmt, int rate, int nch)
 		esd_cfg.hostname = g_strdup_printf("%s:%d", esd_cfg.server, esd_cfg.port);
 	else
 		esd_cfg.hostname = NULL;
-	
+
 	esdout_set_audio_params();
 	if (fd == -1)
 	{

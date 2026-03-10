@@ -125,7 +125,7 @@ const char * sm_init(int argc, char **argv, const char *previous_session_id)
 		props[0] = &program_prop;
 		props[1] = &userid_prop;
 		props[2] = &restart_prop;
-		props[3] = &clone_prop;                
+		props[3] = &clone_prop;
 
 		SmcSetProperties(smc_conn, sizeof(props) / sizeof(props[0]),
 				 (SmProp **)&props);
@@ -158,4 +158,3 @@ void sm_cleanup(void)
 
 
 #endif
-
