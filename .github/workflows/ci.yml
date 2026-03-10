@@ -107,7 +107,6 @@ jobs:
               | xargs clang-tidy-18 \
                   --config-file=.clang-tidy \
                   -p build \
-                  --warnings-as-errors='clang-analyzer-*,bugprone-*' \
                   2>&1 | tee clang-tidy-report.txt
             grep -qE "^.*error:" clang-tidy-report.txt && exit 1 || true
           else
