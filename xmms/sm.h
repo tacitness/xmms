@@ -21,7 +21,7 @@
 #ifndef SM_H
 #define SM_H
 
-const char* sm_init(int argc, char **argv, const char *previous_session_id);
+const char *sm_init(int argc, char **argv, const char *previous_session_id);
 void sm_cleanup(void);
 
 #endif

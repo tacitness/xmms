@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,15 +19,14 @@
 #ifndef MONOSTEREO_H
 #define MONOSTEREO_H
 
-typedef struct
-{
-	Widget ms_widget;
-	int ms_num_channels;
-	SkinIndex ms_skin_index;
-}
-MonoStereo;
+typedef struct {
+    Widget ms_widget;
+    int ms_num_channels;
+    SkinIndex ms_skin_index;
+} MonoStereo;
 
-MonoStereo *create_monostereo(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, SkinIndex si);
-void monostereo_set_num_channels(MonoStereo * ms, gint nch);
+MonoStereo *create_monostereo(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
+                              SkinIndex si);
+void monostereo_set_num_channels(MonoStereo *ms, gint nch);
 
 #endif

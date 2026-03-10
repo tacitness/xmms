@@ -31,26 +31,22 @@
  * with appropriate field values.
  */
 
-typedef struct
-{
-	gint	__size;		/* Set by XMMS_NEW_TITLEINPUT() */
-	gint	__version;	/* Ditto */
+typedef struct {
+    gint __size;       /* Set by XMMS_NEW_TITLEINPUT() */
+    gint __version;    /* Ditto */
 
-	gchar	*performer;	/* %p */
-	gchar	*album_name;	/* %a */
-	gchar	*track_name;	/* %t */
-	gint	 track_number;	/* %n */
-	gint	 year;		/* %y */
-	gchar	*date;		/* %d */
-	gchar	*genre;		/* %g */
-	gchar	*comment;	/* %c */
-	gchar	*file_name;	/* %f */
-	gchar	*file_ext;	/* %e */
-	gchar	*file_path;	/* %F */
-}
-TitleInput;
-
-
+    gchar *performer;  /* %p */
+    gchar *album_name; /* %a */
+    gchar *track_name; /* %t */
+    gint track_number; /* %n */
+    gint year;         /* %y */
+    gchar *date;       /* %d */
+    gchar *genre;      /* %g */
+    gchar *comment;    /* %c */
+    gchar *file_name;  /* %f */
+    gchar *file_ext;   /* %e */
+    gchar *file_path;  /* %F */
+} TitleInput;
 
 
 /*
@@ -60,16 +56,17 @@ TitleInput;
  * the struct layout.
  */
 
-#define XMMS_TITLEINPUT_SIZE	sizeof(TitleInput)
-#define XMMS_TITLEINPUT_VERSION	(1)
+#define XMMS_TITLEINPUT_SIZE sizeof(TitleInput)
+#define XMMS_TITLEINPUT_VERSION (1)
 
-#define XMMS_NEW_TITLEINPUT(input) G_STMT_START {	\
-	input = g_malloc0(sizeof(TitleInput));		\
-	input->__size = XMMS_TITLEINPUT_SIZE;		\
-	input->__version = XMMS_TITLEINPUT_VERSION;	\
-} G_STMT_END
-
-
+#define XMMS_NEW_TITLEINPUT(input)                  \
+    G_STMT_START                                    \
+    {                                               \
+        input = g_malloc0(sizeof(TitleInput));      \
+        input->__size = XMMS_TITLEINPUT_SIZE;       \
+        input->__version = XMMS_TITLEINPUT_VERSION; \
+    }                                               \
+    G_STMT_END
 
 
 #ifdef __cplusplus
@@ -77,7 +74,7 @@ extern "C" {
 #endif
 
 gchar *xmms_get_titlestring(gchar *fmt, TitleInput *input);
-GtkWidget* xmms_titlestring_descriptions(char* tags, int rows);
+GtkWidget *xmms_titlestring_descriptions(char *tags, int rows);
 
 #ifdef __cplusplus
 }

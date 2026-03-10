@@ -1,6 +1,7 @@
 
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,63 +19,57 @@
  */
 #include "xmms.h"
 
-void monostereo_draw(Widget * w)
+void monostereo_draw(Widget *w)
 {
-	MonoStereo *ms = (MonoStereo *) w;
-	GdkPixmap *obj;
+    MonoStereo *ms = (MonoStereo *)w;
+    GdkPixmap *obj;
 
-	obj = ms->ms_widget.parent;
+    obj = ms->ms_widget.parent;
 
-	switch (ms->ms_num_channels)
-	{
-		case 0:
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 29, 12,
-					 ms->ms_widget.x, ms->ms_widget.y, 27, 12);
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 0, 12,
-					 ms->ms_widget.x + 27, ms->ms_widget.y, 29, 12);
-			break;
-		case 1:
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 29, 0,
-					 ms->ms_widget.x, ms->ms_widget.y, 27, 12);
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 0, 12,
-					 ms->ms_widget.x + 27, ms->ms_widget.y, 29, 12);
-			break;
-		case 2:
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 29, 12,
-					 ms->ms_widget.x, ms->ms_widget.y, 27, 12);
-			skin_draw_pixmap(obj, ms->ms_widget.gc,
-					 ms->ms_skin_index, 0, 0,
-					 ms->ms_widget.x + 27, ms->ms_widget.y, 29, 12);
-			break;
-	}
+    switch (ms->ms_num_channels) {
+    case 0:
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
+                         ms->ms_widget.y, 27, 12);
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
+                         ms->ms_widget.y, 29, 12);
+        break;
+    case 1:
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 0, ms->ms_widget.x,
+                         ms->ms_widget.y, 27, 12);
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
+                         ms->ms_widget.y, 29, 12);
+        break;
+    case 2:
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
+                         ms->ms_widget.y, 27, 12);
+        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 0, ms->ms_widget.x + 27,
+                         ms->ms_widget.y, 29, 12);
+        break;
+    }
 }
 
-void monostereo_set_num_channels(MonoStereo * ms, gint nch)
+void monostereo_set_num_channels(MonoStereo *ms, gint nch)
 {
-	ms->ms_num_channels = nch;
-	draw_widget(ms);
+    ms->ms_num_channels = nch;
+    draw_widget(ms);
 }
 
-MonoStereo *create_monostereo(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, SkinIndex si)
+MonoStereo *create_monostereo(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
+                              SkinIndex si)
 {
-	MonoStereo *ms;
+    MonoStereo *ms;
 
-	ms = (MonoStereo *) g_malloc0(sizeof (MonoStereo));
-	ms->ms_widget.parent = parent;
-	ms->ms_widget.gc = gc;
-	ms->ms_widget.x = x;
-	ms->ms_widget.y = y;
-	ms->ms_widget.width = 56;
-	ms->ms_widget.height = 12;
-	ms->ms_widget.visible = 1;
-	ms->ms_widget.draw = monostereo_draw;
-	ms->ms_skin_index = si;
+    ms = (MonoStereo *)g_malloc0(sizeof(MonoStereo));
+    ms->ms_widget.parent = parent;
+    ms->ms_widget.gc = gc;
+    ms->ms_widget.x = x;
+    ms->ms_widget.y = y;
+    ms->ms_widget.width = 56;
+    ms->ms_widget.height = 12;
+    ms->ms_widget.visible = 1;
+    ms->ms_widget.draw = monostereo_draw;
+    ms->ms_skin_index = si;
 
-	add_widget(wlist, ms);
-	return ms;
+    add_widget(wlist, ms);
+    return ms;
 }

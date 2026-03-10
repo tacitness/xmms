@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,20 +19,14 @@
 #ifndef PLAYSTATUS_H
 #define PLAYSTATUS_H
 
-typedef enum
-{
-	STATUS_STOP, STATUS_PAUSE, STATUS_PLAY
-}
-PStatus;
+typedef enum { STATUS_STOP, STATUS_PAUSE, STATUS_PLAY } PStatus;
 
-typedef struct
-{
-	Widget ps_widget;
-	PStatus ps_status;
-}
-PlayStatus;
+typedef struct {
+    Widget ps_widget;
+    PStatus ps_status;
+} PlayStatus;
 
-void playstatus_set_status(PlayStatus * ps, PStatus status);
-PlayStatus *create_playstatus(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y);
+void playstatus_set_status(PlayStatus *ps, PStatus status);
+PlayStatus *create_playstatus(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
 
 #endif

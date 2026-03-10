@@ -22,40 +22,35 @@
 #ifndef ESDOUT_H
 #define ESDOUT_H
 
-#include "config.h"
-
+#include <fcntl.h>
 #include <gtk/gtk.h>
-
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <esd.h>
-
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
+
+#include <esd.h>
 #include <pthread.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "xmms/plugin.h"
+#include "config.h"
 #include "libxmms/util.h"
+#include "xmms/plugin.h"
 
 extern OutputPlugin op;
 
-typedef struct
-{
-	gboolean use_remote;
-	gboolean use_oss_mixer;
-	char *server;
-	char *hostname;
-	char *playername;
-	int port;
-	int buffer_size;
-	int prebuffer;
-}
-ESDConfig;
+typedef struct {
+    gboolean use_remote;
+    gboolean use_oss_mixer;
+    char *server;
+    char *hostname;
+    char *playername;
+    int port;
+    int buffer_size;
+    int prebuffer;
+} ESDConfig;
 
 extern ESDConfig esd_cfg;
 

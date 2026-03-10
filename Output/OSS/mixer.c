@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,81 +16,77 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include "OSS.h"
 #include <errno.h>
 
-static char* get_mixer_device(void)
+#include "OSS.h"
+
+static char *get_mixer_device(void)
 {
-	char *name;
+    char *name;
 
-	if (oss_cfg.use_alt_mixer_device && oss_cfg.alt_mixer_device)
-		name = g_strdup(oss_cfg.alt_mixer_device);
-	else if (oss_cfg.mixer_device > 0)
-		name = g_strdup_printf("%s%d", DEV_MIXER, oss_cfg.mixer_device);
-	else
-		name = g_strdup(DEV_MIXER);
+    if (oss_cfg.use_alt_mixer_device && oss_cfg.alt_mixer_device)
+        name = g_strdup(oss_cfg.alt_mixer_device);
+    else if (oss_cfg.mixer_device > 0)
+        name = g_strdup_printf("%s%d", DEV_MIXER, oss_cfg.mixer_device);
+    else
+        name = g_strdup(DEV_MIXER);
 
-	return name;
+    return name;
 }
 
 void oss_get_volume(int *l, int *r)
 {
-	int fd, v, cmd, devs;
-	gchar *devname;
+    int fd, v, cmd, devs;
+    gchar *devname;
 
-	devname = get_mixer_device();
-	fd = open(devname, O_RDONLY);
-	g_free(devname);
+    devname = get_mixer_device();
+    fd = open(devname, O_RDONLY);
+    g_free(devname);
 
-	/*
-	 * We dont show any errors if this fails, as this is called
-	 * rather often
-	 */
-	if (fd != -1)
-	{
-		ioctl(fd, SOUND_MIXER_READ_DEVMASK, &devs);
-		if ((devs & SOUND_MASK_PCM) && (oss_cfg.use_master==0))
-			cmd = SOUND_MIXER_READ_PCM;
-		else if ((devs & SOUND_MASK_VOLUME) && (oss_cfg.use_master==1))
-			cmd = SOUND_MIXER_READ_VOLUME;
-		else
-		{
-			close(fd);
-			return;
-		}
-		ioctl(fd, cmd, &v);
-		*r = (v & 0xFF00) >> 8;
-		*l = (v & 0x00FF);
-		close(fd);
-	}
+    /*
+     * We dont show any errors if this fails, as this is called
+     * rather often
+     */
+    if (fd != -1) {
+        ioctl(fd, SOUND_MIXER_READ_DEVMASK, &devs);
+        if ((devs & SOUND_MASK_PCM) && (oss_cfg.use_master == 0))
+            cmd = SOUND_MIXER_READ_PCM;
+        else if ((devs & SOUND_MASK_VOLUME) && (oss_cfg.use_master == 1))
+            cmd = SOUND_MIXER_READ_VOLUME;
+        else {
+            close(fd);
+            return;
+        }
+        ioctl(fd, cmd, &v);
+        *r = (v & 0xFF00) >> 8;
+        *l = (v & 0x00FF);
+        close(fd);
+    }
 }
 
 void oss_set_volume(int l, int r)
 {
-	int fd, v, cmd, devs;
-	gchar *devname;
+    int fd, v, cmd, devs;
+    gchar *devname;
 
-	devname = get_mixer_device();
-	fd = open(devname, O_RDONLY);
+    devname = get_mixer_device();
+    fd = open(devname, O_RDONLY);
 
-	if (fd != -1)
-	{
-		ioctl(fd, SOUND_MIXER_READ_DEVMASK, &devs);
-		if ((devs & SOUND_MASK_PCM) && (oss_cfg.use_master==0))
-			cmd = SOUND_MIXER_WRITE_PCM;
-		else if ((devs & SOUND_MASK_VOLUME) && (oss_cfg.use_master==1))
-			cmd = SOUND_MIXER_WRITE_VOLUME;
-		else
-		{
-			close(fd);
-			return;
-		}
-		v = (r << 8) | l;
-		ioctl(fd, cmd, &v);
-		close(fd);
-	}
-	else
-		g_warning("oss_set_volume(): Failed to open mixer device (%s): %s",
-			  devname, strerror(errno));
-	g_free(devname);
+    if (fd != -1) {
+        ioctl(fd, SOUND_MIXER_READ_DEVMASK, &devs);
+        if ((devs & SOUND_MASK_PCM) && (oss_cfg.use_master == 0))
+            cmd = SOUND_MIXER_WRITE_PCM;
+        else if ((devs & SOUND_MASK_VOLUME) && (oss_cfg.use_master == 1))
+            cmd = SOUND_MIXER_WRITE_VOLUME;
+        else {
+            close(fd);
+            return;
+        }
+        v = (r << 8) | l;
+        ioctl(fd, cmd, &v);
+        close(fd);
+    } else
+        g_warning("oss_set_volume(): Failed to open mixer device (%s): %s", devname,
+                  strerror(errno));
+    g_free(devname);
 }

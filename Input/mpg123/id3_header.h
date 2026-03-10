@@ -36,24 +36,20 @@ struct id3_taghdr {
 /* Header size excluding "ID3" */
 #define ID3_TAGHDR_SIZE 7 /* Size on disk */
 
-#define ID3_THFLAG_USYNC	0x80
-#define ID3_THFLAG_EXT		0x40
-#define ID3_THFLAG_EXP		0x20
+#define ID3_THFLAG_USYNC 0x80
+#define ID3_THFLAG_EXT 0x40
+#define ID3_THFLAG_EXP 0x20
 
-#define ID3_SET_SIZE28(size, a, b, c, d)	\
-do {						\
-	a = (size >> (24 + 3)) & 0x7f;		\
-	b = (size >> (16 + 2)) & 0x7f;		\
-	c = (size >> ( 8 + 1)) & 0x7f;		\
-	d = size & 0x7f;			\
-} while (0)
+#define ID3_SET_SIZE28(size, a, b, c, d) \
+    do {                                 \
+        a = (size >> (24 + 3)) & 0x7f;   \
+        b = (size >> (16 + 2)) & 0x7f;   \
+        c = (size >> (8 + 1)) & 0x7f;    \
+        d = size & 0x7f;                 \
+    } while (0)
 
-#define ID3_GET_SIZE28(a, b, c, d)		\
-(((a & 0x7f) << (24 - 3)) |			\
- ((b & 0x7f) << (16 - 2)) |			\
- ((c & 0x7f) << ( 8 - 1)) |			\
- ((d & 0x7f)))
-
+#define ID3_GET_SIZE28(a, b, c, d) \
+    (((a & 0x7f) << (24 - 3)) | ((b & 0x7f) << (16 - 2)) | ((c & 0x7f) << (8 - 1)) | ((d & 0x7f)))
 
 
 /*
@@ -69,9 +65,8 @@ struct id3_exthdr {
 
 #define ID3_EXTHDR_SIZE 10
 
-#define ID3_EHFLAG_V23_CRC	0x80
-#define ID3_EHFLAG_V24_CRC	0x20
-
+#define ID3_EHFLAG_V23_CRC 0x80
+#define ID3_EHFLAG_V24_CRC 0x20
 
 
 /*
@@ -88,24 +83,23 @@ struct id3_framehdr {
 #define ID3_FRAMEHDR_SIZE 10
 
 
-#define ID3_FHFLAG_TAGALT	0x8000
-#define ID3_FHFLAG_FILEALT	0x4000
-#define ID3_FHFLAG_RO		0x2000
-#define ID3_FHFLAG_COMPRESS	0x0080
-#define ID3_FHFLAG_ENCRYPT	0x0040
-#define ID3_FHFLAG_GROUP	0x0020
+#define ID3_FHFLAG_TAGALT 0x8000
+#define ID3_FHFLAG_FILEALT 0x4000
+#define ID3_FHFLAG_RO 0x2000
+#define ID3_FHFLAG_COMPRESS 0x0080
+#define ID3_FHFLAG_ENCRYPT 0x0040
+#define ID3_FHFLAG_GROUP 0x0020
 
 
 #define DEBUG_ID3
 #ifdef DEBUG_ID3
-#define id3_error(id3, error)		\
-  (void) ( id3->id3_error_msg = error,	\
-           printf( "Error %s, line %d: %s\n", __FILE__, __LINE__, error ) )
+#    define id3_error(id3, error)          \
+        (void)(id3->id3_error_msg = error, \
+               printf("Error %s, line %d: %s\n", __FILE__, __LINE__, error))
 
 
 #else
-#define id3_error(id3, error)		\
-  (void) ( id3->id3_error_msg = error )
+#    define id3_error(id3, error) (void)(id3->id3_error_msg = error)
 
 #endif
 

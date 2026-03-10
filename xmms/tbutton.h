@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,20 +19,18 @@
 #ifndef TBUTTON_H
 #define TBUTTON_H
 
-typedef struct
-{
-	Widget tb_widget;
-	gint tb_nux, tb_nuy, tb_pux, tb_puy, tb_nsx, tb_nsy, tb_psx, tb_psy;
-	gint tb_pressed, tb_inside, tb_selected;
-	void (*tb_push_cb) (gboolean);
-	SkinIndex tb_skin_index;
-}
-TButton;
+typedef struct {
+    Widget tb_widget;
+    gint tb_nux, tb_nuy, tb_pux, tb_puy, tb_nsx, tb_nsy, tb_psx, tb_psy;
+    gint tb_pressed, tb_inside, tb_selected;
+    void (*tb_push_cb)(gboolean);
+    SkinIndex tb_skin_index;
+} TButton;
 
-TButton *create_tbutton(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y, gint w, gint h,
-			gint nux, gint nuy, gint pux, gint puy, gint nsx, gint nsy, gint psx, gint psy,
-			void (*cb) (gboolean), SkinIndex si);
-void tbutton_set_toggled(TButton * tb, gboolean toggled);
-void free_tbutton(TButton * b);
+TButton *create_tbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
+                        gint nux, gint nuy, gint pux, gint puy, gint nsx, gint nsy, gint psx,
+                        gint psy, void (*cb)(gboolean), SkinIndex si);
+void tbutton_set_toggled(TButton *tb, gboolean toggled);
+void free_tbutton(TButton *b);
 
 #endif

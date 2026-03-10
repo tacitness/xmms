@@ -20,48 +20,42 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-typedef enum
-{
-	TIMER_ELAPSED, TIMER_REMAINING
-}
-TimerMode;
+typedef enum { TIMER_ELAPSED, TIMER_REMAINING } TimerMode;
 
-typedef struct
-{
-	gint player_x, player_y, equalizer_x, equalizer_y;
-	gint playlist_x, playlist_y, playlist_width, playlist_height;
-	guint snap_distance;
-	gboolean use_realtime, shuffle, repeat, doublesize, autoscroll;
-	gboolean analyzer_peaks, equalizer_autoload, easy_move, equalizer_active;
-	gboolean playlist_visible, equalizer_visible, player_visible;
-	gboolean player_shaded, playlist_shaded, equalizer_shaded;
-	gboolean allow_multiple_instances, always_show_cb;
-	gboolean convert_underscore, convert_twenty;
-	gboolean show_numbers_in_pl, snap_windows, save_window_position;
-	gboolean dim_titlebar, get_info_on_load;
-	gboolean get_info_on_demand, eq_doublesize_linked;
-	gboolean sort_jump_to_file, use_eplugins, always_on_top, sticky;
-	gboolean no_playlist_advance, smooth_title_scroll, use_pl_metadata;
-	gboolean use_backslash_as_dir_delimiter;
-	gboolean random_skin_on_play, use_fontsets;
-	gboolean mainwin_use_xfont, timer_minutes_only;
-	gfloat equalizer_preamp, equalizer_bands[10];
-	gchar *skin, *outputplugin, *filesel_path, *playlist_path;
-	gchar *playlist_font, *mainwin_font;
-	gchar *disabled_iplugins, *enabled_gplugins, *enabled_vplugins, *enabled_eplugins;
-	gchar *eqpreset_default_file, *eqpreset_extension;
-	GList *url_history;
-	gint timer_mode, vis_type, analyzer_mode, analyzer_type, scope_mode;
-	gint vu_mode, vis_refresh;
-	gint analyzer_falloff, peaks_falloff;
-	gint playlist_position;
-	gint pause_between_songs_time;
-	gboolean pause_between_songs, show_wm_decorations;
-	gint mouse_change;
-	gboolean playlist_transparent;
-        gchar *gentitle_format;
-}
-Config;
+typedef struct {
+    gint player_x, player_y, equalizer_x, equalizer_y;
+    gint playlist_x, playlist_y, playlist_width, playlist_height;
+    guint snap_distance;
+    gboolean use_realtime, shuffle, repeat, doublesize, autoscroll;
+    gboolean analyzer_peaks, equalizer_autoload, easy_move, equalizer_active;
+    gboolean playlist_visible, equalizer_visible, player_visible;
+    gboolean player_shaded, playlist_shaded, equalizer_shaded;
+    gboolean allow_multiple_instances, always_show_cb;
+    gboolean convert_underscore, convert_twenty;
+    gboolean show_numbers_in_pl, snap_windows, save_window_position;
+    gboolean dim_titlebar, get_info_on_load;
+    gboolean get_info_on_demand, eq_doublesize_linked;
+    gboolean sort_jump_to_file, use_eplugins, always_on_top, sticky;
+    gboolean no_playlist_advance, smooth_title_scroll, use_pl_metadata;
+    gboolean use_backslash_as_dir_delimiter;
+    gboolean random_skin_on_play, use_fontsets;
+    gboolean mainwin_use_xfont, timer_minutes_only;
+    gfloat equalizer_preamp, equalizer_bands[10];
+    gchar *skin, *outputplugin, *filesel_path, *playlist_path;
+    gchar *playlist_font, *mainwin_font;
+    gchar *disabled_iplugins, *enabled_gplugins, *enabled_vplugins, *enabled_eplugins;
+    gchar *eqpreset_default_file, *eqpreset_extension;
+    GList *url_history;
+    gint timer_mode, vis_type, analyzer_mode, analyzer_type, scope_mode;
+    gint vu_mode, vis_refresh;
+    gint analyzer_falloff, peaks_falloff;
+    gint playlist_position;
+    gint pause_between_songs_time;
+    gboolean pause_between_songs, show_wm_decorations;
+    gint mouse_change;
+    gboolean playlist_transparent;
+    gchar *gentitle_format;
+} Config;
 
 extern Config cfg;
 
@@ -80,7 +74,7 @@ void save_config(void);
 void draw_main_window(gboolean);
 void mainwin_quit_cb(void);
 void set_timer_mode(TimerMode mode);
-void mainwin_lock_info_text(gchar * text);
+void mainwin_lock_info_text(gchar *text);
 void mainwin_release_info_text(void);
 void mainwin_play_pushed(void);
 void mainwin_stop_pushed(void);

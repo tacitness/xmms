@@ -18,114 +18,107 @@
  */
 
 #include "sun.h"
+
+#include <errno.h>
+
 #include "libxmms/configfile.h"
 #include "xmms/i18n.h"
-#include <errno.h>
 
 struct sun_audio audio;
 
-OutputPlugin sun_op =
-{
-	NULL,
-	NULL,
-	NULL,			/* Description */
-	sun_init,
-	sun_about,
-	sun_configure,
-	sun_get_volume,
-	sun_set_volume,
-	sun_open,
-	sun_write,
-	sun_close,
-	sun_flush,
-	sun_pause,
-	sun_free,
-	sun_playing,
-	sun_output_time,
-	sun_written_time,
-	sun_cleanup
-};
+OutputPlugin sun_op = {NULL,
+                       NULL,
+                       NULL, /* Description */
+                       sun_init,
+                       sun_about,
+                       sun_configure,
+                       sun_get_volume,
+                       sun_set_volume,
+                       sun_open,
+                       sun_write,
+                       sun_close,
+                       sun_flush,
+                       sun_pause,
+                       sun_free,
+                       sun_playing,
+                       sun_output_time,
+                       sun_written_time,
+                       sun_cleanup};
 
 
-OutputPlugin * get_oplugin_info(void)
+OutputPlugin *get_oplugin_info(void)
 {
-	sun_op.description = g_strdup_printf(_("BSD Sun Driver %s"),
-					     SUN_VERSION);
-	return (&sun_op);
+    sun_op.description = g_strdup_printf(_("BSD Sun Driver %s"), SUN_VERSION);
+    return (&sun_op);
 }
 
 void sun_init(void)
 {
-	ConfigFile *cfgfile;
-	char *s;
+    ConfigFile *cfgfile;
+    char *s;
 
-	memset(&audio, 0, sizeof(struct sun_audio));
+    memset(&audio, 0, sizeof(struct sun_audio));
 
-	cfgfile = xmms_cfg_open_default_file();
-	/* Devices */
-	xmms_cfg_read_string(cfgfile, "sun", "audio_devaudio", &audio.devaudio);
-	xmms_cfg_read_string(cfgfile, "sun",
-			     "audio_devaudioctl", &audio.devaudioctl);
-	xmms_cfg_read_string(cfgfile, "sun", "audio_devmixer", &audio.devmixer);
+    cfgfile = xmms_cfg_open_default_file();
+    /* Devices */
+    xmms_cfg_read_string(cfgfile, "sun", "audio_devaudio", &audio.devaudio);
+    xmms_cfg_read_string(cfgfile, "sun", "audio_devaudioctl", &audio.devaudioctl);
+    xmms_cfg_read_string(cfgfile, "sun", "audio_devmixer", &audio.devmixer);
 
-	/* Buffering */
-	xmms_cfg_read_int(cfgfile, "sun",
-			  "buffer_size", &audio.req_buffer_size);
-	xmms_cfg_read_int(cfgfile, "sun",
-			  "prebuffer_size", &audio.req_prebuffer_size);
+    /* Buffering */
+    xmms_cfg_read_int(cfgfile, "sun", "buffer_size", &audio.req_buffer_size);
+    xmms_cfg_read_int(cfgfile, "sun", "prebuffer_size", &audio.req_prebuffer_size);
 
-	/* Mixer */
-	xmms_cfg_read_string(cfgfile, "sun", "mixer_voldev", &audio.mixer_voldev);
-	xmms_cfg_read_boolean(cfgfile, "sun",
-			      "mixer_keepopen", &audio.mixer_keepopen);
+    /* Mixer */
+    xmms_cfg_read_string(cfgfile, "sun", "mixer_voldev", &audio.mixer_voldev);
+    xmms_cfg_read_boolean(cfgfile, "sun", "mixer_keepopen", &audio.mixer_keepopen);
 
-	xmms_cfg_free(cfgfile);
+    xmms_cfg_free(cfgfile);
 
-	/* Audio device path */
-	if ((s = getenv("AUDIODEVICE")))
-		audio.devaudio = g_strdup(s);
-	else if (!audio.devaudio || !strcmp("", audio.devaudio))
-		audio.devaudio = g_strdup(SUN_DEV_AUDIO);
+    /* Audio device path */
+    if ((s = getenv("AUDIODEVICE")))
+        audio.devaudio = g_strdup(s);
+    else if (!audio.devaudio || !strcmp("", audio.devaudio))
+        audio.devaudio = g_strdup(SUN_DEV_AUDIO);
 
-	/* Audio control device path */
-	if (!audio.devaudioctl || !strcmp("", audio.devaudioctl))
-		audio.devaudioctl = g_strdup(SUN_DEV_AUDIOCTL);
+    /* Audio control device path */
+    if (!audio.devaudioctl || !strcmp("", audio.devaudioctl))
+        audio.devaudioctl = g_strdup(SUN_DEV_AUDIOCTL);
 
-	/* Mixer device path */
-	if ((s = getenv("MIXERDEVICE")))
-		audio.devmixer = g_strdup(s);
-	else if (!audio.devmixer || !strcmp("", audio.devmixer))
-		audio.devmixer = g_strdup(SUN_DEV_MIXER);
+    /* Mixer device path */
+    if ((s = getenv("MIXERDEVICE")))
+        audio.devmixer = g_strdup(s);
+    else if (!audio.devmixer || !strcmp("", audio.devmixer))
+        audio.devmixer = g_strdup(SUN_DEV_MIXER);
 
-	if (!audio.mixer_voldev || !strcmp("", audio.mixer_voldev))
-		audio.mixer_voldev = g_strdup(SUN_DEFAULT_VOLUME_DEV);
+    if (!audio.mixer_voldev || !strcmp("", audio.mixer_voldev))
+        audio.mixer_voldev = g_strdup(SUN_DEFAULT_VOLUME_DEV);
 
-	/* Default buffering settings */
-	if (!audio.req_buffer_size)
-		audio.req_buffer_size = SUN_DEFAULT_BUFFER_SIZE;
-	if (!audio.req_prebuffer_size)
-		audio.req_prebuffer_size = SUN_DEFAULT_PREBUFFER_SIZE;
+    /* Default buffering settings */
+    if (!audio.req_buffer_size)
+        audio.req_buffer_size = SUN_DEFAULT_BUFFER_SIZE;
+    if (!audio.req_prebuffer_size)
+        audio.req_prebuffer_size = SUN_DEFAULT_PREBUFFER_SIZE;
 
-	audio.input = NULL;
-	audio.output = NULL;
-	audio.effect = NULL;
+    audio.input = NULL;
+    audio.output = NULL;
+    audio.effect = NULL;
 
-	if (pthread_mutex_init(&audio.mixer_mutex, NULL) != 0)
-		perror("mixer_mutex");
+    if (pthread_mutex_init(&audio.mixer_mutex, NULL) != 0)
+        perror("mixer_mutex");
 }
 
 void sun_cleanup(void)
 {
-	g_free(audio.devaudio);
-	g_free(audio.devaudioctl);
-	g_free(audio.devmixer);
-	g_free(audio.mixer_voldev);
+    g_free(audio.devaudio);
+    g_free(audio.devaudioctl);
+    g_free(audio.devmixer);
+    g_free(audio.mixer_voldev);
 
-	if (!pthread_mutex_lock(&audio.mixer_mutex))
-	{
-		if (audio.mixerfd)
-			close(audio.mixerfd);
-		pthread_mutex_unlock(&audio.mixer_mutex);
-		pthread_mutex_destroy(&audio.mixer_mutex);
-	}
+    if (!pthread_mutex_lock(&audio.mixer_mutex)) {
+        if (audio.mixerfd)
+            close(audio.mixerfd);
+        pthread_mutex_unlock(&audio.mixer_mutex);
+        pthread_mutex_destroy(&audio.mixer_mutex);
+    }
 }

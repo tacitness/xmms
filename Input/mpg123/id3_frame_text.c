@@ -17,59 +17,54 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-#include "config.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "id3.h"
 #include "id3_header.h"
-
 #include "libxmms/charset.h"
 
 
 /* Get size of string in bytes including null. */
-guint id3_string_size(guint8 encoding, const char* text)
+guint id3_string_size(guint8 encoding, const char *text)
 {
-	int length = 0;
+    int length = 0;
 
-	switch (encoding)
-	{
-		case ID3_ENCODING_ISO_8859_1:
-		case ID3_ENCODING_UTF8:
-			length = strlen(text) + 1;
-			break;
-		case ID3_ENCODING_UTF16:
-		case ID3_ENCODING_UTF16BE:
-			while (*text != 0 || *(text + 1) != 0)
-			{
-				text += 2;
-				length += 2;
-			}
-			length += 2;
-			break;
-	}
-	return length;
+    switch (encoding) {
+    case ID3_ENCODING_ISO_8859_1:
+    case ID3_ENCODING_UTF8:
+        length = strlen(text) + 1;
+        break;
+    case ID3_ENCODING_UTF16:
+    case ID3_ENCODING_UTF16BE:
+        while (*text != 0 || *(text + 1) != 0) {
+            text += 2;
+            length += 2;
+        }
+        length += 2;
+        break;
+    }
+    return length;
 }
 
 /* Returns a newly-allocated string in the locale's encoding. */
-char* id3_string_decode(guint8 encoding, const char* text)
+char *id3_string_decode(guint8 encoding, const char *text)
 {
-	switch (encoding)
-	{
-		case ID3_ENCODING_ISO_8859_1:
-			return g_strdup(text);
-		case ID3_ENCODING_UTF8:
-			return xmms_charset_from_utf8(text);
-		case ID3_ENCODING_UTF16:
-			return convert_from_utf16(text);
-		case ID3_ENCODING_UTF16BE:
-			return convert_from_utf16be(text);
-		default:
-			return NULL;
-	}
+    switch (encoding) {
+    case ID3_ENCODING_ISO_8859_1:
+        return g_strdup(text);
+    case ID3_ENCODING_UTF8:
+        return xmms_charset_from_utf8(text);
+    case ID3_ENCODING_UTF16:
+        return convert_from_utf16(text);
+    case ID3_ENCODING_UTF16BE:
+        return convert_from_utf16be(text);
+    default:
+        return NULL;
+    }
 }
 
 
@@ -82,25 +77,20 @@ char* id3_string_decode(guint8 encoding, const char* text)
  */
 gint8 id3_get_encoding(struct id3_frame *frame)
 {
-	/* Type check */
-	if (!id3_frame_is_text(frame) &&
-	    frame->fr_desc->fd_id != ID3_WXXX &&
-	    frame->fr_desc->fd_id != ID3_IPLS &&
-	    frame->fr_desc->fd_id != ID3_USLT &&
-	    frame->fr_desc->fd_id != ID3_SYLT &&
-	    frame->fr_desc->fd_id != ID3_COMM &&
-	    frame->fr_desc->fd_id != ID3_APIC &&
-	    frame->fr_desc->fd_id != ID3_GEOB &&
-	    frame->fr_desc->fd_id != ID3_USER &&
-	    frame->fr_desc->fd_id != ID3_OWNE &&
-	    frame->fr_desc->fd_id != ID3_COMR)
-		return -1;
+    /* Type check */
+    if (!id3_frame_is_text(frame) && frame->fr_desc->fd_id != ID3_WXXX &&
+        frame->fr_desc->fd_id != ID3_IPLS && frame->fr_desc->fd_id != ID3_USLT &&
+        frame->fr_desc->fd_id != ID3_SYLT && frame->fr_desc->fd_id != ID3_COMM &&
+        frame->fr_desc->fd_id != ID3_APIC && frame->fr_desc->fd_id != ID3_GEOB &&
+        frame->fr_desc->fd_id != ID3_USER && frame->fr_desc->fd_id != ID3_OWNE &&
+        frame->fr_desc->fd_id != ID3_COMR)
+        return -1;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return -1;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return -1;
 
-	return *(gint8 *) frame->fr_data;
+    return *(gint8 *)frame->fr_data;
 }
 
 
@@ -108,36 +98,31 @@ gint8 id3_get_encoding(struct id3_frame *frame)
  * Function id3_set_encoding (frame, encoding)
  *
  *    Set text encoding for frame.  Return 0 upon success, or -1 if an
- *    error occured.
+ *    error occurred.
  *
  */
 int id3_set_encoding(struct id3_frame *frame, gint8 encoding)
 {
-	/* Type check */
-	if (frame->fr_desc->fd_idstr[0] != 'T' &&
-	    frame->fr_desc->fd_id != ID3_WXXX &&
-	    frame->fr_desc->fd_id != ID3_IPLS &&
-	    frame->fr_desc->fd_id != ID3_USLT &&
-	    frame->fr_desc->fd_id != ID3_SYLT &&
-	    frame->fr_desc->fd_id != ID3_COMM &&
-	    frame->fr_desc->fd_id != ID3_APIC &&
-	    frame->fr_desc->fd_id != ID3_GEOB &&
-	    frame->fr_desc->fd_id != ID3_USER &&
-	    frame->fr_desc->fd_id != ID3_OWNE &&
-	    frame->fr_desc->fd_id != ID3_COMR)
-		return -1;
+    /* Type check */
+    if (frame->fr_desc->fd_idstr[0] != 'T' && frame->fr_desc->fd_id != ID3_WXXX &&
+        frame->fr_desc->fd_id != ID3_IPLS && frame->fr_desc->fd_id != ID3_USLT &&
+        frame->fr_desc->fd_id != ID3_SYLT && frame->fr_desc->fd_id != ID3_COMM &&
+        frame->fr_desc->fd_id != ID3_APIC && frame->fr_desc->fd_id != ID3_GEOB &&
+        frame->fr_desc->fd_id != ID3_USER && frame->fr_desc->fd_id != ID3_OWNE &&
+        frame->fr_desc->fd_id != ID3_COMR)
+        return -1;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return -1;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return -1;
 
-	/* Changing the encoding of frames is not supported yet */
-	if (*(gint8 *) frame->fr_data != encoding)
-		return -1;
+    /* Changing the encoding of frames is not supported yet */
+    if (*(gint8 *)frame->fr_data != encoding)
+        return -1;
 
-	/* Set encoding */
-	*(gint8 *) frame->fr_data = encoding;
-	return 0;
+    /* Set encoding */
+    *(gint8 *)frame->fr_data = encoding;
+    return 0;
 }
 
 
@@ -149,28 +134,25 @@ int id3_set_encoding(struct id3_frame *frame, gint8 encoding)
  */
 char *id3_get_text(struct id3_frame *frame)
 {
-	int offset = 0;
-	/* Type check */
-	if (frame->fr_desc->fd_idstr[0] != 'T')
-		return NULL;
+    int offset = 0;
+    /* Type check */
+    if (frame->fr_desc->fd_idstr[0] != 'T')
+        return NULL;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return NULL;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return NULL;
 
-	if (frame->fr_desc->fd_id == ID3_TXXX)
-	{
-		/*
-		 * This is a user defined text frame.  Skip the description.
-		 */
-		offset = id3_string_size(ID3_TEXT_FRAME_ENCODING(frame),
-					 ID3_TEXT_FRAME_PTR(frame));
-		if (offset >= frame->fr_size)
-			return NULL;
-	}
+    if (frame->fr_desc->fd_id == ID3_TXXX) {
+        /*
+         * This is a user defined text frame.  Skip the description.
+         */
+        offset = id3_string_size(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame));
+        if (offset >= frame->fr_size)
+            return NULL;
+    }
 
-	return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame),
-				 ID3_TEXT_FRAME_PTR(frame) + offset);
+    return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame) + offset);
 }
 
 
@@ -182,20 +164,19 @@ char *id3_get_text(struct id3_frame *frame)
  */
 char *id3_get_text_desc(struct id3_frame *frame)
 {
-	/* Type check */
-	if (frame->fr_desc->fd_idstr[0] != 'T')
-		return NULL;
+    /* Type check */
+    if (frame->fr_desc->fd_idstr[0] != 'T')
+        return NULL;
 
-	/* If predefined text frame, return description. */
-	if (frame->fr_desc->fd_id != ID3_TXXX)
-		return frame->fr_desc->fd_description;
+    /* If predefined text frame, return description. */
+    if (frame->fr_desc->fd_id != ID3_TXXX)
+        return frame->fr_desc->fd_description;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return NULL;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return NULL;
 
-	return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame),
-				 ID3_TEXT_FRAME_PTR(frame));
+    return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame));
 }
 
 
@@ -203,28 +184,26 @@ char *id3_get_text_desc(struct id3_frame *frame)
  * Function id3_get_text_number (frame)
  *
  *    Return string contents of frame translated to a positive
- *    integer, or -1 if an error occured.
+ *    integer, or -1 if an error occurred.
  *
  */
 int id3_get_text_number(struct id3_frame *frame)
 {
-	int number = 0;
-	char* number_str;
+    int number = 0;
+    char *number_str;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return -1;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return -1;
 
-	number_str = id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame),
-				       ID3_TEXT_FRAME_PTR(frame));
+    number_str = id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame));
 
-	if (number_str != NULL)
-	{
-		sscanf(number_str, "%d", &number);
-		g_free(number_str);
-	}
+    if (number_str != NULL) {
+        sscanf(number_str, "%d", &number);
+        g_free(number_str);
+    }
 
-	return number;
+    return number;
 }
 
 
@@ -232,39 +211,39 @@ int id3_get_text_number(struct id3_frame *frame)
  * Function id3_set_text (frame, text)
  *
  *    Set text for the indicated frame (only ISO-8859-1 is currently
- *    supported).  Return 0 upon success, or -1 if an error occured.
+ *    supported).  Return 0 upon success, or -1 if an error occurred.
  *
  */
 int id3_set_text(struct id3_frame *frame, char *text)
 {
-	/* Type check */
-	if (frame->fr_desc->fd_idstr[0] != 'T')
-		return -1;
+    /* Type check */
+    if (frame->fr_desc->fd_idstr[0] != 'T')
+        return -1;
 
-	/*
-	 * Release memory occupied by previous data.
-	 */
-	id3_frame_clear_data(frame);
+    /*
+     * Release memory occupied by previous data.
+     */
+    id3_frame_clear_data(frame);
 
-	/*
-	 * Allocate memory for new data.
-	 */
-	frame->fr_raw_size = strlen(text) + 1;
-	frame->fr_raw_data = g_malloc(frame->fr_raw_size + 1);
+    /*
+     * Allocate memory for new data.
+     */
+    frame->fr_raw_size = strlen(text) + 1;
+    frame->fr_raw_data = g_malloc(frame->fr_raw_size + 1);
 
-	/*
-	 * Copy contents.
-	 */
-	*(gint8 *) frame->fr_raw_data = ID3_ENCODING_ISO_8859_1;
-	memcpy((char *) frame->fr_raw_data + 1, text, frame->fr_raw_size);
+    /*
+     * Copy contents.
+     */
+    *(gint8 *)frame->fr_raw_data = ID3_ENCODING_ISO_8859_1;
+    memcpy((char *)frame->fr_raw_data + 1, text, frame->fr_raw_size);
 
-	frame->fr_altered = 1;
-	frame->fr_owner->id3_altered = 1;
+    frame->fr_altered = 1;
+    frame->fr_owner->id3_altered = 1;
 
-	frame->fr_data = frame->fr_raw_data;
-	frame->fr_size = frame->fr_raw_size;
+    frame->fr_data = frame->fr_raw_data;
+    frame->fr_size = frame->fr_raw_size;
 
-	return 0;
+    return 0;
 }
 
 
@@ -272,69 +251,67 @@ int id3_set_text(struct id3_frame *frame, char *text)
  * Function id3_set_text_number (frame, number)
  *
  *    Set number for the indicated frame (only ISO-8859-1 is currently
- *    supported).  Return 0 upon success, or -1 if an error occured.
+ *    supported).  Return 0 upon success, or -1 if an error occurred.
  *
  */
 int id3_set_text_number(struct id3_frame *frame, int number)
 {
-	char buf[64];
-	int pos;
-	char *text;
+    char buf[64];
+    int pos;
+    char *text;
 
-	/* Type check */
-	if (frame->fr_desc->fd_idstr[0] != 'T')
-		return -1;
+    /* Type check */
+    if (frame->fr_desc->fd_idstr[0] != 'T')
+        return -1;
 
-	/*
-	 * Release memory occupied by previous data.
-	 */
-	id3_frame_clear_data(frame);
+    /*
+     * Release memory occupied by previous data.
+     */
+    id3_frame_clear_data(frame);
 
-	/*
-	 * Create a string with a reversed number.
-	 */
-	pos = 0;
-	while (number > 0 && pos < 64)
-	{
-		buf[pos++] = (number % 10) + '0';
-		number /= 10;
-	}
-	if (pos == 64)
-		return -1;
-	if (pos == 0)
-		buf[pos++] = '0';
+    /*
+     * Create a string with a reversed number.
+     */
+    pos = 0;
+    while (number > 0 && pos < 64) {
+        buf[pos++] = (number % 10) + '0';
+        number /= 10;
+    }
+    if (pos == 64)
+        return -1;
+    if (pos == 0)
+        buf[pos++] = '0';
 
-	/*
-	 * Allocate memory for new data.
-	 */
-	frame->fr_raw_size = pos + 1;
-	frame->fr_raw_data = g_malloc(frame->fr_raw_size + 1);
+    /*
+     * Allocate memory for new data.
+     */
+    frame->fr_raw_size = pos + 1;
+    frame->fr_raw_data = g_malloc(frame->fr_raw_size + 1);
 
-	/*
-	 * Insert contents.
-	 */
-	*(gint8 *) frame->fr_raw_data = ID3_ENCODING_ISO_8859_1;
-	text = (char *) frame->fr_raw_data + 1;
-	while (--pos >= 0)
-		*text++ = buf[pos];
-	*text = '\0';
+    /*
+     * Insert contents.
+     */
+    *(gint8 *)frame->fr_raw_data = ID3_ENCODING_ISO_8859_1;
+    text = (char *)frame->fr_raw_data + 1;
+    while (--pos >= 0)
+        *text++ = buf[pos];
+    *text = '\0';
 
-	frame->fr_altered = 1;
-	frame->fr_owner->id3_altered = 1;
+    frame->fr_altered = 1;
+    frame->fr_owner->id3_altered = 1;
 
-	frame->fr_data = frame->fr_raw_data;
-	frame->fr_size = frame->fr_raw_size;
+    frame->fr_data = frame->fr_raw_data;
+    frame->fr_size = frame->fr_raw_size;
 
-	return 0;
+    return 0;
 }
 
 gboolean id3_frame_is_text(struct id3_frame *frame)
 {
-	if (frame && frame->fr_desc &&
-	    (frame->fr_desc->fd_idstr[0] == 'T' ||
-	     frame->fr_desc->fd_idstr[0] == 'W'))
-		return TRUE;
-	return FALSE;
+    if (frame && frame->fr_desc &&
+        (frame->fr_desc->fd_idstr[0] == 'T' || frame->fr_desc->fd_idstr[0] == 'W'))
+        return TRUE;
+    return FALSE;
 }
 
 /*
@@ -345,27 +322,25 @@ gboolean id3_frame_is_text(struct id3_frame *frame)
  */
 char *id3_get_comment(struct id3_frame *frame)
 {
-	int offset;
-	/* Type check */
-	if (frame->fr_desc->fd_id != ID3_COMM)
-		return NULL;
+    int offset;
+    /* Type check */
+    if (frame->fr_desc->fd_id != ID3_COMM)
+        return NULL;
 
-	/* Check if frame is compressed */
-	if (id3_decompress_frame(frame) == -1)
-		return NULL;
+    /* Check if frame is compressed */
+    if (id3_decompress_frame(frame) == -1)
+        return NULL;
 
-	if (frame->fr_size < 5)
-		return NULL;
+    if (frame->fr_size < 5)
+        return NULL;
 
-	/* Skip language id */
-	offset = 3;
+    /* Skip language id */
+    offset = 3;
 
-	/* Skip the description */
-	offset += id3_string_size(ID3_TEXT_FRAME_ENCODING(frame),
-				  ID3_TEXT_FRAME_PTR(frame) + offset);
-	if (offset >= frame->fr_size)
-		return NULL;
+    /* Skip the description */
+    offset += id3_string_size(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame) + offset);
+    if (offset >= frame->fr_size)
+        return NULL;
 
-	return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame),
-				 ID3_TEXT_FRAME_PTR(frame) + offset);
+    return id3_string_decode(ID3_TEXT_FRAME_ENCODING(frame), ID3_TEXT_FRAME_PTR(frame) + offset);
 }

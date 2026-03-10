@@ -20,65 +20,64 @@
 #ifndef CDAUDIO_H
 #define CDAUDIO_H
 
-#include "config.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-
 #include <glib.h>
 #include <gtk/gtk.h>
-#include "xmms/plugin.h"
-#include "libxmms/configfile.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "cdinfo.h"
+#include "config.h"
+#include "libxmms/configfile.h"
+#include "xmms/plugin.h"
 
 #ifdef HAVE_OSS
-#include <Output/OSS/soundcard.h>
+#    include <Output/OSS/soundcard.h>
 #endif
 
 #ifdef HAVE_MNTENT_H
-#include <mntent.h>
+#    include <mntent.h>
 #endif
 
 #ifdef HAVE_GETMNTINFO
-#include <sys/param.h>
-#include <sys/ucred.h>
-#include <sys/mount.h>
+#    include <sys/mount.h>
+#    include <sys/param.h>
+#    include <sys/ucred.h>
 #endif
 
 #ifndef CD_FRAMES
-#define CD_FRAMES 75
+#    define CD_FRAMES 75
 #endif
 
 #ifdef HAVE_LINUX_CDROM_H
-#include <linux/cdrom.h>
+#    include <linux/cdrom.h>
 #elif defined HAVE_SYS_CDIO_H
-#include <sys/cdio.h>
+#    include <sys/cdio.h>
 #endif
 #if defined HAVE_SYS_CDRIO_H
-#include <sys/cdrio.h>
+#    include <sys/cdrio.h>
 #endif
 
-#if defined(CDROMREADAUDIO) || defined(CDIOCREADAUDIO) || defined(CDROMCDDA) || defined(CDRIOCSETBLOCKSIZE)
-# define CDDA_HAS_READAUDIO
+#if defined(CDROMREADAUDIO) || defined(CDIOCREADAUDIO) || defined(CDROMCDDA) || \
+    defined(CDRIOCSETBLOCKSIZE)
+#    define CDDA_HAS_READAUDIO
 #endif
 
 #ifndef CD_FRAMESIZE_RAW
-# define CD_FRAMESIZE_RAW 2352
+#    define CD_FRAMESIZE_RAW 2352
 #endif
 
 /* Number of frames that are read at once in dae mode */
 #define CDDA_DAE_FRAMES 8
 
 #ifndef CDDA_HAS_READAUDIO
-#warning "Digital audio extraction has not been ported to this platform"
-#define read_audio_data(fd, pos, num, buf) -1
+#    warning "Digital audio extraction has not been ported to this platform"
+#    define read_audio_data(fd, pos, num, buf) -1
 #else
 int read_audio_data(int fd, int pos, int num, void *buf);
 #endif
@@ -88,45 +87,42 @@ int read_audio_data(int fd, int pos, int num, void *buf);
 /*
  * FreeBSD won't be able to detect media changes if using O_NONBLOCK
  */
-#define CDOPENFLAGS O_RDONLY
+#    define CDOPENFLAGS O_RDONLY
 #else
-#define CDOPENFLAGS (O_RDONLY | O_NONBLOCK)
+#    define CDOPENFLAGS (O_RDONLY | O_NONBLOCK)
 #endif
 
 
 #define CDDB_DEFAULT_SERVER "freedb.freedb.org"
 
 struct driveinfo {
-	char *device, *directory;
-	int mixer, oss_mixer;
-	gboolean valid;
-	int dae;
+    char *device, *directory;
+    int mixer, oss_mixer;
+    gboolean valid;
+    int dae;
 };
 
-typedef struct
-{
-	GList *drives;
+typedef struct {
+    GList *drives;
 
-	char *cddb_server;
-	int cddb_protocol_level;
-	gboolean use_cddb;
+    char *cddb_server;
+    int cddb_protocol_level;
+    gboolean use_cddb;
 
-	char *cdin_server;
-	gboolean use_cdin;
+    char *cdin_server;
+    gboolean use_cdin;
 
-	gboolean title_override;
-	char *name_format;
-}
-CDDAConfig;
+    gboolean title_override;
+    char *name_format;
+} CDDAConfig;
 
-struct cdda_msf
-{
-	guint8 minute;
-	guint8 second;
-	guint8 frame;
-	struct {
-		guint data_track : 1;
-	} flags;
+struct cdda_msf {
+    guint8 minute;
+    guint8 second;
+    guint8 frame;
+    struct {
+        guint data_track : 1;
+    } flags;
 };
 
 /*
@@ -137,24 +133,23 @@ struct cdda_msf
 
 #define CDDA_MSF_OFFSET 150
 
-typedef struct
-{
-	guint8 first_track, last_track;
-	struct cdda_msf leadout;
-	struct cdda_msf track[100];
+typedef struct {
+    guint8 first_track, last_track;
+    struct cdda_msf leadout;
+    struct cdda_msf track[100];
 } cdda_disc_toc_t;
 
 extern CDDAConfig cdda_cfg;
 
 enum {
-	CDDA_MIXER_NONE,
-	CDDA_MIXER_DRIVE,
-	CDDA_MIXER_OSS,
+    CDDA_MIXER_NONE,
+    CDDA_MIXER_DRIVE,
+    CDDA_MIXER_OSS,
 };
 
 enum {
-	CDDA_READ_ANALOG,
-	CDDA_READ_DAE,
+    CDDA_READ_ANALOG,
+    CDDA_READ_DAE,
 };
 
 void cdda_configure(void);
@@ -162,7 +157,7 @@ gboolean cdda_get_toc(cdda_disc_toc_t *info, char *device);
 guint32 cdda_cddb_compute_discid(cdda_disc_toc_t *info);
 void cdda_cddb_get_info(cdda_disc_toc_t *toc, cdinfo_t *info);
 void cdda_cdindex_get_idx(cdda_disc_toc_t *toc, cdinfo_t *cdinfo);
-struct driveinfo* cdda_find_drive(char *filename);
+struct driveinfo *cdda_find_drive(char *filename);
 
 
 void cdda_cddb_show_server_dialog(GtkWidget *w, gpointer data);

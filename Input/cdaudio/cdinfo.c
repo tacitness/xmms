@@ -19,10 +19,11 @@
  */
 
 
+#include "cdinfo.h"
+
 #include <glib.h>
 
 #include "cdaudio.h"
-#include "cdinfo.h"
 #include "xmms/i18n.h"
 
 /*
@@ -31,29 +32,28 @@
  *    Free all information stored about the CD.
  *
  */
-void cdda_cdinfo_flush(cdinfo_t * cdinfo)
+void cdda_cdinfo_flush(cdinfo_t *cdinfo)
 {
-	trackinfo_t *t;
-	int i;
+    trackinfo_t *t;
+    int i;
 
-	if (cdinfo->albname)
-		g_free(cdinfo->albname);
-	if (cdinfo->artname)
-		g_free(cdinfo->artname);
+    if (cdinfo->albname)
+        g_free(cdinfo->albname);
+    if (cdinfo->artname)
+        g_free(cdinfo->artname);
 
-	cdinfo->albname = cdinfo->artname = NULL;
+    cdinfo->albname = cdinfo->artname = NULL;
 
-	for (t = cdinfo->tracks, i = 0; i < 100; i++, t++)
-	{
-		if (t->artist)
-			g_free(t->artist);
-		if (t->title)
-			g_free(t->title);
+    for (t = cdinfo->tracks, i = 0; i < 100; i++, t++) {
+        if (t->artist)
+            g_free(t->artist);
+        if (t->title)
+            g_free(t->title);
 
-		t->artist = t->title = NULL;
-		t->num = -1;
-	}
-	cdinfo->is_valid = FALSE;
+        t->artist = t->title = NULL;
+        t->num = -1;
+    }
+    cdinfo->is_valid = FALSE;
 }
 
 
@@ -63,10 +63,10 @@ void cdda_cdinfo_flush(cdinfo_t * cdinfo)
  *    Free the indicated `cdinfo' structure.
  *
  */
-void cdda_cdinfo_delete(cdinfo_t * cdinfo)
+void cdda_cdinfo_delete(cdinfo_t *cdinfo)
 {
-	cdda_cdinfo_flush(cdinfo);
-	g_free(cdinfo);
+    cdda_cdinfo_flush(cdinfo);
+    g_free(cdinfo);
 }
 
 
@@ -78,11 +78,11 @@ void cdda_cdinfo_delete(cdinfo_t * cdinfo)
  */
 cdinfo_t *cdda_cdinfo_new(void)
 {
-	cdinfo_t *ret;
-	ret = g_malloc0(sizeof (cdinfo_t));
-	cdda_cdinfo_flush(ret);
+    cdinfo_t *ret;
+    ret = g_malloc0(sizeof(cdinfo_t));
+    cdda_cdinfo_flush(ret);
 
-	return ret;
+    return ret;
 }
 
 
@@ -96,17 +96,17 @@ cdinfo_t *cdda_cdinfo_new(void)
  */
 void cdda_cdinfo_track_set(cdinfo_t *cdinfo, int num, char *artist, char *title)
 {
-	trackinfo_t *track;
+    trackinfo_t *track;
 
-	/* Check bounds */
-	if (num < 1 || num >= 100)
-		return;
+    /* Check bounds */
+    if (num < 1 || num >= 100)
+        return;
 
-	track = cdinfo->tracks + num;
-	track->artist = artist;
-	track->title = title;
-	track->num = num;
-	cdinfo->is_valid = TRUE;
+    track = cdinfo->tracks + num;
+    track->artist = artist;
+    track->title = title;
+    track->num = num;
+    cdinfo->is_valid = TRUE;
 }
 
 
@@ -119,9 +119,9 @@ void cdda_cdinfo_track_set(cdinfo_t *cdinfo, int num, char *artist, char *title)
  */
 void cdda_cdinfo_cd_set(cdinfo_t *cdinfo, char *cdname, char *cdartist)
 {
-	cdinfo->albname = cdname;
-	cdinfo->artname = cdartist;
-	cdinfo->is_valid = TRUE;
+    cdinfo->albname = cdname;
+    cdinfo->artname = cdartist;
+    cdinfo->is_valid = TRUE;
 }
 
 
@@ -136,18 +136,17 @@ void cdda_cdinfo_cd_set(cdinfo_t *cdinfo, char *cdname, char *cdartist)
  */
 int cdda_cdinfo_get(cdinfo_t *cdinfo, int num, char **artist, char **album, char **title)
 {
-	trackinfo_t *track = cdinfo->tracks + num;
+    trackinfo_t *track = cdinfo->tracks + num;
 
-	/* Check validity */
-	if (!cdinfo->is_valid || num < 1 || num >= 100)
-		return -1;
+    /* Check validity */
+    if (!cdinfo->is_valid || num < 1 || num >= 100)
+        return -1;
 
-	*artist = track->artist ? track->artist :
-		cdinfo->artname ? cdinfo->artname : _("(unknown)");
-	*album = cdinfo->albname ? cdinfo->albname : _("(unknown)");
-	*title = track->title ? track->title : _("(unknown)");
+    *artist = track->artist ? track->artist : cdinfo->artname ? cdinfo->artname : _("(unknown)");
+    *album = cdinfo->albname ? cdinfo->albname : _("(unknown)");
+    *title = track->title ? track->title : _("(unknown)");
 
-	return track->num == -1 ? -1 : 0;
+    return track->num == -1 ? -1 : 0;
 }
 
 
@@ -160,45 +159,42 @@ int cdda_cdinfo_get(cdinfo_t *cdinfo, int num, char **artist, char **album, char
 
 void cdda_cdinfo_write_file(guint32 cddb_discid, cdinfo_t *cdinfo)
 {
-	/*
-	 * We currently identify cdinfo on disk with the CDDB-discid.
-	 * Maybe it would be smarter to use the cdindex id instead?
-	 */
+    /*
+     * We currently identify cdinfo on disk with the CDDB-discid.
+     * Maybe it would be smarter to use the cdindex id instead?
+     */
 
-	char *filename;
-	ConfigFile *cfg;
-	char sectionname[10], trackstr[16];
-	int i, numtracks = CLAMP(cddb_discid & 0xff, 0, 99);
+    char *filename;
+    ConfigFile *cfg;
+    char sectionname[10], trackstr[16];
+    int i, numtracks = CLAMP(cddb_discid & 0xff, 0, 99);
 
-	sprintf(sectionname, "%08x", cddb_discid);
+    sprintf(sectionname, "%08x", cddb_discid);
 
-	filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
-	if ((cfg = xmms_cfg_open_file(filename)) == NULL)
-		cfg = xmms_cfg_new();
+    filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
+    if ((cfg = xmms_cfg_open_file(filename)) == NULL)
+        cfg = xmms_cfg_new();
 
-	if (cdinfo->albname)
-		xmms_cfg_write_string(cfg, sectionname, "Albumname", cdinfo->albname);
-	else
-		xmms_cfg_write_string(cfg, sectionname, "Albumname", "");
-	if (cdinfo->artname)
-		xmms_cfg_write_string(cfg, sectionname, "Artistname", cdinfo->artname);
-	for (i = 1; i <= numtracks; i++)
-	{
-		if (cdinfo->tracks[i].artist)
-		{
-			sprintf(trackstr, "track_artist%d", i);
-			xmms_cfg_write_string(cfg, sectionname, trackstr, cdinfo->tracks[i].artist);
-		}
-		if (cdinfo->tracks[i].title)
-		{
-			sprintf(trackstr, "track_title%d", i);
-			xmms_cfg_write_string(cfg, sectionname, trackstr, cdinfo->tracks[i].title);
-		}
-	}
-	if (!xmms_cfg_write_file(cfg, filename))
-		/*FIXME */;
-	xmms_cfg_free(cfg);
-	g_free(filename);
+    if (cdinfo->albname)
+        xmms_cfg_write_string(cfg, sectionname, "Albumname", cdinfo->albname);
+    else
+        xmms_cfg_write_string(cfg, sectionname, "Albumname", "");
+    if (cdinfo->artname)
+        xmms_cfg_write_string(cfg, sectionname, "Artistname", cdinfo->artname);
+    for (i = 1; i <= numtracks; i++) {
+        if (cdinfo->tracks[i].artist) {
+            sprintf(trackstr, "track_artist%d", i);
+            xmms_cfg_write_string(cfg, sectionname, trackstr, cdinfo->tracks[i].artist);
+        }
+        if (cdinfo->tracks[i].title) {
+            sprintf(trackstr, "track_title%d", i);
+            xmms_cfg_write_string(cfg, sectionname, trackstr, cdinfo->tracks[i].title);
+        }
+    }
+    if (!xmms_cfg_write_file(cfg, filename))
+        /*FIXME */;
+    xmms_cfg_free(cfg);
+    g_free(filename);
 }
 
 /*
@@ -211,40 +207,38 @@ void cdda_cdinfo_write_file(guint32 cddb_discid, cdinfo_t *cdinfo)
 
 gboolean cdda_cdinfo_read_file(guint32 cddb_discid, cdinfo_t *cdinfo)
 {
-	gchar *filename;
-	ConfigFile *cfg;
-	gchar sectionname[10], trackstr[16];
-	gint i, numtracks = CLAMP(cddb_discid & 0xff, 0, 99);
-	gboolean track_found;
+    gchar *filename;
+    ConfigFile *cfg;
+    gchar sectionname[10], trackstr[16];
+    gint i, numtracks = CLAMP(cddb_discid & 0xff, 0, 99);
+    gboolean track_found;
 
-	sprintf(sectionname, "%08x", cddb_discid);
+    sprintf(sectionname, "%08x", cddb_discid);
 
-	filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
-	if ((cfg = xmms_cfg_open_file(filename)) == NULL)
-	{
-		g_free(filename);
-		return FALSE;
-	}
-	g_free(filename);
+    filename = g_strconcat(g_get_home_dir(), "/.xmms/cdinfo", NULL);
+    if ((cfg = xmms_cfg_open_file(filename)) == NULL) {
+        g_free(filename);
+        return FALSE;
+    }
+    g_free(filename);
 
-	if (!xmms_cfg_read_string(cfg, sectionname, "Albumname", &cdinfo->albname))
-		return FALSE;
+    if (!xmms_cfg_read_string(cfg, sectionname, "Albumname", &cdinfo->albname))
+        return FALSE;
 
-	xmms_cfg_read_string(cfg, sectionname, "Artistname", &cdinfo->artname);
+    xmms_cfg_read_string(cfg, sectionname, "Artistname", &cdinfo->artname);
 
-	for (i = 1; i <= numtracks; i++)
-	{
-		track_found = FALSE;
-		sprintf(trackstr, "track_artist%d", i);
-		if (xmms_cfg_read_string(cfg, sectionname, trackstr, &cdinfo->tracks[i].artist))
-			track_found = TRUE;
-		sprintf(trackstr, "track_title%d", i);
-		if (xmms_cfg_read_string(cfg, sectionname, trackstr, &cdinfo->tracks[i].title))
-			track_found = TRUE;
-		if (track_found)
-			cdinfo->tracks[i].num = i;
-	}
-	cdinfo->is_valid = TRUE;
-	xmms_cfg_free(cfg);
-	return TRUE;
+    for (i = 1; i <= numtracks; i++) {
+        track_found = FALSE;
+        sprintf(trackstr, "track_artist%d", i);
+        if (xmms_cfg_read_string(cfg, sectionname, trackstr, &cdinfo->tracks[i].artist))
+            track_found = TRUE;
+        sprintf(trackstr, "track_title%d", i);
+        if (xmms_cfg_read_string(cfg, sectionname, trackstr, &cdinfo->tracks[i].title))
+            track_found = TRUE;
+        if (track_found)
+            cdinfo->tracks[i].num = i;
+    }
+    cdinfo->is_valid = TRUE;
+    xmms_cfg_free(cfg);
+    return TRUE;
 }

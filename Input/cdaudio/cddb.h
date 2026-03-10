@@ -23,10 +23,9 @@
 
 #include <glib.h>
 
-typedef struct
-{
-	gchar *category;
-	guint32 discid;
+typedef struct {
+    gchar *category;
+    guint32 discid;
 } cddb_disc_header_t;
 
 #define CDDB_MAX_PROTOCOL_LEVEL 3

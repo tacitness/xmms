@@ -23,47 +23,47 @@ struct OutputPluginData *op_data;
 
 OutputPlugin *get_current_output_plugin(void)
 {
-	return op_data->current_output_plugin;
+    return op_data->current_output_plugin;
 }
 
 void set_current_output_plugin(int i)
 {
-	GList *node = g_list_nth(op_data->output_list, i);
-	if (node)
-		op_data->current_output_plugin = node->data;
-	else
-		op_data->current_output_plugin = NULL;
+    GList *node = g_list_nth(op_data->output_list, i);
+    if (node)
+        op_data->current_output_plugin = node->data;
+    else
+        op_data->current_output_plugin = NULL;
 }
 
 GList *get_output_list(void)
 {
-	return op_data->output_list;
+    return op_data->output_list;
 }
 
 void output_about(int i)
 {
-	OutputPlugin *out = (OutputPlugin *) g_list_nth(op_data->output_list, i)->data;
-	if (out && out->about)
-		out->about();
+    OutputPlugin *out = (OutputPlugin *)g_list_nth(op_data->output_list, i)->data;
+    if (out && out->about)
+        out->about();
 }
 
 void output_configure(int i)
 {
-	OutputPlugin *out = (OutputPlugin *) g_list_nth(op_data->output_list, i)->data;
-	if (out && out->configure)
-		out->configure();
+    OutputPlugin *out = (OutputPlugin *)g_list_nth(op_data->output_list, i)->data;
+    if (out && out->configure)
+        out->configure();
 }
 
 void output_get_volume(int *l, int *r)
 {
-	if (op_data->current_output_plugin && op_data->current_output_plugin->get_volume)
-		op_data->current_output_plugin->get_volume(l, r);
-	else
-		(*l) = (*r) = -1;
+    if (op_data->current_output_plugin && op_data->current_output_plugin->get_volume)
+        op_data->current_output_plugin->get_volume(l, r);
+    else
+        (*l) = (*r) = -1;
 }
 
 void output_set_volume(int l, int r)
 {
-	if (op_data->current_output_plugin && op_data->current_output_plugin->set_volume)
-		op_data->current_output_plugin->set_volume(l, r);
+    if (op_data->current_output_plugin && op_data->current_output_plugin->set_volume)
+        op_data->current_output_plugin->set_volume(l, r);
 }

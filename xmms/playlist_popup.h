@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 #define PLAYLIST_POPUP_H
 
 void playlist_popup_destroy(void);
-void playlist_popup(gint x, gint y, gint num_items, gint * nx, gint * ny, gint * sx, gint * sy,
-		    gint barx, gint bary, gint base, void (*handler) (gint item));
+void playlist_popup(gint x, gint y, gint num_items, gint *nx, gint *ny, gint *sx, gint *sy,
+                    gint barx, gint bary, gint base, void (*handler)(gint item));
 
 #endif

@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,12 +19,10 @@
 #ifndef EQ_GRAPH_H
 #define EQ_GRAPH_H
 
-typedef struct
-{
-	Widget eg_widget;
-}
-EqGraph;
+typedef struct {
+    Widget eg_widget;
+} EqGraph;
 
-EqGraph *create_eqgraph(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y);
+EqGraph *create_eqgraph(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
 
 #endif

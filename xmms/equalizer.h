@@ -22,7 +22,7 @@
 
 #define EQUALIZER_DOUBLESIZE (cfg.doublesize && cfg.eq_doublesize_linked)
 #define EQUALIZER_HEIGHT ((cfg.equalizer_shaded ? 14 : 116) * (EQUALIZER_DOUBLESIZE + 1))
-#define EQUALIZER_WIDTH ( 275 * (EQUALIZER_DOUBLESIZE + 1))
+#define EQUALIZER_WIDTH (275 * (EQUALIZER_DOUBLESIZE + 1))
 
 void equalizerwin_set_doublesize(gboolean ds);
 void equalizerwin_set_shade_menu_cb(gboolean shaded);
@@ -36,7 +36,7 @@ void equalizerwin_recreate(void);
 void equalizerwin_show(gboolean show);
 void equalizerwin_real_show(void);
 void equalizerwin_real_hide(void);
-void equalizerwin_load_auto_preset(gchar * filename);
+void equalizerwin_load_auto_preset(gchar *filename);
 void equalizerwin_set_back_pixmap(void);
 void equalizerwin_set_volume_slider(gint percent);
 void equalizerwin_set_balance_slider(gint percent);

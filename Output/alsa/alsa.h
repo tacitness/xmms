@@ -21,42 +21,40 @@
 #ifndef ALSA_H
 #define ALSA_H
 
-#include "config.h"
-
-#include <libxmms/util.h>
-#include <xmms/plugin.h>
 #include <libxmms/configfile.h>
+#include <libxmms/util.h>
 #include <xmms/i18n.h>
+#include <xmms/plugin.h>
+
+#include "config.h"
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API
+#include <gtk/gtk.h>
+
 #include <alsa/asoundlib.h>
 #include <alsa/pcm_plugin.h>
 
-#include <gtk/gtk.h>
-
 #ifdef WORDS_BIGENDIAN
-# define IS_BIG_ENDIAN TRUE
+#    define IS_BIG_ENDIAN TRUE
 #else
-# define IS_BIG_ENDIAN FALSE
+#    define IS_BIG_ENDIAN FALSE
 #endif
 
 extern OutputPlugin op;
 
-struct alsa_config
-{
-	char *pcm_device;
-	int mixer_card;
-	char *mixer_device;
-	int buffer_time;
-	int period_time;
-	int thread_buffer_time;
-	gboolean debug;
-	struct
-	{
-		int left, right;
-	} vol;
-	gboolean soft_volume;
+struct alsa_config {
+    char *pcm_device;
+    int mixer_card;
+    char *mixer_device;
+    int buffer_time;
+    int period_time;
+    int thread_buffer_time;
+    gboolean debug;
+    struct {
+        int left, right;
+    } vol;
+    gboolean soft_volume;
 };
 
 extern struct alsa_config alsa_cfg;

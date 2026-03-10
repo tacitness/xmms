@@ -22,50 +22,44 @@
 
 #include <glib.h>
 
-typedef struct
-{
-	gchar *key;
-	gchar *value;
-}
-ConfigLine;
+typedef struct {
+    gchar *key;
+    gchar *value;
+} ConfigLine;
 
-typedef struct
-{
-	gchar *name;
-	GList *lines;
-}
-ConfigSection;
+typedef struct {
+    gchar *name;
+    GList *lines;
+} ConfigSection;
 
-typedef struct
-{
-	GList *sections;
-}
-ConfigFile;
+typedef struct {
+    GList *sections;
+} ConfigFile;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 ConfigFile *xmms_cfg_new(void);
-ConfigFile *xmms_cfg_open_file(gchar * filename);
-gboolean xmms_cfg_write_file(ConfigFile * cfg, gchar * filename);
-void xmms_cfg_free(ConfigFile * cfg);
+ConfigFile *xmms_cfg_open_file(gchar *filename);
+gboolean xmms_cfg_write_file(ConfigFile *cfg, gchar *filename);
+void xmms_cfg_free(ConfigFile *cfg);
 ConfigFile *xmms_cfg_open_default_file(void);
-gboolean xmms_cfg_write_default_file(ConfigFile * cfg);
+gboolean xmms_cfg_write_default_file(ConfigFile *cfg);
 
-gboolean xmms_cfg_read_string(ConfigFile * cfg, gchar * section, gchar * key, gchar ** value);
-gboolean xmms_cfg_read_int(ConfigFile * cfg, gchar * section, gchar * key, gint * value);
-gboolean xmms_cfg_read_boolean(ConfigFile * cfg, gchar * section, gchar * key, gboolean * value);
-gboolean xmms_cfg_read_float(ConfigFile * cfg, gchar * section, gchar * key, gfloat * value);
-gboolean xmms_cfg_read_double(ConfigFile * cfg, gchar * section, gchar * key, gdouble * value);
+gboolean xmms_cfg_read_string(ConfigFile *cfg, gchar *section, gchar *key, gchar **value);
+gboolean xmms_cfg_read_int(ConfigFile *cfg, gchar *section, gchar *key, gint *value);
+gboolean xmms_cfg_read_boolean(ConfigFile *cfg, gchar *section, gchar *key, gboolean *value);
+gboolean xmms_cfg_read_float(ConfigFile *cfg, gchar *section, gchar *key, gfloat *value);
+gboolean xmms_cfg_read_double(ConfigFile *cfg, gchar *section, gchar *key, gdouble *value);
 
-void xmms_cfg_write_string(ConfigFile * cfg, gchar * section, gchar * key, gchar * value);
-void xmms_cfg_write_int(ConfigFile * cfg, gchar * section, gchar * key, gint value);
-void xmms_cfg_write_boolean(ConfigFile * cfg, gchar * section, gchar * key, gboolean value);
-void xmms_cfg_write_float(ConfigFile * cfg, gchar * section, gchar * key, gfloat value);
-void xmms_cfg_write_double(ConfigFile * cfg, gchar * section, gchar * key, gdouble value);
+void xmms_cfg_write_string(ConfigFile *cfg, gchar *section, gchar *key, gchar *value);
+void xmms_cfg_write_int(ConfigFile *cfg, gchar *section, gchar *key, gint value);
+void xmms_cfg_write_boolean(ConfigFile *cfg, gchar *section, gchar *key, gboolean value);
+void xmms_cfg_write_float(ConfigFile *cfg, gchar *section, gchar *key, gfloat value);
+void xmms_cfg_write_double(ConfigFile *cfg, gchar *section, gchar *key, gdouble value);
 
-void xmms_cfg_remove_key(ConfigFile * cfg, gchar * section, gchar * key);
+void xmms_cfg_remove_key(ConfigFile *cfg, gchar *section, gchar *key);
 
 #ifdef __cplusplus
 }

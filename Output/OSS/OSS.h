@@ -20,47 +20,41 @@
 #ifndef OSS_H
 #define OSS_H
 
-#include "config.h"
-
+#include <fcntl.h>
 #include <gtk/gtk.h>
-
-#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
+
 #include <pthread.h>
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "soundcard.h"
-
-#include "xmms/plugin.h"
+#include "config.h"
 #include "libxmms/configfile.h"
+#include "soundcard.h"
+#include "xmms/plugin.h"
 
 #ifdef WORDS_BIGENDIAN
-# define IS_BIG_ENDIAN TRUE
+#    define IS_BIG_ENDIAN TRUE
 #else
-# define IS_BIG_ENDIAN FALSE
+#    define IS_BIG_ENDIAN FALSE
 #endif
 
 extern OutputPlugin op;
 
-typedef struct
-{
-	gint audio_device;
-	gint mixer_device;
-	gint buffer_size;
-	gint prebuffer;
-	gboolean use_master;
-	gboolean use_alt_audio_device, use_alt_mixer_device;
-	gchar *alt_audio_device, *alt_mixer_device;
-}
-OSSConfig;
+typedef struct {
+    gint audio_device;
+    gint mixer_device;
+    gint buffer_size;
+    gint prebuffer;
+    gboolean use_master;
+    gboolean use_alt_audio_device, use_alt_mixer_device;
+    gchar *alt_audio_device, *alt_mixer_device;
+} OSSConfig;
 
 extern OSSConfig oss_cfg;
 

@@ -19,24 +19,26 @@
 #ifndef XMMS_HTTP_H
 #define XMMS_HTTP_H
 
-#include "config.h"
 #include <glib.h>
 
+#include "config.h"
+
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <netdb.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+
+#include <netdb.h>
+#include <netinet/in.h>
 
 
-gint http_open_connection(gchar * server, gint port);
+gint http_open_connection(gchar *server, gint port);
 void http_close_connection(gint sock);
-gint http_read_line(gint sock, gchar * buf, gint size);
-gint http_read_first_line(gint sock, gchar * buf, gint size);
-gchar * http_get(gchar * url);
+gint http_read_line(gint sock, gchar *buf, gint size);
+gint http_read_first_line(gint sock, gchar *buf, gint size);
+gchar *http_get(gchar *url);
 
 #endif

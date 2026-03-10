@@ -1,6 +1,7 @@
 
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,19 +20,17 @@
 #ifndef SVIS_H
 #define SVIS_H
 
-typedef struct
-{
-	Widget vs_widget;
-	gint vs_data[75];
-	gint vs_refresh_delay;
-}
-SVis;
+typedef struct {
+    Widget vs_widget;
+    gint vs_data[75];
+    gint vs_refresh_delay;
+} SVis;
 
-void svis_draw(Widget * w);
-void svis_timeout_func(SVis * svis, guchar * data);
-SVis *create_svis(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y);
-void svis_set_data(SVis * vis, guchar * data);
-void svis_clear_data(SVis * vis);
-void svis_clear(SVis * vis);
+void svis_draw(Widget *w);
+void svis_timeout_func(SVis *svis, guchar *data);
+SVis *create_svis(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
+void svis_set_data(SVis *vis, guchar *data);
+void svis_clear_data(SVis *vis);
+void svis_clear(SVis *vis);
 
 #endif

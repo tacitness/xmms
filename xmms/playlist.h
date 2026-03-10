@@ -20,28 +20,26 @@
 #ifndef PLAYLIST_H
 #define PLAYLIST_H
 
-typedef struct
-{
-        gchar *filename;
-        gchar *title;
-        gint length;
-        gboolean selected;
-}
-PlaylistEntry;
+typedef struct {
+    gchar *filename;
+    gchar *title;
+    gint length;
+    gboolean selected;
+} PlaylistEntry;
 
 void playlist_clear(void);
 void playlist_delete(gboolean crop);
 /*  void playlist_add(gchar * filename); */
 #define playlist_add(filename) playlist_ins(filename, -1)
-void playlist_ins(gchar * filename, glong pos);
+void playlist_ins(gchar *filename, glong pos);
 /*  void playlist_add_dir(gchar * dir); */
 #define playlist_add_dir(directory) playlist_ins_dir(directory, -1, TRUE)
 guint playlist_ins_dir(char *dir, long pos, gboolean background);
 /*  void playlist_add_url_string(gchar * string); */
 #define playlist_add_url_string(string) playlist_ins_url_string(string, -1)
-guint playlist_ins_url_string(gchar * string, glong pos);
+guint playlist_ins_url_string(gchar *string, glong pos);
 void playlist_play(void);
-void playlist_set_info(gchar * title, gint length, gint rate, gint freq, gint nch);
+void playlist_set_info(gchar *title, gint length, gint rate, gint freq, gint nch);
 void playlist_check_pos_current(void);
 void playlist_next(void);
 void playlist_prev(void);
@@ -64,7 +62,7 @@ gint __get_playlist_position(void);
 gchar *playlist_get_info_text(void);
 int playlist_get_current_length(void);
 gboolean playlist_save(char *filename, gboolean is_pls);
-gboolean playlist_load(gchar * filename);
+gboolean playlist_load(gchar *filename);
 GList *get_playlist(void);
 GList *get_queue(void);
 void playlist_start_get_info_thread(void);
@@ -86,13 +84,14 @@ void playlist_fileinfo_current(void);
 void playlist_fileinfo(gint pos);
 void playlist_delete_index(glong index);
 void playlist_delete_filenames(GList *filenames);
-gchar* playlist_get_filename(gint pos);
-gchar* playlist_get_songtitle(gint pos);
+gchar *playlist_get_filename(gint pos);
+gchar *playlist_get_songtitle(gint pos);
 gint playlist_get_songtime(gint pos);
-GList * playlist_get_selected(void);
-GList * playlist_get_selected_list(void);
+GList *playlist_get_selected(void);
+GList *playlist_get_selected_list(void);
 int playlist_get_num_selected(void);
-void playlist_get_total_time(gulong *total_time, gulong *selection_time, gboolean *total_more, gboolean *selection_more);
+void playlist_get_total_time(gulong *total_time, gulong *selection_time, gboolean *total_more,
+                             gboolean *selection_more);
 void playlist_select_all(gboolean set);
 void playlist_select_range(int min, int max, gboolean sel);
 void playlist_select_invert_all(void);
@@ -102,8 +101,8 @@ void playlist_read_info(int pos);
 void playlist_set_shuffle(gboolean shuffle);
 
 
-#define PL_LOCK()    pthread_mutex_lock(&playlist_mutex)
-#define PL_UNLOCK()  pthread_mutex_unlock(&playlist_mutex)
+#define PL_LOCK() pthread_mutex_lock(&playlist_mutex)
+#define PL_UNLOCK() pthread_mutex_unlock(&playlist_mutex)
 
 extern pthread_mutex_t playlist_mutex;
 

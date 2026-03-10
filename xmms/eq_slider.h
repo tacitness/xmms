@@ -1,5 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,17 +19,15 @@
 #ifndef EQ_SLIDER_H
 #define EQ_SLIDER_H
 
-typedef struct
-{
-	Widget es_widget;
-	gint es_position;
-	gboolean es_isdragging;
-	gint es_drag_y;
-}
-EqSlider;
+typedef struct {
+    Widget es_widget;
+    gint es_position;
+    gboolean es_isdragging;
+    gint es_drag_y;
+} EqSlider;
 
-EqSlider *create_eqslider(GList ** wlist, GdkPixmap * parent, GdkGC * gc, gint x, gint y);
-void eqslider_set_position(EqSlider * es, gfloat pos);
-gfloat eqslider_get_position(EqSlider * es);
+EqSlider *create_eqslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
+void eqslider_set_position(EqSlider *es, gfloat pos);
+gfloat eqslider_get_position(EqSlider *es);
 
 #endif

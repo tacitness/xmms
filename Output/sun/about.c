@@ -17,25 +17,23 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "sun.h"
 #include "libxmms/util.h"
+#include "sun.h"
 #include "xmms/i18n.h"
 
 void sun_about(void)
 {
-	static GtkWidget *dialog;
+    static GtkWidget *dialog;
 
-	if (dialog != NULL)
-		return;
+    if (dialog != NULL)
+        return;
 
-	dialog = xmms_show_message(
-		_("About the Sun Driver"),
-		_("XMMS BSD Sun Driver\n\n"
-		  "Copyright (c) 2001 CubeSoft Communications, Inc.\n"
-		  "Maintainer: <vedge at csoft.org>.\n"),
-		_("OK"), FALSE, NULL, NULL);
+    dialog = xmms_show_message(_("About the Sun Driver"),
+                               _("XMMS BSD Sun Driver\n\n"
+                                 "Copyright (c) 2001 CubeSoft Communications, Inc.\n"
+                                 "Maintainer: <vedge at csoft.org>.\n"),
+                               _("OK"), FALSE, NULL, NULL);
 
-	gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
-			   GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-			   &dialog);
+    gtk_signal_connect(GTK_OBJECT(dialog), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
+                       &dialog);
 }

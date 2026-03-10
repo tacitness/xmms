@@ -1,8 +1,9 @@
 
 /*  Joystick plugin for xmms by Tim Ferguson (timf@dgs.monash.edu.au
  *                                  http://www.dgs.monash.edu.au/~timf/) ...
- *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake <justin@globalsoft.com.au>)
- *  XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  14/12/2000 - patched to allow 5 or more buttons to be used (Justin Wake
+ * <justin@globalsoft.com.au>) XMMS is Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas,
+ * Thomas Nilsson and 4Front Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,43 +21,54 @@
 #include "config.h"
 
 /* System general includes */
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/joystick.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <fcntl.h>
-#include <termios.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
-#include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include <linux/joystick.h>
+
+#include <termios.h>
 
 /* XMMS-required includes (glib, threads) */
 #include <glib.h>
 #include <gtk/gtk.h>
+
 #include <pthread.h>
-#include "xmms/plugin.h"
-#include "libxmms/xmmsctrl.h"
+
 #include "libxmms/configfile.h"
+#include "libxmms/xmmsctrl.h"
+#include "xmms/plugin.h"
 
-typedef enum joy_cmd_en
-{
-	JC_PLAYPAUSE, JC_STOP, JC_NEXT, JC_PREV, JC_FWD5, JC_BWD5, JC_VOLUP,
-	JC_VOLDWN, JC_FWD, JC_RWD, JC_SHUFFLE, JC_REPEAT, JC_ALT, JC_NONE
-}
-joy_cmd;
+typedef enum joy_cmd_en {
+    JC_PLAYPAUSE,
+    JC_STOP,
+    JC_NEXT,
+    JC_PREV,
+    JC_FWD5,
+    JC_BWD5,
+    JC_VOLUP,
+    JC_VOLDWN,
+    JC_FWD,
+    JC_RWD,
+    JC_SHUFFLE,
+    JC_REPEAT,
+    JC_ALT,
+    JC_NONE
+} joy_cmd;
 
-typedef struct joy_config_st
-{
-	int sens;
-	gchar *device_1, *device_2;
-	int up, down, left, right;
-	int alt_up, alt_down, alt_left, alt_right;
-	int num_buttons;
-	int *button_cmd;
-}
-joy_config;
+typedef struct joy_config_st {
+    int sens;
+    gchar *device_1, *device_2;
+    int up, down, left, right;
+    int alt_up, alt_down, alt_left, alt_right;
+    int num_buttons;
+    int *button_cmd;
+} joy_config;
 
 extern joy_config joy_cfg;
 

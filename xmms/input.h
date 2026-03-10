@@ -1,6 +1,7 @@
 
 /*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Technologies
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
+ * Technologies
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,26 +20,25 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-struct InputPluginData
-{
-	GList *input_list;
-	InputPlugin *current_input_plugin;
-	gboolean playing;
-	gboolean paused;
+struct InputPluginData {
+    GList *input_list;
+    InputPlugin *current_input_plugin;
+    gboolean playing;
+    gboolean paused;
 };
 
 GList *get_input_list(void);
 InputPlugin *get_current_input_plugin(void);
-void set_current_input_plugin(InputPlugin * ip);
+void set_current_input_plugin(InputPlugin *ip);
 InputVisType input_get_vis_type();
-gboolean input_check_file(gchar * filename);
+gboolean input_check_file(gchar *filename);
 void input_play(char *filename);
 void input_stop(void);
 void input_pause(void);
 int input_get_time(void);
 void input_set_eq(int on, float preamp, float *bands);
 void input_seek(int time);
-void input_get_song_info(gchar * filename, gchar ** title, gint * length);
+void input_get_song_info(gchar *filename, gchar **title, gint *length);
 gboolean get_input_playing(void);
 gboolean get_input_paused(void);
 guchar *input_get_vis(gint time);
@@ -51,10 +51,10 @@ void input_add_vis_pcm(int time, AFormat fmt, int nch, int length, void *ptr);
 InputVisType input_get_vis_type();
 void input_update_vis(gint time);
 
-void input_set_info_text(gchar * text);
-GList *input_scan_dir(gchar * dir);
+void input_set_info_text(gchar *text);
+GList *input_scan_dir(gchar *dir);
 void input_get_volume(int *l, int *r);
 void input_set_volume(int l, int r);
-void input_file_info_box(gchar * filename);
+void input_file_info_box(gchar *filename);
 
 #endif

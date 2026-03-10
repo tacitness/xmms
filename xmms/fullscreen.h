@@ -25,11 +25,11 @@
 #ifndef _XMMS_FULLSCREEN_H
 #define _XMMS_FULLSCREEN_H 1
 
-#include <gtk/gtk.h>
 #include <gdk/gdkx.h>
+#include <gtk/gtk.h>
 
 typedef struct {
-	gint width, height;
+    gint width, height;
 } xmms_fullscreen_mode_t;
 
 #ifdef __cplusplus
