@@ -1,0 +1,131 @@
+# XMMS Resurrection Project — pre-commit hook configuration
+#
+# Install:  pre-commit install && pre-commit install --hook-type commit-msg
+# Run all:  pre-commit run --all-files
+# Update:   pre-commit autoupdate
+# Docs:     https://pre-commit.com/
+#
+# Design: locally-installed tools (clang-format, clang-tidy, shellcheck,
+# yamllint, codespell) run via repo:local/language:system to avoid
+# unnecessary GitHub clones and version-pin drift.
+# Only two remote repos are used: pre-commit-hooks (basic hygiene) and
+# conventional-pre-commit (commit-msg validation).
+
+default_language_version:
+  python: python3
+
+repos:
+
+  # ── Basic file hygiene (pre-commit/pre-commit-hooks) ────────────────────
+  # Well-maintained stdlib — safe to fetch from GitHub.
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=2048]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: fix-byte-order-marker
+      - id: no-commit-to-branch
+        args: [--branch=main]
+
+  # ── Local system tools ───────────────────────────────────────────────────
+  # All of these use tools already installed on the system.
+  # Requires: clang-format, clang-tidy, shellcheck, yamllint, codespell.
+  # Install missing items: sudo apt install clang-format clang-tidy shellcheck yamllint
+  #                        pip install --user codespell
+
+  - repo: local
+    hooks:
+
+      # ── clang-format: auto-format C/C++ to .clang-format style ──────────
+      - id: clang-format
+        name: clang-format (C/C++)
+        entry: clang-format
+        args: [--style=file, -i]
+        language: system
+        types_or: [c, c++]
+        # Reformats files in-place to match .clang-format.
+        # Run check-only mode: clang-format --dry-run --Werror <files>
+
+      # ── clang-tidy: static analysis ──────────────────────────────────────
+      - id: clang-tidy
+        name: clang-tidy (static analysis)
+        entry: scripts/run-clang-tidy.sh
+        language: script
+        types_or: [c, c++]
+        pass_filenames: true
+        # Requires build/compile_commands.json.
+        # Generate: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        # Skips gracefully if compile_commands.json is absent.
+
+      # ── shellcheck: shell script linting ────────────────────────────────
+      - id: shellcheck
+        name: shellcheck (shell scripts)
+        entry: shellcheck
+        args: [--severity=warning, --shell=bash]
+        language: system
+        types: [shell]
+
+      # ── yamllint: YAML style checking ────────────────────────────────────
+      - id: yamllint
+        name: yamllint (YAML)
+        entry: yamllint
+        args: [--config-file=.yamllint.yml, --strict]
+        language: system
+        types: [yaml]
+
+      # ── codespell: spell-check code comments and docs ────────────────────
+      - id: codespell
+        name: codespell (spell check)
+        entry: codespell
+        args: [--config=.codespellrc, --write-changes]
+        language: python
+        additional_dependencies: [codespell]
+        types_or: [c, c++, markdown, rst, text]
+        exclude: |
+          (?x)^(
+            po/|
+            intl/|
+            .*\.gmo|
+            aclocal\.m4|
+            configure$|
+            ltmain\.sh
+          )$
+
+  # ── Conventional Commits message validation ──────────────────────────────
+  # Validated reachable: https://github.com/compilerla/conventional-pre-commit
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args:
+          - feat
+          - fix
+          - refactor
+          - style
+          - docs
+          - test
+          - build
+          - ci
+          - chore
+          - perf
+          - gtk3
+          - gtk4
+          - revert

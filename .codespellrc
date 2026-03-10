@@ -1,0 +1,15 @@
+# codespell configuration for XMMS project
+# https://github.com/codespell-project/codespell
+
+[codespell]
+# Skip auto-generated or third-party files
+skip = ./po,./intl,./aclocal.m4,./configure,./ltmain.sh,./config.guess,./config.sub,./depcomp,./missing,./install-sh,./ABOUT-NLS,*.gmo,*.po
+
+# Project-specific word whitelist (add false positives here)
+ignore-words-list = datas,lod,thru,colour,colours,initialise,initialised,fullscreen
+
+# Count occurrences for easier threshold decisions
+count = true
+
+# Quiet level: 0=all, 1=warnings, 2=errors only
+quiet-level = 2

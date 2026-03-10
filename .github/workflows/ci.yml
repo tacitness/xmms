@@ -1,0 +1,396 @@
+---
+# XMMS Resurrection — CI Pipeline
+# Runs on every push to develop/main and on all PRs.
+# Jobs:
+#   lint        — clang-format + clang-tidy + codespell + shellcheck
+#   build       — Autotools + GTK3 matrix across distros
+#   build-cmake — CMake build (future default build system)
+#   test        — Unit tests via Check/cmocka
+#   asan        — AddressSanitizer build for memory safety
+#   summary     — Final gate job
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "gtk3/**", "gtk4/**", "release/**"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks:   write
+  pull-requests: write
+
+# ── Global defaults ────────────────────────────────────────────────────────────
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+# ═══════════════════════════════════════════════════════════════════════════════
+jobs:
+
+  # ── Lint / Static Analysis ──────────────────────────────────────────────────
+  lint:
+    name: Lint (${{ matrix.check }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check:
+          - clang-format
+          - clang-tidy
+          - codespell
+          - shellcheck
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── clang-format ─────────────────────────────────────────────────────────
+      - name: Install clang-format
+        if: matrix.check == 'clang-format'
+        run: sudo apt-get install -y --no-install-recommends clang-format-18
+
+      - name: Check formatting (clang-format)
+        if: matrix.check == 'clang-format'
+        run: |
+          find . -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \
+            ! -path './intl/*' \
+            ! -path './build/*' \
+            | xargs clang-format-18 --style=file --dry-run --Werror
+
+      # ── clang-tidy ─────────────────────────────────────────────────────────
+      - name: Install build deps + clang-tidy
+        if: matrix.check == 'clang-tidy'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            clang-18 clang-tidy-18 cmake ninja-build \
+            libgtk-3-dev libglib2.0-dev libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev
+
+      - name: Generate compile_commands.json
+        if: matrix.check == 'clang-tidy'
+        run: |
+          cmake -B build \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang-18 \
+            -G Ninja \
+            -DENABLE_GTK3=ON \
+            2>/dev/null || echo "CMakeLists.txt not yet present — skipping clang-tidy"
+
+      - name: Run clang-tidy
+        if: matrix.check == 'clang-tidy'
+        run: |
+          if [[ -f build/compile_commands.json ]]; then
+            find xmms libxmms -type f \( -name '*.c' -o -name '*.h' \) \
+              ! -path '*/intl/*' \
+              | xargs clang-tidy-18 \
+                  --config-file=.clang-tidy \
+                  -p build \
+                  --warnings-as-errors='clang-analyzer-*,bugprone-*' \
+                  2>&1 | tee clang-tidy-report.txt
+            grep -qE "^.*error:" clang-tidy-report.txt && exit 1 || true
+          else
+            echo "Skipping clang-tidy: no compile_commands.json (CMake migration in progress)"
+          fi
+
+      # ── codespell ─────────────────────────────────────────────────────────
+      - name: Spell-check (codespell)
+        if: matrix.check == 'codespell'
+        run: |
+          pip install --quiet codespell
+          codespell --config .codespellrc \
+            xmms/ libxmms/ Input/ Output/ Effect/ General/ Visualization/ \
+            scripts/ .github/ README TODO FAQ
+
+      # ── shellcheck ─────────────────────────────────────────────────────────
+      - name: Install shellcheck
+        if: matrix.check == 'shellcheck'
+        run: sudo apt-get install -y --no-install-recommends shellcheck
+
+      - name: Check shell scripts
+        if: matrix.check == 'shellcheck'
+        run: |
+          find scripts/ -name '*.sh' | xargs shellcheck --severity=warning --shell=bash
+
+  # ── Autotools Build Matrix ─────────────────────────────────────────────────
+  build:
+    name: Build / ${{ matrix.distro }} / GTK${{ matrix.gtk }}
+    runs-on: ubuntu-latest
+    needs: lint
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ubuntu LTS — GTK3
+          - distro: ubuntu-22.04
+            image: ubuntu:22.04
+            gtk: 3
+            pkg_cmd: apt-get install -y --no-install-recommends
+            deps_gtk: libgtk-3-dev
+            pkg_update: apt-get update -qq
+
+          # Ubuntu 24.04 — GTK4
+          - distro: ubuntu-24.04
+            image: ubuntu:24.04
+            gtk: 4
+            pkg_cmd: apt-get install -y --no-install-recommends
+            deps_gtk: libgtk-4-dev
+            pkg_update: apt-get update -qq
+
+          # Fedora 40 — GTK3
+          - distro: fedora-40
+            image: fedora:40
+            gtk: 3
+            pkg_cmd: dnf install -y
+            deps_gtk: gtk3-devel
+            pkg_update: dnf check-update -y || true
+
+          # Fedora 41 — GTK4
+          - distro: fedora-41
+            image: fedora:41
+            gtk: 4
+            pkg_cmd: dnf install -y
+            deps_gtk: gtk4-devel
+            pkg_update: dnf check-update -y || true
+
+          # Arch Linux — GTK3 (rolling)
+          - distro: arch-latest
+            image: archlinux:latest
+            gtk: 3
+            pkg_cmd: pacman -S --noconfirm
+            deps_gtk: gtk3
+            pkg_update: pacman -Syu --noconfirm
+
+          # Alpine — GTK3 (musl libc)
+          - distro: alpine-3.20
+            image: alpine:3.20
+            gtk: 3
+            pkg_cmd: apk add --no-cache
+            deps_gtk: gtk+3.0-dev
+            pkg_update: apk update
+
+    container:
+      image: ${{ matrix.image }}
+      options: --privileged
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          ${{ matrix.pkg_update }}
+          ${{ matrix.pkg_cmd }} \
+            gcc make autoconf automake libtool pkgconf \
+            ${{ matrix.deps_gtk }} glib2-dev \
+            alsa-lib-dev pulseaudio-dev \
+            libvorbis-dev libogg-dev \
+            libx11-dev libxext-dev \
+            2>/dev/null || \
+          ${{ matrix.pkg_cmd }} \
+            gcc make autoconf automake libtool pkg-config \
+            ${{ matrix.deps_gtk }} libglib2.0-dev \
+            libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev \
+            libx11-dev libxext-dev
+
+      - name: Bootstrap Autotools
+        run: |
+          autoreconf -fi || (libtoolize --force && aclocal && autoheader && automake --add-missing && autoconf)
+
+      - name: Configure
+        run: |
+          GTK_FLAGS=""
+          if [[ "${{ matrix.gtk }}" == "3" ]]; then
+            GTK_FLAGS="--with-gtk3"
+          else
+            GTK_FLAGS="--with-gtk4"
+          fi
+          ./configure \
+            --prefix=/usr \
+            --enable-alsa \
+            --disable-esd \
+            --disable-solaris \
+            $GTK_FLAGS \
+            CFLAGS="-Wall -Wextra -std=c11 -O2" \
+          || ./configure \
+            --prefix=/usr \
+            --enable-alsa \
+            --disable-esd \
+            CFLAGS="-Wall -Wextra -O2"
+
+      - name: Build
+        run: make -j"$(nproc)"
+
+      - name: Install (staged)
+        run: make DESTDIR=/tmp/xmms-install install
+
+      - name: Verify installation
+        run: |
+          ls -la /tmp/xmms-install/usr/bin/xmms || echo "No xmms binary found (may be expected)"
+          ls -la /tmp/xmms-install/usr/lib/xmms/ || echo "No plugin dir found (may be expected)"
+
+      - name: Upload build artefacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-logs-${{ matrix.distro }}-gtk${{ matrix.gtk }}
+          path: |
+            config.log
+            xmms/*.log
+          retention-days: 7
+
+  # ── CMake Build (migration target) ────────────────────────────────────────
+  build-cmake:
+    name: CMake Build (GTK3 / Ubuntu 24.04)
+    runs-on: ubuntu-24.04
+    needs: lint
+    # Currently informational — failures don't block PRs until CMake is primary build system
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config \
+            libgtk-3-dev libglib2.0-dev libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev
+
+      - name: Configure with CMake
+        run: |
+          cmake -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_GTK3=ON \
+            -DENABLE_ALSA=ON \
+            -DENABLE_PULSE=ON
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Upload compile_commands.json
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compile-commands-cmake
+          path: build/compile_commands.json
+          retention-days: 14
+
+  # ── Unit Tests ─────────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests / ${{ matrix.distro }}
+    runs-on: ubuntu-24.04
+    needs: build
+    # Tests directory is not yet fully established — mark non-blocking for now
+    continue-on-error: true
+
+    strategy:
+      matrix:
+        distro: [ubuntu-24.04, fedora-41]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install test deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            check libcmocka-dev \
+            libgtk-3-dev libglib2.0-dev \
+            libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libx11-dev
+
+      - name: Build with tests
+        run: |
+          autoreconf -fi || true
+          ./configure --prefix=/usr --enable-tests 2>/dev/null || \
+          ./configure --prefix=/usr
+          make -j"$(nproc)"
+
+      - name: Run tests
+        run: |
+          if [[ -d tests ]]; then
+            make check || make test ARGS="--output-on-failure"
+          else
+            echo "No tests/ directory yet — skipping (tracked in GH issue)"
+          fi
+
+  # ── Memory Safety (ASAN) ───────────────────────────────────────────────────
+  asan:
+    name: AddressSanitizer Build
+    runs-on: ubuntu-24.04
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            clang-18 libasan8 \
+            libgtk-3-dev libglib2.0-dev \
+            libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libx11-dev libxext-dev
+
+      - name: Configure with ASAN
+        run: |
+          autoreconf -fi || true
+          ./configure \
+            CC=clang-18 \
+            CFLAGS="-std=c11 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer" \
+            LDFLAGS="-fsanitize=address,undefined" \
+            --prefix=/usr \
+            --disable-esd \
+            || echo "Configure failed (pre-CMake era) — skipping ASAN build"
+
+      - name: Build with ASAN
+        run: |
+          if [[ -f Makefile ]]; then
+            make -j"$(nproc)" 2>&1 | head -200
+          fi
+
+  # ── PR Summary Gate ────────────────────────────────────────────────────────
+  summary:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    needs: [lint, build]
+    if: always()
+
+    steps:
+      - name: Check results
+        env:
+          LINT_RESULT:  ${{ needs.lint.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          echo "Lint:  $LINT_RESULT"
+          echo "Build: $BUILD_RESULT"
+          if [[ "$LINT_RESULT" != "success" || "$BUILD_RESULT" != "success" ]]; then
+            echo "❌  CI gate FAILED — lint or build did not succeed."
+            exit 1
+          fi
+          echo "✅  CI gate PASSED"

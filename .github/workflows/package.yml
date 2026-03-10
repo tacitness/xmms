@@ -1,0 +1,470 @@
+---
+# XMMS Resurrection — Multi-Distro Package Build
+# Builds RPM (Fedora/RHEL), DEB (Debian/Ubuntu), and APK (Alpine) packages
+# on version tags and release/* branches.
+#
+# Triggers:
+#   - Push of version tag:  v1.2.3 or v1.2.3-rc1
+#   - Push to release/**
+#   - Manual dispatch (with optional version override)
+#
+# Artefacts attached to the GitHub Release:
+#   xmms-<ver>-1.fc41.x86_64.rpm
+#   xmms_<ver>-1_amd64.deb
+#   xmms-<ver>-r0.apk  (Alpine)
+
+name: Package
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+    branches:
+      - "release/**"
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: "Override package version (e.g. 1.3.0-beta1)"
+        required: false
+        default: ""
+      prerelease:
+        description: "Mark as pre-release?"
+        type: boolean
+        default: false
+
+concurrency:
+  group: pkg-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # needed to create/update GH Release
+  packages: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+# ──────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ── Determine version ────────────────────────────────────────────────────────
+  version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      rpm_version: ${{ steps.ver.outputs.rpm_version }}
+      deb_version: ${{ steps.ver.outputs.deb_version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version string
+        id: ver
+        run: |
+          if [[ -n "${{ inputs.version_override }}" ]]; then
+            RAW="${{ inputs.version_override }}"
+          else
+            RAW="${GITHUB_REF_NAME#v}"   # strip leading 'v' from tag
+          fi
+          # Normalise: 1.3.0-beta1 → RPM 1.3.0~beta1 / DEB 1.3.0~beta1
+          RPM_VER="${RAW//-/.}"          # RPM: dashes → dots
+          DEB_VER="${RAW//-/~}"          # DEB: dashes → tildes (pre-release ordering)
+          echo "version=$RAW"           >> "$GITHUB_OUTPUT"
+          echo "rpm_version=$RPM_VER"   >> "$GITHUB_OUTPUT"
+          echo "deb_version=$DEB_VER"   >> "$GITHUB_OUTPUT"
+
+  # ── RPM: Fedora 40, Fedora 41, RHEL 9 ──────────────────────────────────────
+  build-rpm:
+    name: RPM / ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    needs: version
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: fedora-40
+            image: fedora:40
+            dist: .fc40
+          - distro: fedora-41
+            image: fedora:41
+            dist: .fc41
+          - distro: fedora-42
+            image: fedora:42
+            dist: .fc42
+          - distro: rhel-9
+            image: redhat/ubi9:latest
+            dist: .el9
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable EPEL (RHEL only)
+        if: contains(matrix.distro, 'rhel')
+        run: dnf install -y epel-release
+
+      - name: Install RPM build tools + dependencies
+        run: |
+          dnf install -y \
+            rpm-build rpmdevtools rpmlint \
+            gcc make autoconf automake libtool pkgconfig \
+            gtk3-devel glib2-devel \
+            alsa-lib-devel pulseaudio-libs-devel \
+            libvorbis-devel libogg-devel mpg123-devel flac-devel \
+            libX11-devel libXext-devel libXxf86vm-devel \
+            gettext-devel \
+          || true
+          # GTK4 extra on newer Fedora
+          dnf install -y gtk4-devel 2>/dev/null || true
+
+      - name: Prepare rpmbuild tree
+        run: |
+          rpmdev-setuptree
+          PKG_VER="${{ needs.version.outputs.rpm_version }}"
+          # Inject version into spec
+          sed "s/^Version:.*/Version:        $PKG_VER/" xmms.spec \
+            > ~/rpmbuild/SPECS/xmms.spec
+          # Create source tarball from current tree
+          git archive --format=tar.gz --prefix="xmms-$PKG_VER/" HEAD \
+            > ~/rpmbuild/SOURCES/xmms-$PKG_VER.tar.gz
+
+      - name: Build RPM
+        run: |
+          rpmbuild -ba ~/rpmbuild/SPECS/xmms.spec \
+            --define "dist ${{ matrix.dist }}" \
+            --define "_version ${{ needs.version.outputs.rpm_version }}"
+
+      - name: Run rpmlint
+        run: |
+          rpmlint ~/rpmbuild/RPMS/**/*.rpm 2>&1 || true
+
+      - name: Upload RPM artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-${{ matrix.distro }}
+          path: |
+            ~/rpmbuild/RPMS/**/*.rpm
+            ~/rpmbuild/SRPMS/**/*.rpm
+          retention-days: 30
+
+  # ── DEB: Debian 12, Ubuntu 22.04 LTS, Ubuntu 24.04 LTS ────────────────────
+  build-deb:
+    name: DEB / ${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    needs: version
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian-12
+            image: debian:12
+            suite: bookworm
+          - distro: ubuntu-22.04
+            image: ubuntu:22.04
+            suite: jammy
+          - distro: ubuntu-24.04
+            image: ubuntu:24.04
+            suite: noble
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install DEB build tools + dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            build-essential devscripts debhelper lintian \
+            gcc make autoconf automake libtool pkg-config \
+            libgtk-3-dev libglib2.0-dev \
+            libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev \
+            gettext dpkg-dev \
+          || apt-get install -y --no-install-recommends \
+            build-essential devscripts debhelper lintian \
+            gcc make autoconf automake libtool pkg-config \
+            libgtk-3-dev libglib2.0-dev \
+            libasound-dev libpulse-dev \
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev \
+            gettext dpkg-dev
+
+      - name: Setup debian/ package directory
+        run: |
+          DEB_VER="${{ needs.version.outputs.deb_version }}"
+          SUITE="${{ matrix.suite }}"
+
+          mkdir -p debian/source
+
+          # source compat
+          echo "native" > debian/source/format
+
+          # control file
+          cat > debian/control << 'CTRL'
+          Source: xmms
+          Section: sound
+          Priority: optional
+          Maintainer: XMMS Resurrection Team <xmms-dev@example.com>
+          Build-Depends: debhelper-compat (= 13),
+                         libgtk-3-dev | libgtk-4-dev,
+                         libglib2.0-dev,
+                         libasound2-dev | libasound-dev,
+                         libpulse-dev,
+                         libvorbis-dev,
+                         libogg-dev,
+                         libmpg123-dev,
+                         libflac-dev,
+                         libx11-dev,
+                         libxext-dev,
+                         libxxf86vm-dev,
+                         autoconf, automake, libtool, pkg-config
+          Package: xmms
+          Architecture: any
+          Depends: ${shlibs:Depends}, ${misc:Depends}
+          Description: XMMS — X Multimedia System (GTK3/4 Resurrection)
+           XMMS is a classic Winamp-style audio player resurrected with GTK3/GTK4
+           support, preserving the beloved skin-based interface and plugin system.
+          CTRL
+
+          # rules file
+          cat > debian/rules << 'RULES'
+          #!/usr/bin/make -f
+          export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+          %:
+          	dh $@
+          override_dh_auto_configure:
+          	autoreconf -fi
+          	./configure --prefix=/usr --enable-alsa --disable-esd \
+          		CFLAGS="$(CFLAGS) -std=c11"
+          RULES
+          chmod +x debian/rules
+
+          # compat
+          echo "13" > debian/compat
+
+          # changelog
+          cat > debian/changelog << CHNG
+          xmms ($DEB_VER-1) $SUITE; urgency=medium
+
+            * XMMS Resurrection $DEB_VER release — GTK3/GTK4 migration.
+
+           -- XMMS Resurrection Team <xmms-dev@example.com>  $(date -R)
+          CHNG
+
+      - name: Build DEB package
+        run: |
+          dpkg-buildpackage -uc -us -b
+
+      - name: Run lintian
+        run: |
+          lintian ../*.deb --pedantic 2>&1 || true
+
+      - name: Upload DEB artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.distro }}
+          path: |
+            ../*.deb
+            ../*.changes
+            ../*.buildinfo
+          retention-days: 30
+
+  # ── APK: Alpine 3.19, Alpine 3.20, Alpine edge ─────────────────────────────
+  build-apk:
+    name: APK / Alpine ${{ matrix.alpine }}
+    runs-on: ubuntu-latest
+    needs: version
+
+    strategy:
+      fail-fast: false
+      matrix:
+        alpine: ["3.19", "3.20", "edge"]
+
+    container:
+      image: alpine:${{ matrix.alpine }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Alpine SDK
+        run: |
+          apk update
+          apk add --no-cache \
+            alpine-sdk abuild git sudo \
+            gcc make autoconf automake libtool pkgconf \
+            gtk+3.0-dev glib2-dev \
+            alsa-lib-dev pulseaudio-dev \
+            libvorbis-dev libogg-dev mpg123-dev flac-dev \
+            libx11-dev libxext-dev
+
+      - name: Set up abuild
+        run: |
+          adduser -D builder || true
+          addgroup builder abuild || true
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          mkdir -p /var/cache/distfiles
+          chmod 777 /var/cache/distfiles
+
+      - name: Create APKBUILD
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          mkdir -p /home/builder/packages/xmms
+
+          cat > /home/builder/packages/xmms/APKBUILD << APKB
+          # Maintainer: XMMS Resurrection Team
+          pkgname=xmms
+          pkgver=${VERSION//-/_}
+          pkgrel=0
+          pkgdesc="XMMS X Multimedia System — GTK3 Resurrection"
+          url="https://github.com/xmms-resurrection/xmms"
+          arch="all"
+          license="GPL-2.0-or-later"
+          depends="gtk+3.0 glib alsa-lib pulseaudio-libs libvorbis libogg mpg123 flac"
+          makedepends="gcc make autoconf automake libtool pkgconf
+            gtk+3.0-dev glib2-dev alsa-lib-dev pulseaudio-dev
+            libvorbis-dev libogg-dev mpg123-dev flac-dev
+            libx11-dev libxext-dev"
+          source="xmms-${VERSION}.tar.gz::file:///src.tar.gz"
+          builddir="\$srcdir/xmms-${VERSION}"
+
+          prepare() {
+            cd "\$builddir"
+            autoreconf -fi || libtoolize && aclocal && autoheader && automake --add-missing && autoconf
+          }
+
+          build() {
+            cd "\$builddir"
+            ./configure \
+              --prefix=/usr \
+              --sysconfdir=/etc \
+              --mandir=/usr/share/man \
+              --infodir=/usr/share/info \
+              --enable-alsa \
+              --disable-esd \
+              CFLAGS="\$CFLAGS -std=c11"
+            make -j\$(nproc)
+          }
+
+          package() {
+            cd "\$builddir"
+            make DESTDIR="\$pkgdir" install
+          }
+          APKB
+
+          # Create source tarball
+          git archive --format=tar.gz --prefix="xmms-${VERSION}/" HEAD > /src.tar.gz
+
+          # Set correct ownership
+          chown -R builder:builder /home/builder/packages/xmms
+
+      - name: Build APK
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          su builder -c "
+            cd /home/builder/packages/xmms
+            abuild-keygen -a -n 2>/dev/null || true
+            abuild -F 2>&1
+          "
+
+      - name: Collect APK artefacts
+        run: |
+          find /home/builder/packages -name '*.apk' -exec ls -la {} \; || \
+          find /root/packages -name '*.apk' -exec ls -la {} \; || \
+          echo "APK artefacts in expected location"
+
+      - name: Upload APK artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-alpine-${{ matrix.alpine }}
+          path: |
+            /home/builder/packages/**/*.apk
+            /root/packages/**/*.apk
+          retention-days: 30
+
+  # ── Create / Update GitHub Release ─────────────────────────────────────────
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [version, build-rpm, build-deb, build-apk]
+    if: startsWith(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all build artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: List artefacts
+        run: find dist/ -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "XMMS ${{ needs.version.outputs.version }}"
+          draft: false
+          prerelease: ${{ inputs.prerelease || contains(needs.version.outputs.version, 'rc') || contains(needs.version.outputs.version, 'beta') || contains(needs.version.outputs.version, 'alpha') }}
+          generate_release_notes: true
+          files: |
+            dist/**/*.rpm
+            dist/**/*.deb
+            dist/**/*.changes
+            dist/**/*.apk
+          body: |
+            ## XMMS Resurrection ${{ needs.version.outputs.version }}
+
+            ### Packages
+
+            | Distro | Format | Download |
+            |--------|--------|----------|
+            | Fedora 40 | RPM | `rpm-fedora-40/*.rpm` |
+            | Fedora 41 | RPM | `rpm-fedora-41/*.rpm` |
+            | Fedora 42 | RPM | `rpm-fedora-42/*.rpm` |
+            | RHEL 9 | RPM | `rpm-rhel-9/*.rpm` |
+            | Debian 12 | DEB | `deb-debian-12/*.deb` |
+            | Ubuntu 22.04 | DEB | `deb-ubuntu-22.04/*.deb` |
+            | Ubuntu 24.04 | DEB | `deb-ubuntu-24.04/*.deb` |
+            | Alpine 3.19 | APK | `apk-alpine-3.19/*.apk` |
+            | Alpine 3.20 | APK | `apk-alpine-3.20/*.apk` |
+            | Alpine edge | APK | `apk-alpine-edge/*.apk` |
+
+            ### Installation
+
+            **Fedora/RHEL:**
+            ```bash
+            sudo rpm -ivh xmms-*.rpm
+            ```
+
+            **Debian/Ubuntu:**
+            ```bash
+            sudo dpkg -i xmms_*.deb
+            sudo apt-get install -f   # resolve any dependency issues
+            ```
+
+            **Alpine:**
+            ```bash
+            sudo apk add --allow-untrusted xmms-*.apk
+            ```

@@ -1,0 +1,145 @@
+name: GTK Migration Task
+description: Track a GTK3 or GTK4 migration work item for a specific subsystem
+title: "gtk3(<component>): migrate <subsystem> from GTK2"
+labels: ["gtk-migration", "needs-triage", "refactor"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## GTK Migration Task
+        Use this template for **one subsystem** per issue.
+        Link to the parent epic issue (milestone tracker) in the body.
+        Keep migration PRs atomic — one component per PR.
+
+  - type: dropdown
+    id: target_gtk
+    attributes:
+      label: Target GTK Version
+      options:
+        - GTK 3.x (target now)
+        - GTK 4.x (stretch target)
+        - Both — GTK3 step then GTK4
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Subsystem / Component
+      options:
+        - mainwin (main player window)
+        - skin (skin loading & rendering)
+        - playlist window
+        - equalizer window
+        - visualizer window
+        - preferences dialog
+        - playlistwin widgets
+        - drawing / cairo migration
+        - event handling / GdkEventController
+        - menus / GtkPopoverMenu
+        - drag-and-drop
+        - socket/plug (GtkSocket removal)
+        - X11/Wayland abstraction layer (gtk_compat.h)
+        - input plugin API
+        - output plugin API
+        - effect plugin API
+        - libxmms
+        - build system (CMake/Meson)
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current GTK2 API Usage
+      description: List the specific deprecated APIs used in this subsystem.
+      placeholder: |
+        - `GdkPixmap` used for double-buffer in `skin.c:skin_load()`
+        - `GdkGC` for graphics context in `skinwin.c`
+        - `gdk_draw_pixmap()` calls throughout `mainwin.c`
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_state
+    attributes:
+      label: Target GTK3/4 API
+      description: What replaces the deprecated APIs?
+      placeholder: |
+        - Replace `GdkPixmap` → `GdkPixbuf` + `cairo_surface_t`
+        - Replace `GdkGC` → `cairo_t`
+        - Replace draw calls → `cairo_t` drawing in `::draw` signal handler
+    validations:
+      required: true
+
+  - type: textarea
+    id: files_affected
+    attributes:
+      label: Files Affected
+      description: List .c/.h files that need changes.
+      placeholder: |
+        - xmms/skin.c, xmms/skin.h
+        - xmms/skinwin.c, xmms/skinwin.h
+        - xmms/mainwin.c (drawing sections)
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know this migration is complete?
+      placeholder: |
+        - [ ] No `GdkPixmap` references in affected files
+        - [ ] No `GdkGC` references in affected files
+        - [ ] Skin renders correctly with GTK3
+        - [ ] No new `-Wdeprecated-declarations` warnings on GTK3 build
+        - [ ] CI passes on Fedora 41, Ubuntu 24.04, Arch, Alpine
+    validations:
+      required: true
+
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent Epic / Milestone Issue
+      placeholder: "#42"
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Effort Estimate
+      options:
+        - effort-small (< 1 day)
+        - effort-medium (1–3 days)
+        - effort-large (1–2 weeks)
+        - effort-xlarge (multi-week)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Notes / Links
+      description: Links to GTK migration guides, related PRs, or prior art…
+      placeholder: |
+        - https://docs.gtk.org/gtk3/migrating-2to3.html
+        - https://docs.gtk.org/gtk4/migrating-3to4.html
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Definition of Done
+      options:
+        - label: All `GdkPixmap` / deprecated API references removed from affected files.
+          required: false
+        - label: Unit/visual regression tests added or updated.
+          required: false
+        - label: No new compiler warnings on GTK3 / GTK4 build.
+          required: false
+        - label: CHANGELOG entry added.
+          required: false
+        - label: PR title follows Conventional Commits (`gtk3(scope): …`).
+          required: false

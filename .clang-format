@@ -1,0 +1,87 @@
+---
+# XMMS Resurrection Project — clang-format configuration
+# Enforces K&R style, C11, 4-space indent, 100-char line limit
+# Validated against clang-format 20.x
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# Core indent / width settings
+IndentWidth:             4
+TabWidth:                4
+UseTab:                  Never
+ColumnLimit:             100
+ContinuationIndentWidth: 4
+
+# Brace style: K&R — opening brace on same line
+BreakBeforeBraces:       Linux
+
+# Pointer / reference alignment  →  int *ptr
+PointerAlignment:        Right
+ReferenceAlignment:      Right
+
+# Function / parameter alignment
+AlignAfterOpenBracket:         Align
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine:  false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+
+# Include sorting — enforced order:
+#   1. Own header (paired .h for this .c file)
+#   2. System / library headers  <angle-bracket>
+#   3. Project-local headers     "quotes"
+SortIncludes:            CaseSensitive
+IncludeBlocks:           Regroup
+IncludeCategories:
+  # System headers: <gtk/gtk.h>, <glib.h>, <stdlib.h>, etc.
+  - Regex:           '^<(glib|gdk|gtk|pango|cairo|X11|sys|bits|linux|stdlib|stdio|string|math|unistd|fcntl|signal|errno|ctype|time|assert|stdint|stddef|stdbool|limits|float|setjmp|locale|wchar|wctype|complex|tgmath|fenv|iso646|stdarg|stdnoreturn|threads|uchar|stdatomic).*>'
+    Priority:        2
+    SortPriority:    2
+  # Any remaining angle-bracket headers
+  - Regex:           '^<.*>'
+    Priority:        3
+    SortPriority:    3
+  # Project-local: "something.h"
+  - Regex:           '^".*"'
+    Priority:        4
+    SortPriority:    4
+
+# Spaces (only options valid in clang-format 20)
+SpaceBeforeParens:       ControlStatements
+SpaceInEmptyBlock:       false
+SpaceAfterCStyleCast:    false
+SpaceBeforeAssignmentOperators: true
+
+# Alignment
+AlignConsecutiveAssignments:
+  Enabled: false
+AlignConsecutiveDeclarations:
+  Enabled: false
+AlignTrailingComments:
+  Kind:           Always
+  OverEmptyLines: 1
+AlignEscapedNewlines:    Left
+
+# Comments
+ReflowComments:          Always
+SpacesBeforeTrailingComments: 2
+
+# Misc
+MaxEmptyLinesToKeep:     2
+InsertTrailingCommas:    None
+SortUsingDeclarations:   Never
+
+# Macro definitions
+IndentPPDirectives:      AfterHash
+MacroBlockBegin:         '^G_BEGIN_DECLS$'
+MacroBlockEnd:           '^G_END_DECLS$'
+
+# Penalty tuning (prefer not to break function calls)
+PenaltyBreakBeforeFirstCallParameter: 1000
+PenaltyBreakComment:                  300
+PenaltyBreakString:                   1000
+PenaltyExcessCharacter:               100
+PenaltyReturnTypeOnItsOwnLine:        200

@@ -1,0 +1,85 @@
+# XMMS Resurrection Project — EditorConfig
+# https://editorconfig.org
+# Ensures consistent coding style across all editors and IDEs.
+
+root = true
+
+# ── Global defaults ────────────────────────────────────────────────────────
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+indent_style             = space
+indent_size              = 4
+
+# ── C / C++ source ─────────────────────────────────────────────────────────
+[*.{c,h,cpp,hpp,cc,cxx,hh}]
+indent_style             = space
+indent_size              = 4
+max_line_length          = 100
+
+# ── Build system files ─────────────────────────────────────────────────────
+[Makefile,Makefile.*,*.mak,*.mk]
+indent_style             = tab
+indent_size              = 8
+
+[CMakeLists.txt,*.cmake]
+indent_style             = space
+indent_size              = 2
+
+[meson.build,meson_options.txt]
+indent_style             = space
+indent_size              = 2
+
+# ── CI / DevOps ────────────────────────────────────────────────────────────
+[*.{yml,yaml}]
+indent_style             = space
+indent_size              = 2
+
+[*.toml]
+indent_style             = space
+indent_size              = 2
+
+# ── Scripts ────────────────────────────────────────────────────────────────
+[*.sh]
+indent_style             = space
+indent_size              = 4
+
+[configure.in,configure.ac,*.m4]
+indent_style             = space
+indent_size              = 2
+
+# ── Packaging ──────────────────────────────────────────────────────────────
+[*.spec]
+indent_style             = space
+indent_size              = 4
+
+[APKBUILD,PKGBUILD]
+indent_style             = space
+indent_size              = 4
+
+# ── Documentation ──────────────────────────────────────────────────────────
+[*.md]
+indent_style             = space
+indent_size              = 2
+trim_trailing_whitespace = false  # allow trailing spaces for line-breaks in Markdown
+
+[*.{rst,txt}]
+indent_style             = space
+indent_size              = 4
+
+# ── i18n ───────────────────────────────────────────────────────────────────
+[*.po,*.pot]
+indent_style             = space
+indent_size              = 4
+
+# ── Desktop / XDG ──────────────────────────────────────────────────────────
+[*.desktop]
+indent_style             = space
+indent_size              = 4
+
+# ── JSON ───────────────────────────────────────────────────────────────────
+[*.json]
+indent_style             = space
+indent_size              = 2

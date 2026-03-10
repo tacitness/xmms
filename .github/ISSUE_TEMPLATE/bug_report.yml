@@ -1,0 +1,121 @@
+name: Bug Report
+description: Report a defect or unexpected behaviour in XMMS
+title: "fix(<scope>): <short description>"
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        Thank you for taking the time to file a bug!
+        Please fill out every section as completely as possible.
+        For GTK migration regressions, use the **GTK Migration Task** template instead.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of XMMS is affected?
+      options:
+        - core (main player window)
+        - skin (theme / Winamp skin rendering)
+        - playlist
+        - equalizer
+        - visualizer
+        - input-plugin (mp3 / ogg / wav / cd …)
+        - output-plugin (ALSA / PulseAudio / OSS …)
+        - effect-plugin
+        - general-plugin
+        - preferences dialog
+        - libxmms
+        - build system
+        - i18n / translations
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: gtk_version
+    attributes:
+      label: GTK Version
+      options:
+        - GTK 2.x (legacy)
+        - GTK 3.x
+        - GTK 4.x
+        - Unknown / Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: Clear, concise description of what went wrong.
+      placeholder: "When I click Play, the window crashes with …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to consistently reproduce the issue.
+      placeholder: |
+        1. Start XMMS with skin "Classic"
+        2. Load a playlist with OGG files
+        3. Press Play
+        4. Observe crash
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      placeholder: "Audio should start playing without crashing."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      placeholder: "XMMS segfaults with signal 11 (SIGSEGV)."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: "Paste output of: `uname -a && gtk-launch --version 2>/dev/null; pkg-config --modversion gtk+-3.0 2>/dev/null || pkg-config --modversion gtk4 2>/dev/null`"
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: backtrace
+    attributes:
+      label: Crash Backtrace / Logs
+      description: If applicable, paste GDB backtrace or relevant log output.
+      render: text
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Screenshots, skin files, playlist excerpts, or anything else helpful.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am using the latest code from the `develop` branch.
+          required: false
+        - label: I have included reproduction steps.
+          required: true

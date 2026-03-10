@@ -1,0 +1,99 @@
+name: Feature Request
+description: Propose a new feature or enhancement for the XMMS resurrection
+title: "feat(<scope>): <short description>"
+labels: ["feature", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+        Thanks for helping make XMMS better!
+        Please describe the feature clearly and explain *why* it belongs in this project.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Target Component
+      options:
+        - core (main player window)
+        - skin (theme / Winamp skin rendering)
+        - playlist
+        - equalizer
+        - visualizer
+        - input-plugin
+        - output-plugin
+        - effect-plugin
+        - general-plugin
+        - preferences dialog
+        - libxmms
+        - build system / CMake / Meson
+        - packaging (RPM / DEB / APK)
+        - CI/CD
+        - documentation
+        - i18n / translations
+        - other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority_guess
+    attributes:
+      label: Suggested Priority
+      options:
+        - P1-high (blocking for migration / release)
+        - P2-medium (next milestone)
+        - P3-low (future consideration)
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: One paragraph describing the new capability.
+      placeholder: "Add support for loading and rendering Winamp 2.x/3.x skins via GtkCssProvider…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Use Case
+      description: Why is this needed? Who benefits?
+      placeholder: "Modern users on GTK3/GTK4 cannot load any skins because the legacy GdkPixmap path was removed…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution / Approach
+      description: How could this be implemented? Technical details, API changes, etc.
+      placeholder: |
+        1. Parse Winamp skin BMP files into GdkPixbuf
+        2. Convert to CSS fragment using GtkCssProvider
+        3. Apply via gtk_style_context_add_provider()
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches did you consider and why did you reject them?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Links, screenshots, reference implementations, prior art…
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and feature requests and this is not a duplicate.
+          required: true
+        - label: This feature is consistent with the project's Winamp-revival goals.
+          required: false
+        - label: I am willing to contribute a PR for this feature.
+          required: false
