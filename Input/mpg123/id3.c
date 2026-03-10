@@ -568,9 +568,9 @@ int id3_write_tag(struct id3_tag *id3, int fd)
     if (safe_write(fd, buf, ID3_TAGHDR_SIZE) == -1)
         return -1;
 
-    /*
-     * TODO: Write extended header.
-     */
+        /*
+         * TODO: Write extended header.
+         */
 #if 0
 	if (id3->id3_flags & ID3_THFLAG_EXT)
 	{
