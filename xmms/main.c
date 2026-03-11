@@ -1035,9 +1035,23 @@ void draw_main_window(gboolean force)
                 wl = wl->next;
             }
         }
-        /* GTK3: always queue the window repaint when the backing surface was updated */
-        gtk_widget_queue_draw(mainwin);
-        /* gdk_flush() no-op in GTK3 */
+        /* GTK3 migration: bypass the async frame-clock with a direct synchronous
+         * paint so volume/balance/position sliders update on every drag event.
+         * gdk_cairo_create() is deprecated in GTK 3.16+ but still functional
+         * in GTK 3.24 and has no viable synchronous X11 replacement. */
+        {
+            GdkWindow *gdkwin = gtk_widget_get_window(mainwin);
+            if (gdkwin && mainwin_bg) {
+                G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+                cairo_t *scr = gdk_cairo_create(gdkwin);
+                G_GNUC_END_IGNORE_DEPRECATIONS
+                cairo_set_source_surface(scr, mainwin_bg, 0, 0);
+                cairo_paint(scr);
+                cairo_destroy(scr);
+            } else {
+                gtk_widget_queue_draw(mainwin);
+            }
+        }
     }
     unlock_widget_list(mainwin_wlist);
 }

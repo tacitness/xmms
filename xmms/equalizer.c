@@ -229,8 +229,7 @@ void equalizerwin_presets_pushed(void)
      * so the menu pops up directly below the button regardless of display type.
      */
     gtk_window_get_position(GTK_WINDOW(equalizerwin), &wx, &wy);
-    util_item_factory_popup(equalizerwin_presets_menu,
-                            wx + 217, wy + 18 + 12, 1, GDK_CURRENT_TIME);
+    util_item_factory_popup(equalizerwin_presets_menu, wx + 217, wy + 18 + 12, 1, GDK_CURRENT_TIME);
 }
 
 void equalizerwin_auto_pushed(gboolean toggled)
@@ -288,8 +287,25 @@ void draw_equalizer_window(gboolean force)
             }
         } else
             clear_widget_list_redraw(equalizerwin_wlist);
-        gtk_widget_queue_draw(equalizerwin);
-        /* gdk_flush() no-op in GTK3 */
+        /* GTK3 migration: gtk_widget_queue_draw() schedules a repaint via the
+         * compositor frame clock, adding up to one vsync (~16 ms) of latency.
+         * Bypass the frame clock: create a cairo context directly on the X11
+         * window and blit equalizerwin_bg immediately for real-time response.
+         * gdk_cairo_create() is deprecated in GTK 3.16+ but still available
+         * in GTK 3.24 and has no viable synchronous alternative on X11. */
+        {
+            GdkWindow *gdkwin = gtk_widget_get_window(equalizerwin);
+            if (gdkwin && equalizerwin_bg) {
+                G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+                cairo_t *scr = gdk_cairo_create(gdkwin);
+                G_GNUC_END_IGNORE_DEPRECATIONS
+                cairo_set_source_surface(scr, equalizerwin_bg, 0, 0);
+                cairo_paint(scr);
+                cairo_destroy(scr);
+            } else {
+                gtk_widget_queue_draw(equalizerwin);
+            }
+        }
     }
     unlock_widget_list(equalizerwin_wlist);
 }
@@ -355,8 +371,6 @@ void equalizerwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callb
 
 void equalizerwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer callback_data)
 {
-    XEvent ev;
-
     if (cfg.doublesize && cfg.eq_doublesize_linked) {
         event->x /= 2;
         event->y /= 2;
@@ -367,9 +381,10 @@ void equalizerwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer call
         handle_motion_cb(equalizerwin_wlist, widget, event);
         draw_equalizer_window(FALSE); /* fix(#11): was draw_main_window(FALSE) */
     }
-    /* gdk_flush() no-op in GTK3 */
-    while (XCheckMaskEvent(gdk_x11_get_default_xdisplay(), ButtonMotionMask, &ev))
-        ;
+    /* GTK3 migration: removed XCheckMaskEvent(ButtonMotionMask) drain loop.
+     * In GTK2 it prevented X queue flood; in GTK3/GDK3 it can swallow raw X
+     * events before GDK converts them to GdkEventMotion, dropping intermediate
+     * positions and making drags feel unresponsive. */
 }
 
 void equalizerwin_release(GtkWidget *widget, GdkEventButton *event, gpointer callback_data)

@@ -413,7 +413,13 @@ static int alsa_setup_mixer(void)
      * This hack should be removed once we depend on Alsa 1.0.0.
      */
     snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, &a);
-    snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &b);
+    /* fix(#12/mono): pvolume-joined controls (e.g. Master on most systems) expose
+     * only SND_MIXER_SCHN_MONO/FRONT_LEFT.  FRONT_RIGHT is absent: the call
+     * returns an error and leaves 'b' unchanged (its uninitialised value). */
+    if (snd_mixer_selem_is_playback_mono(pcm_element))
+        b = a;
+    else
+        snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &b);
 
     snd_mixer_selem_get_playback_volume_range(pcm_element, &alsa_min_vol, &alsa_max_vol);
     snd_mixer_selem_set_playback_volume_range(pcm_element, 0, 100);
@@ -474,7 +480,13 @@ void alsa_get_volume(int *l, int *r)
 
     if (!alsa_cfg.soft_volume) {
         snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, &ll);
-        snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &lr);
+        /* fix(#12/mono): for pvolume-joined (Mono) elements FRONT_RIGHT does not
+         * exist; copying ll → lr so both channels carry the same hardware value
+         * prevents read_volume() from computing a nonsensical balance offset. */
+        if (snd_mixer_selem_is_playback_mono(pcm_element))
+            lr = ll;
+        else
+            snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &lr);
         *l = ll;
         *r = lr;
     }
@@ -506,7 +518,11 @@ void alsa_set_volume(int l, int r)
         return;
 
     snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, l);
-    snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, r);
+    /* fix(#12/mono): skip FRONT_RIGHT for pvolume-joined (Mono) elements; the
+     * single joined channel was already set above via FRONT_LEFT == MONO (0)
+     * and the FRONT_RIGHT call would return an error silently. */
+    if (!snd_mixer_selem_is_playback_mono(pcm_element))
+        snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, r);
 }
 
 
