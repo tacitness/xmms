@@ -19,6 +19,7 @@
  */
 #include "blur_scope.h"
 
+#include <cairo/cairo.h>
 #include <gtk/gtk.h>
 #include <string.h>
 
@@ -29,8 +30,10 @@
 #include "xmms/plugin.h"
 #include "xmms_logo.xpm"
 
+/* GTK3: GdkPixmap removed; using cairo_image_surface_t for off-screen rendering */
 static GtkWidget *window = NULL, *area;
-static GdkPixmap *bg_pixmap = NULL;
+static cairo_surface_t *surface = NULL;
+static guint32 colors[256]; /* ARGB32 palette derived from bscope_cfg.color */
 static gboolean config_read = FALSE;
 
 static void bscope_init(void);
@@ -70,7 +73,6 @@ VisPlugin *get_vplugin_info(void)
 #define BPL ((WIDTH + 2))
 
 static guchar rgb_buf[(WIDTH + 2) * (HEIGHT + 2)];
-static GdkRgbCmap *cmap = NULL;
 
 static void inline draw_pixel_8(guchar *buffer, gint x, gint y, guchar c)
 {
@@ -117,23 +119,30 @@ void bscope_blur_8(guchar *ptr, gint w, gint h, gint bpl)
 extern void bscope_blur_8(guchar *ptr, gint w, gint h, gint bpl);
 #endif
 
+/* GTK3: populates the module-static colors[] instead of a GdkRgbCmap */
 void generate_cmap(void)
 {
-    guint32 colors[256], i, red, blue, green;
-    if (window) {
-        red = (guint32)(bscope_cfg.color / 0x10000);
-        green = (guint32)((bscope_cfg.color % 0x10000) / 0x100);
-        blue = (guint32)(bscope_cfg.color % 0x100);
-        for (i = 255; i > 0; i--) {
-            colors[i] = (((guint32)(i * red / 256) << 16) | ((guint32)(i * green / 256) << 8) |
-                         ((guint32)(i * blue / 256)));
-        }
-        colors[0] = 0;
-        if (cmap) {
-            gdk_rgb_cmap_free(cmap);
-        }
-        cmap = gdk_rgb_cmap_new(colors, 256);
+    guint32 i, red, green, blue;
+
+    red   = bscope_cfg.color >> 16;
+    green = (bscope_cfg.color >> 8) & 0xFF;
+    blue  = bscope_cfg.color & 0xFF;
+    for (i = 255; i > 0; i--) {
+        colors[i] = 0xFF000000u |
+                    ((i * red   / 256) << 16) |
+                    ((i * green / 256) <<  8) |
+                     (i * blue  / 256);
     }
+    colors[0] = 0xFF000000u; /* fully opaque black */
+}
+
+static gboolean bscope_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+    if (surface) {
+        cairo_set_source_surface(cr, surface, 0, 0);
+        cairo_paint(cr);
+    }
+    return FALSE;
 }
 
 static void bscope_destroy_cb(GtkWidget *w, gpointer data)
@@ -147,48 +156,44 @@ static void bscope_init(void)
         return;
     bscope_read_config();
 
-    window = gtk_window_new(GTK_WINDOW_DIALOG);
+    /* GTK3: GTK_WINDOW_DIALOG -> GTK_WINDOW_TOPLEVEL; gdk_pixmap removed */
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), _("Blur scope"));
-    gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
-    gtk_widget_realize(window);
-    bg_pixmap = gdk_pixmap_create_from_xpm_d(window->window, NULL, NULL, bscope_xmms_logo_xpm);
-    gdk_window_set_back_pixmap(window->window, bg_pixmap, 0);
-    gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(bscope_destroy_cb), NULL);
-    gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &window);
-    gtk_widget_set_usize(window, WIDTH, HEIGHT);
+    gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(bscope_destroy_cb), NULL);
+    g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
+    gtk_widget_set_size_request(window, WIDTH, HEIGHT);
 
     area = gtk_drawing_area_new();
+    gtk_widget_set_size_request(area, WIDTH, HEIGHT);
     gtk_container_add(GTK_CONTAINER(window), area);
-    gtk_widget_realize(area);
-    gdk_window_set_back_pixmap(area->window, bg_pixmap, 0);
+    g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(bscope_draw_cb), NULL);
+
+    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     generate_cmap();
     memset(rgb_buf, 0, (WIDTH + 2) * (HEIGHT + 2));
 
     gtk_widget_show(area);
     gtk_widget_show(window);
-    gdk_window_clear(window->window);
-    gdk_window_clear(area->window);
 }
 
 static void bscope_cleanup(void)
 {
     if (window)
         gtk_widget_destroy(window);
-    if (bg_pixmap) {
-        gdk_pixmap_unref(bg_pixmap);
-        bg_pixmap = NULL;
-    }
-    if (cmap) {
-        gdk_rgb_cmap_free(cmap);
-        cmap = NULL;
+    if (surface) {
+        cairo_surface_destroy(surface);
+        surface = NULL;
     }
 }
 
 static void bscope_playback_stop(void)
 {
-    if (GTK_WIDGET_REALIZED(area))
-        gdk_window_clear(area->window);
+    /* GTK3: GTK_WIDGET_REALIZED macro removed; clear and redraw via queue */
+    if (area && gtk_widget_get_realized(area)) {
+        memset(rgb_buf, 0, (WIDTH + 2) * (HEIGHT + 2));
+        gtk_widget_queue_draw(area);
+    }
 }
 
 static inline void draw_vert_line(guchar *buffer, gint x, gint y1, gint y2)
@@ -206,10 +211,12 @@ static inline void draw_vert_line(guchar *buffer, gint x, gint y1, gint y2)
 
 static void bscope_render_pcm(gint16 data[2][512])
 {
-    gint i, y, prev_y;
+    guint32 *pixels;
+    gint stride, i, y, prev_y;
 
-    if (!window)
+    if (!window || !surface)
         return;
+
     bscope_blur_8(rgb_buf, WIDTH, HEIGHT, BPL);
     prev_y = y = (HEIGHT / 2) + (data[0][0] >> 9);
     for (i = 0; i < WIDTH; i++) {
@@ -222,9 +229,13 @@ static void bscope_render_pcm(gint16 data[2][512])
         prev_y = y;
     }
 
-    GDK_THREADS_ENTER();
-    gdk_draw_indexed_image(area->window, area->style->white_gc, 0, 0, WIDTH, HEIGHT,
-                           GDK_RGB_DITHER_NONE, rgb_buf + BPL + 1, (WIDTH + 2), cmap);
-    GDK_THREADS_LEAVE();
-    return;
+    /* GTK3: write indexed palette buffer into ARGB32 cairo_image_surface */
+    cairo_surface_flush(surface);
+    pixels = (guint32 *)cairo_image_surface_get_data(surface);
+    stride = cairo_image_surface_get_stride(surface) / 4;
+    for (y = 0; y < HEIGHT; y++)
+        for (i = 0; i < WIDTH; i++)
+            pixels[y * stride + i] = colors[rgb_buf[(y + 1) * BPL + (i + 1)]];
+    cairo_surface_mark_dirty(surface);
+    gtk_widget_queue_draw(area);
 }
