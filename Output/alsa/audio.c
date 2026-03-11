@@ -69,6 +69,11 @@ static gboolean pause_request; /* pause status currently requested */
 static int flush_request;      /* flush status (time) currently requested */
 static int prebuffer_size;
 
+/* EOF drain detection for PipeWire (issues/19):
+ * PipeWire never leaves SND_PCM_STATE_RUNNING so we detect completion by
+ * watching the time since the last alsa_write() call. */
+static gint64 last_write_time_us;  /* g_get_monotonic_time() at last write */
+
 static guint mixer_timeout;
 
 struct snd_format {
@@ -126,7 +131,27 @@ int alsa_playing(void)
     if (!going || paused || alsa_pcm == NULL)
         return FALSE;
 
-    return snd_pcm_state(alsa_pcm) == SND_PCM_STATE_RUNNING;
+    if (snd_pcm_state(alsa_pcm) != SND_PCM_STATE_RUNNING)
+        return FALSE;
+
+    /* PipeWire keeps the PCM in SND_PCM_STATE_RUNNING indefinitely,
+     * filling silence instead of triggering an XRUN.  snd_pcm_state() and
+     * snd_pcm_delay() are both unreliable for EOF detection on PipeWire.
+     *
+     * Reliable approach: alsa_write() stamps last_write_time_us on every
+     * call from the decoder.  When the decoder reaches EOF it stops
+     * calling alsa_write().  Once (hw_buffer_size/bps + 300) ms have
+     * elapsed since the last write the PCM hardware buffer has fully
+     * drained and we signal completion.
+     * Ref: https://github.com/tacitness/xmms/issues/19 */
+    if (last_write_time_us > 0 && outputf && outputf->bps > 0) {
+        gint64 hw_drain_ms = (gint64)hw_buffer_size * 1000 / outputf->bps;
+        gint64 silence_us  = g_get_monotonic_time() - last_write_time_us;
+        if (silence_us > (hw_drain_ms + 300) * G_GINT64_CONSTANT(1000))
+            return FALSE;
+    }
+
+    return TRUE;
 }
 
 static int xrun_recover(void)
@@ -290,6 +315,7 @@ static void alsa_do_flush(int time)
     output_time_offset = time;
     alsa_total_written = (guint64)time * inputf->bps / 1000;
     rd_index = wr_index = alsa_hw_written = 0;
+    last_write_time_us = 0;
 }
 
 void alsa_flush(int time)
@@ -546,7 +572,11 @@ int alsa_get_output_time(void)
     if (!going || alsa_pcm == NULL)
         return 0;
 
-    if (!snd_pcm_delay(alsa_pcm, &delay)) {
+    /* Guard against negative delay (can occur with PipeWire when the
+     * hardware read pointer has advanced past our last write — casting a
+     * negative snd_pcm_sframes_t to unsigned int produces a huge number
+     * that would wrongly zero-out the output time. */
+    if (!snd_pcm_delay(alsa_pcm, &delay) && delay > 0) {
         unsigned int d = snd_pcm_frames_to_bytes(alsa_pcm, delay);
         if (bytes < d)
             bytes = 0;
@@ -715,6 +745,7 @@ void alsa_write(gpointer data, int length)
     char *src = (char *)data;
 
     remove_prebuffer = FALSE;
+    last_write_time_us = g_get_monotonic_time();
 
     alsa_total_written += length;
     while (length > 0) {
@@ -843,6 +874,7 @@ int alsa_open(AFormat fmt, int rate, int nch)
 
     output_time_offset = 0;
     alsa_total_written = alsa_hw_written = 0;
+    last_write_time_us = 0;
     going = TRUE;
     paused = FALSE;
     prebuffer = TRUE;
