@@ -8,3 +8,7 @@ endif()
 if(XMMS_ENABLE_SANALYZER)
     add_subdirectory(sanalyzer)
 endif()
+
+if(XMMS_ENABLE_OPENGLSPECTRUM)
+    add_subdirectory(opengl_spectrum)
+endif()

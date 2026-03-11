@@ -1264,6 +1264,25 @@ static gboolean inside_sensitive_widgets(gint x, gint y)
             inside_widget(x, y, mainwin_about));
 }
 
+/* GTK3: scroll-event replaces the old button==4/5 hack for mouse-wheel volume.
+ * GDK stopped synthesising button 4/5 press events for scroll wheels in GTK3. */
+static gboolean mainwin_scroll_cb(GtkWidget *widget, GdkEventScroll *event, gpointer data)
+{
+    int d = cfg.mouse_change;
+
+    if (event->direction == GDK_SCROLL_DOWN ||
+        (event->direction == GDK_SCROLL_SMOOTH && event->delta_y > 0.0))
+        d = -d;
+    else if (event->direction == GDK_SCROLL_UP ||
+             (event->direction == GDK_SCROLL_SMOOTH && event->delta_y < 0.0))
+        ; /* d unchanged — scroll up raises volume */
+    else
+        return FALSE;
+
+    mainwin_set_volume_diff(d);
+    return TRUE;
+}
+
 void mainwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callback_data)
 {
     gboolean grab = TRUE;
@@ -3614,6 +3633,7 @@ static void mainwin_create_gtk(void)
 
     gtk_widget_set_events(mainwin, GDK_FOCUS_CHANGE_MASK | GDK_BUTTON_MOTION_MASK |
                                        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                                       GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK |
                                        GDK_STRUCTURE_MASK);
     if (cfg.player_x != -1 && cfg.save_window_position)
         dock_set_uposition(mainwin, cfg.player_x, cfg.player_y);
@@ -3642,6 +3662,8 @@ static void mainwin_create_gtk(void)
     g_signal_connect(G_OBJECT(mainwin), "drag-data-received",
                      G_CALLBACK(mainwin_drag_data_received), NULL);
     g_signal_connect(G_OBJECT(mainwin), "key-press-event", G_CALLBACK(mainwin_keypress), NULL);
+    /* GTK3: scroll-event delivers mouse-wheel input; replaces button 4/5 in press handler */
+    g_signal_connect(G_OBJECT(mainwin), "scroll-event", G_CALLBACK(mainwin_scroll_cb), NULL);
     /* GTK3: blit backing surface on every redraw */
     g_signal_connect(G_OBJECT(mainwin), "draw", G_CALLBACK(mainwin_draw_cb), NULL);
 
@@ -4413,31 +4435,30 @@ int main(int argc, char **argv)
      * the items.  Setting an explicit background-color on menu and menuitem
      * scopes the background to only the drawn widgets. */
     {
-        static const gchar *menu_css =
-            "menu, menu decoration {\n"
-            "  background-color: #2a2a2e;\n"
-            "  border: 1px solid #555566;\n"
-            "  padding: 1px;\n"
-            "  margin: 0px;\n"
-            "}\n"
-            "menuitem {\n"
-            "  background-color: transparent;\n"
-            "  color: #c8c8d8;\n"
-            "  padding: 1px 6px;\n"
-            "  min-height: 0px;\n"
-            "}\n"
-            "menuitem:hover, menuitem:selected {\n"
-            "  background-color: #0a3a6e;\n"
-            "  color: #ffffff;\n"
-            "}\n"
-            "menuitem:disabled, menuitem:insensitive {\n"
-            "  color: #606070;\n"
-            "}\n"
-            "separator, menuitem > separator {\n"
-            "  background-color: #444455;\n"
-            "  min-height: 1px;\n"
-            "  margin: 2px 0px;\n"
-            "}\n";
+        static const gchar *menu_css = "menu, menu decoration {\n"
+                                       "  background-color: #2a2a2e;\n"
+                                       "  border: 1px solid #555566;\n"
+                                       "  padding: 1px;\n"
+                                       "  margin: 0px;\n"
+                                       "}\n"
+                                       "menuitem {\n"
+                                       "  background-color: transparent;\n"
+                                       "  color: #c8c8d8;\n"
+                                       "  padding: 1px 6px;\n"
+                                       "  min-height: 0px;\n"
+                                       "}\n"
+                                       "menuitem:hover, menuitem:selected {\n"
+                                       "  background-color: #0a3a6e;\n"
+                                       "  color: #ffffff;\n"
+                                       "}\n"
+                                       "menuitem:disabled, menuitem:insensitive {\n"
+                                       "  color: #606070;\n"
+                                       "}\n"
+                                       "separator, menuitem > separator {\n"
+                                       "  background-color: #444455;\n"
+                                       "  min-height: 1px;\n"
+                                       "  margin: 2px 0px;\n"
+                                       "}\n";
         GtkCssProvider *menu_provider = gtk_css_provider_new();
         gtk_css_provider_load_from_data(menu_provider, menu_css, -1, NULL);
         gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
@@ -4489,8 +4510,8 @@ int main(int argc, char **argv)
     /* Register the per-frame drawing tick, synchronized with the compositor
      * frame clock.  Logic (time tracking, input, volume) stays in idle_func
      * at 100 Hz; visual presentation happens here at vsync rate (~60 Hz). */
-    mainwin_tick_id = gtk_widget_add_tick_callback(mainwin,
-                          (GtkTickCallback)mainwin_frame_tick, NULL, NULL);
+    mainwin_tick_id =
+        gtk_widget_add_tick_callback(mainwin, (GtkTickCallback)mainwin_frame_tick, NULL, NULL);
     playlist_start_get_info_thread();
 
     enable_x11r5_session_management(argc, argv);

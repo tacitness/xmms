@@ -1,66 +1,48 @@
-/*  XMMS - Cross-platform multimedia player
- *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
- * Technologies
+/*  XMMS - OpenGL Spectrum Analyzer visualization plugin
+ *  Copyright (C) 1998-2000  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front Tech
+ *  GTK3/GtkGLArea port  Copyright (C) 2024  XMMS Resurrection Project
+ *
+ *  Original: used raw X11/GLX + pthread draw-loop.
+ *  GTK3 port: GtkGLArea + g_timeout_add animation + GTK key/window signals.
+ *  No separate render thread needed -- GTK main loop drives everything.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*
- *  Wed May 24 10:49:37 CDT 2000
- *  Fixes to threading/context creation for the nVidia X4 drivers by
- *  Christian Zander <phoenix@minion.de>
- */
-
-
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <gtk/gtk.h>
 #include <math.h>
+#include <string.h>
 
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <pthread.h>
+/* GtkGLArea requires epoxy; include BEFORE gtk/gtk.h */
+#include <gtk/gtk.h>
+
+#include <epoxy/gl.h>
 
 #include "config.h"
-#ifdef HAVE_SCHED_SETSCHEDULER
-#    include <sched.h>
-#endif
-#include <stdlib.h>
-
 #include "libxmms/configfile.h"
 #include "libxmms/util.h"
-#include "libxmms/xmmsctrl.h"
 #include "opengl_spectrum.h"
 #include "xmms/i18n.h"
 #include "xmms/plugin.h"
 
 #define NUM_BANDS 16
+#define ANIM_MS 16 /* ~60 fps */
 
 OGLSpectrumConfig oglspectrum_cfg;
 
-static Display *dpy = NULL;
-static Colormap colormap = 0;
-static GLXContext glxcontext = NULL;
-static Window window = 0;
-static GLfloat y_angle = 45.0, y_speed = 0.5;
-static GLfloat x_angle = 20.0, x_speed = 0.0;
-static GLfloat z_angle = 0.0, z_speed = 0.0;
-static GLfloat heights[16][16], scale;
-static gboolean going = FALSE, grabbed_pointer = FALSE;
-static Atom wm_delete_window_atom;
-static pthread_t draw_thread;
+static GLfloat y_angle = 45.0f, y_speed = 0.5f;
+static GLfloat x_angle = 20.0f, x_speed = 0.0f;
+static GLfloat z_angle = 0.0f, z_speed = 0.0f;
+
+static GLfloat heights[16][16];
+static GLfloat scale;
+
+static GtkWidget *win = NULL;
+static GtkWidget *gl_area = NULL;
+static guint anim_id = 0;
+static gboolean gl_ready = FALSE;
 
 static void oglspectrum_init(void);
 static void oglspectrum_cleanup(void);
@@ -72,60 +54,19 @@ VisPlugin oglspectrum_vp = {
     NULL,
     NULL,
     0,
-    NULL, /* Description */
+    NULL, /* description -- set in get_vplugin_info */
     0,
     1,
-    oglspectrum_init,           /* init */
-    oglspectrum_cleanup,        /* cleanup */
-    NULL,                       /* about */
-    oglspectrum_configure,      /* configure */
-    NULL,                       /* disable_plugin */
-    oglspectrum_playback_start, /* playback_start */
-    oglspectrum_playback_stop,  /* playback_stop */
-    NULL,                       /* render_pcm */
-    oglspectrum_render_freq     /* render_freq */
+    oglspectrum_init,
+    oglspectrum_cleanup,
+    NULL,
+    oglspectrum_configure,
+    NULL,
+    oglspectrum_playback_start,
+    oglspectrum_playback_stop,
+    NULL,
+    oglspectrum_render_freq,
 };
-
-static Window create_window(int width, int height)
-{
-    int attr_list[] = {GLX_RGBA, GLX_DEPTH_SIZE, 16, GLX_DOUBLEBUFFER, None};
-    int scrnum;
-    XSetWindowAttributes attr;
-    unsigned long mask;
-    Window root, win;
-    XVisualInfo *visinfo;
-    Atom wm_protocols[1];
-
-    if ((dpy = XOpenDisplay(NULL)) == NULL)
-        return 0;
-
-    scrnum = DefaultScreen(dpy);
-    root = RootWindow(dpy, scrnum);
-
-    if ((visinfo = glXChooseVisual(dpy, scrnum, attr_list)) == NULL)
-        return 0;
-
-    attr.background_pixel = 0;
-    attr.border_pixel = 0;
-    attr.colormap = colormap = XCreateColormap(dpy, root, visinfo->visual, AllocNone);
-    attr.event_mask = StructureNotifyMask | KeyPressMask;
-    mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-
-    win = XCreateWindow(dpy, root, 0, 0, width, height, 0, visinfo->depth, InputOutput,
-                        visinfo->visual, mask, &attr);
-    XmbSetWMProperties(dpy, win, _("OpenGL Spectrum analyzer"), _("OpenGL Spectrum analyzer"), NULL,
-                       0, NULL, NULL, NULL);
-    wm_delete_window_atom = wm_protocols[0] = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(dpy, win, wm_protocols, 1);
-
-    glxcontext = glXCreateContext(dpy, visinfo, NULL, True);
-
-    XFree(visinfo);
-
-    glXMakeCurrent(dpy, win, glxcontext);
-
-    return win;
-}
 
 VisPlugin *get_vplugin_info(void)
 {
@@ -133,32 +74,16 @@ VisPlugin *get_vplugin_info(void)
     return &oglspectrum_vp;
 }
 
-void oglspectrum_read_config(void)
-{
-    ConfigFile *cfg;
-    gchar *filename;
-
-    oglspectrum_cfg.tdfx_mode = FALSE;
-
-    filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
-    cfg = xmms_cfg_open_file(filename);
-
-    if (cfg) {
-        xmms_cfg_read_boolean(cfg, "OpenGL Spectrum", "tdfx_fullscreen",
-                              &oglspectrum_cfg.tdfx_mode);
-        xmms_cfg_free(cfg);
-    }
-    g_free(filename);
-}
+/* --------------------------------------------------------------------------
+ * OpenGL rendering (OpenGL 1.x fixed-function, compatibility context)
+ * -------------------------------------------------------------------------- */
 
 static void draw_rectangle(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLfloat y2, GLfloat z2)
 {
     if (y1 == y2) {
-
         glVertex3f(x1, y1, z1);
         glVertex3f(x2, y1, z1);
         glVertex3f(x2, y2, z2);
-
         glVertex3f(x2, y2, z2);
         glVertex3f(x1, y2, z2);
         glVertex3f(x1, y1, z1);
@@ -166,286 +91,239 @@ static void draw_rectangle(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLflo
         glVertex3f(x1, y1, z1);
         glVertex3f(x2, y1, z2);
         glVertex3f(x2, y2, z2);
-
         glVertex3f(x2, y2, z2);
         glVertex3f(x1, y2, z1);
         glVertex3f(x1, y1, z1);
     }
 }
 
-static void draw_bar(GLfloat x_offset, GLfloat z_offset, GLfloat height, GLfloat red, GLfloat green,
-                     GLfloat blue)
+static void draw_bar(GLfloat x_off, GLfloat z_off, GLfloat h, GLfloat r, GLfloat g, GLfloat b)
 {
-    GLfloat width = 0.1;
-
-    glColor3f(red, green, blue);
-    draw_rectangle(x_offset, height, z_offset, x_offset + width, height, z_offset + 0.1);
-    draw_rectangle(x_offset, 0, z_offset, x_offset + width, 0, z_offset + 0.1);
-
-    glColor3f(0.5 * red, 0.5 * green, 0.5 * blue);
-    draw_rectangle(x_offset, 0.0, z_offset + 0.1, x_offset + width, height, z_offset + 0.1);
-    draw_rectangle(x_offset, 0.0, z_offset, x_offset + width, height, z_offset);
-
-    glColor3f(0.25 * red, 0.25 * green, 0.25 * blue);
-    draw_rectangle(x_offset, 0.0, z_offset, x_offset, height, z_offset + 0.1);
-    draw_rectangle(x_offset + width, 0.0, z_offset, x_offset + width, height, z_offset + 0.1);
+    const GLfloat w = 0.1f;
+    glColor3f(r, g, b);
+    draw_rectangle(x_off, h, z_off, x_off + w, h, z_off + 0.1f);
+    draw_rectangle(x_off, 0.0f, z_off, x_off + w, 0.0f, z_off + 0.1f);
+    glColor3f(0.5f * r, 0.5f * g, 0.5f * b);
+    draw_rectangle(x_off, 0.0f, z_off + 0.1f, x_off + w, h, z_off + 0.1f);
+    draw_rectangle(x_off, 0.0f, z_off, x_off + w, h, z_off);
+    glColor3f(0.25f * r, 0.25f * g, 0.25f * b);
+    draw_rectangle(x_off, 0.0f, z_off, x_off, h, z_off + 0.1f);
+    draw_rectangle(x_off + w, 0.0f, z_off, x_off + w, h, z_off + 0.1f);
 }
 
 static void draw_bars(void)
 {
     gint x, y;
-    GLfloat x_offset, z_offset, r_base, b_base;
 
-
-    glClearColor(0, 0, 0, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glPushMatrix();
-    glTranslatef(0.0, -0.5, -5.0);
-    glRotatef(x_angle, 1.0, 0.0, 0.0);
-    glRotatef(y_angle, 0.0, 1.0, 0.0);
-    glRotatef(z_angle, 0.0, 0.0, 1.0);
-
+    glTranslatef(0.0f, -0.5f, -5.0f);
+    glRotatef(x_angle, 1.0f, 0.0f, 0.0f);
+    glRotatef(y_angle, 0.0f, 1.0f, 0.0f);
+    glRotatef(z_angle, 0.0f, 0.0f, 1.0f);
     glBegin(GL_TRIANGLES);
     for (y = 0; y < 16; y++) {
-        z_offset = -1.6 + ((15 - y) * 0.2);
-
-        b_base = y * (1.0 / 15);
-        r_base = 1.0 - b_base;
-
+        GLfloat z_off = -1.6f + ((15 - y) * 0.2f);
+        GLfloat b_base = y * (1.0f / 15.0f);
+        GLfloat r_base = 1.0f - b_base;
         for (x = 0; x < 16; x++) {
-            x_offset = -1.6 + (x * 0.2);
-
-            draw_bar(x_offset, z_offset, heights[y][x], r_base - (x * (r_base / 15.0)),
-                     x * (1.0 / 15), b_base);
+            GLfloat x_off = -1.6f + (x * 0.2f);
+            draw_bar(x_off, z_off, heights[y][x], r_base - (x * (r_base / 15.0f)),
+                     x * (1.0f / 15.0f), b_base);
         }
     }
     glEnd();
-
     glPopMatrix();
-
-    glXSwapBuffers(dpy, window);
 }
 
-static gint disable_func(gpointer data)
+/* --------------------------------------------------------------------------
+ * GtkGLArea callbacks
+ * -------------------------------------------------------------------------- */
+
+static void on_realize(GtkGLArea *area, gpointer data)
 {
-    oglspectrum_vp.disable_plugin(&oglspectrum_vp);
-    return FALSE;
-}
-
-
-void *draw_thread_func(void *arg)
-{
-    Bool configured = FALSE;
-
-    if ((window = create_window(640, 480)) == 0) {
-        g_log(NULL, G_LOG_LEVEL_CRITICAL, __FILE__ ": unable to create window");
-        pthread_exit(NULL);
-    }
-
-    XMapWindow(dpy, window);
+    gtk_gl_area_make_current(area);
+    if (gtk_gl_area_get_error(area))
+        return;
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-1, 1, -1, 1, 1.5, 10);
+    glFrustum(-1.0, 1.0, -1.0, 1.0, 1.5, 10.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-
-#ifdef HAVE_SCHED_SETSCHEDULER
-    if (xmms_check_realtime_priority()) {
-        struct sched_param sparam;
-        sparam.sched_priority = sched_get_priority_max(SCHED_OTHER);
-        pthread_setschedparam(pthread_self(), SCHED_OTHER, &sparam);
-    }
-#endif
-
-    while (going) {
-        while (XPending(dpy)) {
-            XEvent event;
-            KeySym keysym;
-            char buf[16];
-
-            XNextEvent(dpy, &event);
-            switch (event.type) {
-            case ConfigureNotify:
-                glViewport(0, 0, event.xconfigure.width, event.xconfigure.height);
-                if (oglspectrum_cfg.tdfx_mode && !grabbed_pointer) {
-
-                    XGrabPointer(dpy, window, True, ButtonPressMask, GrabModeAsync, GrabModeAsync,
-                                 window, None, CurrentTime);
-                    grabbed_pointer = TRUE;
-                }
-                configured = TRUE;
-                break;
-            case KeyPress:
-
-
-                XLookupString(&event.xkey, buf, 16, &keysym, NULL);
-                switch (keysym) {
-                case XK_Escape:
-
-                    /* Ugly hack to get the disable_plugin call in the main thread. */
-                    GDK_THREADS_ENTER();
-                    gtk_idle_add(disable_func, NULL);
-                    GDK_THREADS_LEAVE();
-                    break;
-                case XK_z:
-                    xmms_remote_playlist_prev(oglspectrum_vp.xmms_session);
-                    break;
-                case XK_x:
-                    xmms_remote_play(oglspectrum_vp.xmms_session);
-                    break;
-                case XK_c:
-                    xmms_remote_pause(oglspectrum_vp.xmms_session);
-                    break;
-                case XK_v:
-                    xmms_remote_stop(oglspectrum_vp.xmms_session);
-                    break;
-                case XK_b:
-                    xmms_remote_playlist_next(oglspectrum_vp.xmms_session);
-                    break;
-                case XK_Up:
-                    x_speed -= 0.1;
-                    if (x_speed < -3.0)
-                        x_speed = -3.0;
-                    break;
-                case XK_Down:
-                    x_speed += 0.1;
-                    if (x_speed > 3.0)
-                        x_speed = 3.0;
-                    break;
-                case XK_Left:
-                    y_speed -= 0.1;
-                    if (y_speed < -3.0)
-                        y_speed = -3.0;
-
-                    break;
-                case XK_Right:
-                    y_speed += 0.1;
-                    if (y_speed > 3.0)
-                        y_speed = 3.0;
-                    break;
-                case XK_w:
-                    z_speed -= 0.1;
-                    if (z_speed < -3.0)
-                        z_speed = -3.0;
-                    break;
-                case XK_q:
-                    z_speed += 0.1;
-                    if (z_speed > 3.0)
-                        z_speed = 3.0;
-                    break;
-                case XK_Return:
-                    x_speed = 0.0;
-                    y_speed = 0.5;
-                    z_speed = 0.0;
-                    x_angle = 20.0;
-                    y_angle = 45.0;
-                    z_angle = 0.0;
-                    break;
-                }
-
-                break;
-            case ClientMessage:
-                if ((Atom)event.xclient.data.l[0] == wm_delete_window_atom) {
-                    GDK_THREADS_ENTER();
-                    gtk_idle_add(disable_func, NULL);
-                    GDK_THREADS_LEAVE();
-                }
-                break;
-            }
-        }
-        if (configured) {
-            x_angle += x_speed;
-            if (x_angle >= 360.0)
-                x_angle -= 360.0;
-
-            y_angle += y_speed;
-            if (y_angle >= 360.0)
-                y_angle -= 360.0;
-
-            z_angle += z_speed;
-            if (z_angle >= 360.0)
-                z_angle -= 360.0;
-
-            draw_bars();
-        }
-    }
-
-    if (glxcontext) {
-        glXMakeCurrent(dpy, 0, NULL);
-        glXDestroyContext(dpy, glxcontext);
-        glxcontext = NULL;
-    }
-    if (window) {
-        if (grabbed_pointer) {
-            XUngrabPointer(dpy, CurrentTime);
-            grabbed_pointer = FALSE;
-        }
-
-        XDestroyWindow(dpy, window);
-        window = 0;
-    }
-
-    pthread_exit(NULL);
+    gl_ready = TRUE;
 }
+
+static void on_unrealize(GtkGLArea *area, gpointer data)
+{
+    (void)area;
+    (void)data;
+    gl_ready = FALSE;
+}
+
+static gboolean on_render(GtkGLArea *area, GdkGLContext *ctx, gpointer data)
+{
+    (void)ctx;
+    (void)data;
+    if (!gl_ready || gtk_gl_area_get_error(area))
+        return FALSE;
+    draw_bars();
+    return TRUE;
+}
+
+static void on_resize(GtkGLArea *area, gint width, gint height, gpointer data)
+{
+    (void)data;
+    gtk_gl_area_make_current(area);
+    glViewport(0, 0, width, height);
+}
+
+/* --------------------------------------------------------------------------
+ * Animation timer: advance angles then queue a redraw
+ * -------------------------------------------------------------------------- */
+
+static gboolean anim_tick(gpointer data)
+{
+    (void)data;
+    if (!win || !gtk_widget_get_visible(win))
+        return G_SOURCE_CONTINUE;
+
+#define WRAP360(a)         \
+    do {                   \
+        if ((a) >= 360.0f) \
+            (a) -= 360.0f; \
+    } while (0)
+    x_angle += x_speed;
+    WRAP360(x_angle);
+    y_angle += y_speed;
+    WRAP360(y_angle);
+    z_angle += z_speed;
+    WRAP360(z_angle);
+#undef WRAP360
+
+    gtk_widget_queue_draw(gl_area);
+    return G_SOURCE_CONTINUE;
+}
+
+/* --------------------------------------------------------------------------
+ * Key and window event handlers
+ * -------------------------------------------------------------------------- */
+
+static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    (void)widget;
+    (void)data;
+    switch (event->keyval) {
+    case GDK_KEY_Escape:
+        if (oglspectrum_vp.disable_plugin)
+            g_idle_add((GSourceFunc)oglspectrum_vp.disable_plugin, &oglspectrum_vp);
+        return TRUE;
+    case GDK_KEY_Up:
+        x_speed = CLAMP(x_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_Down:
+        x_speed = CLAMP(x_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_Left:
+        y_speed = CLAMP(y_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_Right:
+        y_speed = CLAMP(y_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_w:
+        z_speed = CLAMP(z_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_q:
+        z_speed = CLAMP(z_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_Return:
+    case GDK_KEY_KP_Enter:
+        x_speed = 0.0f;
+        y_speed = 0.5f;
+        z_speed = 0.0f;
+        x_angle = 20.0f;
+        y_angle = 45.0f;
+        z_angle = 0.0f;
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
+{
+    (void)widget;
+    (void)event;
+    (void)data;
+    if (oglspectrum_vp.disable_plugin)
+        g_idle_add((GSourceFunc)oglspectrum_vp.disable_plugin, &oglspectrum_vp);
+    return TRUE;
+}
+
+/* --------------------------------------------------------------------------
+ * Plugin lifecycle
+ * -------------------------------------------------------------------------- */
 
 static void start_display(void)
 {
     int x, y;
 
-    if (oglspectrum_cfg.tdfx_mode)
-        putenv("MESA_GLX_FX=fullscreen");
-    else
-        putenv("MESA_GLX_FX="
-               "");
+    for (x = 0; x < 16; x++)
+        for (y = 0; y < 16; y++)
+            heights[y][x] = 0.0f;
+    scale = 1.0f / logf(256.0f);
 
-    for (x = 0; x < 16; x++) {
-        for (y = 0; y < 16; y++) {
-            heights[y][x] = 0.0;
-        }
-    }
-    scale = 1.0 / log(256.0);
+    x_speed = 0.0f;
+    y_speed = 0.5f;
+    z_speed = 0.0f;
+    x_angle = 20.0f;
+    y_angle = 45.0f;
+    z_angle = 0.0f;
 
-    x_speed = 0.0;
-    y_speed = 0.5;
-    z_speed = 0.0;
-    x_angle = 20.0;
-    y_angle = 45.0;
-    z_angle = 0.0;
+    win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(win), _("OpenGL Spectrum Analyzer"));
+    gtk_window_set_default_size(GTK_WINDOW(win), 640, 480);
+    gtk_widget_add_events(win, GDK_KEY_PRESS_MASK);
 
-    going = TRUE;
-    pthread_create(&draw_thread, NULL, draw_thread_func, NULL);
+    gl_area = gtk_gl_area_new();
+    gtk_gl_area_set_required_version(GTK_GL_AREA(gl_area), 1, 0);
+    gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(gl_area), TRUE);
+    gtk_container_add(GTK_CONTAINER(win), gl_area);
+
+    g_signal_connect(G_OBJECT(gl_area), "realize", G_CALLBACK(on_realize), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "unrealize", G_CALLBACK(on_unrealize), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "render", G_CALLBACK(on_render), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "resize", G_CALLBACK(on_resize), NULL);
+    g_signal_connect(G_OBJECT(win), "key-press-event", G_CALLBACK(on_key_press), NULL);
+    g_signal_connect(G_OBJECT(win), "delete-event", G_CALLBACK(on_delete), NULL);
+
+    gtk_widget_show_all(win);
+    anim_id = g_timeout_add(ANIM_MS, anim_tick, NULL);
 }
 
 static void stop_display(void)
 {
-    if (going) {
-        going = FALSE;
-        pthread_join(draw_thread, NULL);
+    if (anim_id) {
+        g_source_remove(anim_id);
+        anim_id = 0;
     }
-
-    if (colormap) {
-        XFreeColormap(dpy, colormap);
-        colormap = 0;
-    }
-    if (dpy) {
-        XCloseDisplay(dpy);
-        dpy = NULL;
+    gl_ready = FALSE;
+    if (win) {
+        gtk_widget_destroy(win);
+        win = NULL;
+        gl_area = NULL;
     }
 }
 
 static void oglspectrum_init(void)
 {
-    if (dpy)
+    if (win)
         return;
-
     oglspectrum_read_config();
-
-    if (!oglspectrum_cfg.tdfx_mode)
-        start_display();
+    start_display();
 }
 
 static void oglspectrum_cleanup(void)
@@ -454,48 +332,46 @@ static void oglspectrum_cleanup(void)
 }
 
 static void oglspectrum_playback_start(void)
-{
-    if (oglspectrum_cfg.tdfx_mode) {
-        if (window)
-            stop_display();
-
-        start_display();
-    }
+{ /* nothing — window already open */
 }
-
 static void oglspectrum_playback_stop(void)
-{
-    if (oglspectrum_cfg.tdfx_mode) {
-        stop_display();
-    }
+{ /* keep window; bars freeze */
 }
+
+void oglspectrum_read_config(void)
+{
+    ConfigFile *cfg;
+    gchar *filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
+    oglspectrum_cfg.tdfx_mode = FALSE;
+    cfg = xmms_cfg_open_file(filename);
+    if (cfg) {
+        xmms_cfg_read_boolean(cfg, "OpenGL Spectrum", "tdfx_fullscreen",
+                              &oglspectrum_cfg.tdfx_mode);
+        xmms_cfg_free(cfg);
+    }
+    g_free(filename);
+}
+
+/* --------------------------------------------------------------------------
+ * Frequency data -- called from XMMS audio/vis dispatch thread
+ * -------------------------------------------------------------------------- */
 
 static void oglspectrum_render_freq(gint16 data[2][256])
 {
-    gint i, c;
-    gint y;
-    GLfloat val;
+    static const gint xscale[] = {0, 1, 2, 3, 5, 7, 10, 14, 20, 28, 40, 54, 74, 101, 137, 187, 255};
+    gint i, c, y;
 
-    gint xscale[] = {0, 1, 2, 3, 5, 7, 10, 14, 20, 28, 40, 54, 74, 101, 137, 187, 255};
-
-    for (y = 15; y > 0; y--) {
-        for (i = 0; i < 16; i++) {
+    /* Cascade existing rows down one slot */
+    for (y = 15; y > 0; y--)
+        for (i = 0; i < 16; i++)
             heights[y][i] = heights[y - 1][i];
-        }
-    }
 
+    /* Fill top row */
     for (i = 0; i < NUM_BANDS; i++) {
-        for (c = xscale[i], y = 0; c < xscale[i + 1]; c++) {
+        for (c = xscale[i], y = 0; c < xscale[i + 1]; c++)
             if (data[0][c] > y)
                 y = data[0][c];
-        }
         y >>= 7;
-        if (y > 0)
-            val = (log(y) * scale);
-        else
-            val = 0;
-
-
-        heights[0][i] = val;
+        heights[0][i] = (y > 0) ? (logf(y) * scale) : 0.0f;
     }
 }

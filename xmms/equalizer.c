@@ -306,6 +306,44 @@ static gboolean inside_sensitive_widgets(gint x, gint y)
         inside_widget(x, y, equalizerwin_volume) || inside_widget(x, y, equalizerwin_balance));
 }
 
+/* GTK3: scroll-event adjusts whichever EQ band or preamp slider is under the cursor.
+ * The old button==4/5 dispatch in equalizerwin_press no longer fires in GTK3. */
+static gboolean equalizerwin_scroll_cb(GtkWidget *widget, GdkEventScroll *event, gpointer data)
+{
+    gint step;
+    gint x = (gint)event->x;
+    gint y = (gint)event->y;
+    EqSlider *es = NULL;
+    gint i;
+
+    if (event->direction == GDK_SCROLL_UP ||
+        (event->direction == GDK_SCROLL_SMOOTH && event->delta_y < 0.0))
+        step = -2; /* up = raise/louder for a band */
+    else if (event->direction == GDK_SCROLL_DOWN ||
+             (event->direction == GDK_SCROLL_SMOOTH && event->delta_y > 0.0))
+        step = 2; /* down = lower/quieter for a band */
+    else
+        return FALSE;
+
+    /* Preamp slider */
+    if (inside_widget(x, y, equalizerwin_preamp))
+        es = equalizerwin_preamp;
+
+    /* 10 band sliders */
+    for (i = 0; i < 10 && !es; i++) {
+        if (inside_widget(x, y, equalizerwin_bands[i]))
+            es = equalizerwin_bands[i];
+    }
+
+    if (!es)
+        return FALSE;
+
+    es->es_position = CLAMP(es->es_position + step, 0, 50);
+    equalizerwin_eq_changed();
+    draw_widget(es);
+    return TRUE;
+}
+
 void equalizerwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callback_data)
 {
     gint mx, my;
@@ -732,7 +770,8 @@ static void equalizerwin_create_gtk(void)
         gtk_widget_set_size_request(equalizerwin, 275, (cfg.equalizer_shaded ? 14 : 116));
 
     gtk_widget_set_events(equalizerwin, GDK_FOCUS_CHANGE_MASK | GDK_BUTTON_MOTION_MASK |
-                                            GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+                                            GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                                            GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
     gtk_widget_realize(equalizerwin);
     hint_set_skip_winlist(equalizerwin);
     util_set_cursor(equalizerwin);
@@ -765,6 +804,9 @@ static void equalizerwin_create_gtk(void)
                      NULL);
     /* GTK3: blit backing surface on every redraw */
     g_signal_connect(G_OBJECT(equalizerwin), "draw", G_CALLBACK(equalizerwin_draw_cb), NULL);
+    /* GTK3: scroll-event for EQ band/preamp wheel adjustment */
+    g_signal_connect(G_OBJECT(equalizerwin), "scroll-event", G_CALLBACK(equalizerwin_scroll_cb),
+                     NULL);
 }
 
 void equalizerwin_create(void)
@@ -1101,10 +1143,12 @@ static void equalizerwin_load_ok(GtkWidget *widget, gpointer data)
 }
 
 /* row-activated: fires on double-click or Enter — immediately load */
-static void equalizerwin_load_select(GtkTreeView *view, GtkTreePath *path,
-                                     GtkTreeViewColumn *col, gpointer data)
+static void equalizerwin_load_select(GtkTreeView *view, GtkTreePath *path, GtkTreeViewColumn *col,
+                                     gpointer data)
 {
-    (void)path; (void)col; (void)data;
+    (void)path;
+    (void)col;
+    (void)data;
     equalizerwin_load_ok(NULL, view);
 }
 
@@ -1189,7 +1233,9 @@ static void equalizerwin_load_auto_ok(GtkWidget *widget, gpointer data)
 static void equalizerwin_load_auto_select(GtkTreeView *view, GtkTreePath *path,
                                           GtkTreeViewColumn *col, gpointer data)
 {
-    (void)path; (void)col; (void)data;
+    (void)path;
+    (void)col;
+    (void)data;
     equalizerwin_load_auto_ok(NULL, view);
 }
 
@@ -1366,13 +1412,12 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
     gtk_container_add(GTK_CONTAINER(*window), vbox);
 
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
-                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_ALWAYS);
 
     /* Build the model: one string column, sorted alphabetically */
     store = gtk_list_store_new(1, G_TYPE_STRING);
-    sorted = g_list_sort(g_list_copy(preset_list),
-                         (GCompareFunc)equalizerwin_preset_name_compare);
+    sorted = g_list_sort(g_list_copy(preset_list), (GCompareFunc)equalizerwin_preset_name_compare);
     for (node = sorted; node; node = node->next) {
         GtkTreeIter iter;
         gtk_list_store_append(store, &iter);
@@ -1392,12 +1437,10 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
     if (select_row_func) {
         if (entry)
             /* Save dialogs: fill entry on single-click cursor change */
-            g_signal_connect(G_OBJECT(view), "cursor-changed",
-                             G_CALLBACK(select_row_func), NULL);
+            g_signal_connect(G_OBJECT(view), "cursor-changed", G_CALLBACK(select_row_func), NULL);
         else
             /* Load dialogs: activate (load) on double-click / Enter */
-            g_signal_connect(G_OBJECT(view), "row-activated",
-                             G_CALLBACK(select_row_func), NULL);
+            g_signal_connect(G_OBJECT(view), "row-activated", G_CALLBACK(select_row_func), NULL);
     }
 
     gtk_container_add(GTK_CONTAINER(scrolled_window), view);

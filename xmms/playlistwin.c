@@ -1050,6 +1050,22 @@ static gboolean inside_sensitive_widgets(int x, int y)
     (event->x >= cfg.playlist_width - (x1) && event->x < cfg.playlist_width - (x2) && \
      event->y >= cfg.playlist_height - (y1) && event->y < cfg.playlist_height - (y2))
 
+/* GTK3: scroll-event delivers mouse-wheel input; GDK no longer synthesises button
+ * 4/5 press events for scroll wheels so we need this dedicated handler. */
+static gboolean playlistwin_scroll_event_cb(GtkWidget *widget, GdkEventScroll *event, gpointer data)
+{
+    if (event->direction == GDK_SCROLL_UP ||
+        (event->direction == GDK_SCROLL_SMOOTH && event->delta_y < 0.0))
+        playlistwin_scroll(-3);
+    else if (event->direction == GDK_SCROLL_DOWN ||
+             (event->direction == GDK_SCROLL_SMOOTH && event->delta_y > 0.0))
+        playlistwin_scroll(3);
+    else
+        return FALSE;
+
+    return TRUE;
+}
+
 static void playlistwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callback_data)
 {
     gboolean grab = TRUE;
@@ -1173,9 +1189,9 @@ static void playlistwin_press(GtkWidget *widget, GdkEventButton *event, gpointer
                                               event->x_root, event->y_root + 5, 3, event->time);
         }
         grab = FALSE;
-    } else if (event->button == 4) /* Scrollwheel up */
+    } else if (event->button == 4) /* GTK2 fallback: scrollwheel up (GTK3: see scroll-event) */
         playlistwin_scroll(-3);
-    else if (event->button == 5)   /* Scrollwheel down */
+    else if (event->button == 5)   /* GTK2 fallback: scrollwheel down */
         playlistwin_scroll(3);
     else {
         handle_press_cb(playlistwin_wlist, widget, event);
@@ -1833,7 +1849,8 @@ static void playlistwin_create_gtk(void)
     gtk_widget_set_size_request(playlistwin, cfg.playlist_width,
                                 cfg.playlist_shaded ? 14 : cfg.playlist_height);
     gtk_widget_set_events(playlistwin, GDK_FOCUS_CHANGE_MASK | GDK_BUTTON_MOTION_MASK |
-                                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+                                           GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                                           GDK_SCROLL_MASK | GDK_SMOOTH_SCROLL_MASK);
     gtk_widget_realize(playlistwin);
     hint_set_skip_winlist(playlistwin);
     playlistwin_set_hints();
@@ -1857,6 +1874,9 @@ static void playlistwin_create_gtk(void)
     g_signal_connect(G_OBJECT(playlistwin), "drag-data-received",
                      G_CALLBACK(playlistwin_drag_data_received), NULL);
     g_signal_connect(G_OBJECT(playlistwin), "key-press-event", G_CALLBACK(playlistwin_keypress),
+                     NULL);
+    /* GTK3: scroll-event for mouse-wheel list scrolling */
+    g_signal_connect(G_OBJECT(playlistwin), "scroll-event", G_CALLBACK(playlistwin_scroll_event_cb),
                      NULL);
     g_signal_connect(G_OBJECT(playlistwin), "selection_received", G_CALLBACK(selection_received),
                      NULL);
