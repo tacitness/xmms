@@ -392,8 +392,8 @@ static int alsa_setup_mixer(void)
             if (g_ascii_strcasecmp(name, fallbacks[fi]) != 0) {
                 pcm_element = alsa_get_mixer_elem(mixer, (char *)fallbacks[fi], 0);
                 if (pcm_element) {
-                    g_message("alsa_setup_mixer(): '%s' not found, falling back to '%s'",
-                              name, fallbacks[fi]);
+                    g_message("alsa_setup_mixer(): '%s' not found, falling back to '%s'", name,
+                              fallbacks[fi]);
                     break;
                 }
             }
@@ -493,10 +493,13 @@ void alsa_set_volume(int l, int r)
     }
 
     /* fix(#12): initialise mixer on demand if alsa_get_volume() hasn't been
-     * called first (e.g. user drags slider before the first idle-func read). */
+     * called first (e.g. user drags slider before the first idle-func read).
+     * IMPORTANT: clear mixer_start BEFORE calling alsa_setup_mixer() to break
+     * the mutual recursion: alsa_setup_mixer() calls alsa_set_volume() as an
+     * alsa-lib workaround, and that re-entrant call must not re-enter here. */
     if (mixer_start) {
-        alsa_setup_mixer();
         mixer_start = FALSE;
+        alsa_setup_mixer();
     }
 
     if (!pcm_element)

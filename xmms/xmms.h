@@ -38,6 +38,14 @@
 #include <dirent.h>
 #include <pthread.h>
 
+/* Order matters: plugin.h → widget.h → skin.h → vis.h must precede all
+ * headers that embed or reference InputPlugin/AFormat, Widget, SkinIndex,
+ * or VisType.  Do not reorder these four without careful dependency analysis. */
+#include "plugin.h"   /* InputPlugin, AFormat — must precede input.h, effect.h, output.h, general.h */
+#include "widget.h"   /* Widget struct — must precede vis.h, eq_graph.h, eq_slider.h, hslider.h, menurow.h, monostereo.h */
+#include "skin.h"     /* SkinIndex enum — must precede hslider.h, menurow.h, monostereo.h */
+#include "vis.h"      /* VisType enum; embeds Widget — must precede main.h */
+
 #include "about.h"
 #include "bmp.h"
 #include "config.h"
@@ -45,12 +53,6 @@
 #include "dnd.h"
 #include "dock.h"
 #include "effect.h"
-/* skin.h, vis.h, widget.h, and plugin.h must come before any header that uses
- * SkinIndex, Widget, VisType, or InputPlugin/AFormat respectively. */
-#include "plugin.h" /* defines InputPlugin, AFormat — must precede input.h */
-#include "skin.h"   /* defines SkinIndex — must precede hslider.h, menurow.h, monostereo.h */
-#include "widget.h" /* defines Widget — must precede vis.h, eq_graph.h, eq_slider.h, menurow.h etc. */
-#include "vis.h"    /* defines VisType — must precede main.h; uses Widget so widget.h first */
 #include "eq_graph.h"
 #include "eq_slider.h"
 #include "equalizer.h"
@@ -75,7 +77,6 @@
 #include "pluginenum.h"
 #include "prefswin.h"
 #include "sbutton.h"
-/* skin.h already included above */
 #include "skinwin.h"
 #include "sm.h"
 #include "svis.h"
@@ -84,6 +85,5 @@
 #include "urldecode.h"
 #include "util.h"
 #include "visualization.h"
-/* widget.h and vis.h already included above */
 
 #endif
