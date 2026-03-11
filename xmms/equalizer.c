@@ -1049,128 +1049,193 @@ static void equalizerwin_read_xmms_preset(ConfigFile *cfgfile)
     equalizerwin_eq_changed();
 }
 
+/* GTK3: get the preset name of the currently-selected row in a GtkTreeView.
+ * Returns a newly-allocated string; caller must g_free() it.
+ * Returns NULL if nothing is selected. */
+static gchar *equalizerwin_get_selected_preset_name(GtkTreeView *view)
+{
+    GtkTreeSelection *sel = gtk_tree_view_get_selection(view);
+    GtkTreeModel *model;
+    GtkTreeIter iter;
+    gchar *name = NULL;
+
+    if (gtk_tree_selection_get_selected(sel, &model, &iter))
+        gtk_tree_model_get(model, &iter, 0, &name, -1);
+    return name;
+}
+
+/* GTK3: sort helper for EqualizerPreset GList by name (case-insensitive) */
+static gint equalizerwin_preset_name_compare(gconstpointer a, gconstpointer b)
+{
+    return g_ascii_strcasecmp(((const EqualizerPreset *)a)->name,
+                              ((const EqualizerPreset *)b)->name);
+}
+
 static void equalizerwin_save_ok(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-
-    text = gtk_entry_get_text(GTK_ENTRY(equalizerwin_save_entry));
+    const gchar *text = gtk_entry_get_text(GTK_ENTRY(equalizerwin_save_entry));
     if (strlen(text) != 0)
         equalizer_presets = equalizerwin_save_preset(equalizer_presets, text, "eq.preset");
     gtk_widget_destroy(equalizerwin_save_window);
 }
 
-static void equalizerwin_save_select(GtkTreeView *clist, gint row, gint column,
-                                     GdkEventButton *event, gpointer data)
+/* cursor-changed: fires on single-click selection change — fill the save entry */
+static void equalizerwin_save_select(GtkTreeView *view, gpointer data)
 {
-    gchar *text;
-
-    /* TODO(#gtk3): gtk_clist_get_text removed */
-
-    gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_entry), text);
-    if (event && event->type == GDK_2BUTTON_PRESS)
-        equalizerwin_save_ok(NULL, NULL);
+    gchar *text = equalizerwin_get_selected_preset_name(view);
+    if (text) {
+        gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_entry), text);
+        g_free(text);
+    }
 }
 
 static void equalizerwin_load_ok(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-    GtkTreeView *clist = GTK_TREE_VIEW(data);
-
-    if ((clist && FALSE) /* TODO(#gtk3): clist->selection */) {
-        /* TODO(#gtk3): gtk_clist_get_text removed */
+    GtkTreeView *view = GTK_TREE_VIEW(data);
+    gchar *text = equalizerwin_get_selected_preset_name(view);
+    if (text) {
         equalizerwin_load_preset(equalizer_presets, text);
+        g_free(text);
     }
     gtk_widget_destroy(equalizerwin_load_window);
 }
 
-static void equalizerwin_load_select(GtkTreeView *widget, gint row, gint column,
-                                     GdkEventButton *event, gpointer data)
+/* row-activated: fires on double-click or Enter — immediately load */
+static void equalizerwin_load_select(GtkTreeView *view, GtkTreePath *path,
+                                     GtkTreeViewColumn *col, gpointer data)
 {
-    if (event && event->type == GDK_2BUTTON_PRESS)
-        equalizerwin_load_ok(NULL, widget);
+    (void)path; (void)col; (void)data;
+    equalizerwin_load_ok(NULL, view);
 }
 
 static void equalizerwin_delete_delete(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-    GList *list, *next;
-    GtkTreeView *clist = GTK_TREE_VIEW(data);
+    GtkTreeView *view = GTK_TREE_VIEW(data);
+    GtkTreeSelection *sel;
+    GtkTreeModel *model;
+    GList *selected_rows, *node;
+    GList *names = NULL;
 
-    g_return_if_fail(clist != NULL);
+    g_return_if_fail(view != NULL);
 
-    list = NULL; /* TODO(#gtk3): clist->selection removed */
-    /* TODO(#gtk3): gtk_clist_freeze removed */
-    while (list) {
-        next = g_list_next(list);
-        /* TODO(#gtk3): gtk_clist_get_text removed */
-        equalizer_presets = equalizerwin_delete_preset(equalizer_presets, text, "eq.preset");
-        /* TODO(#gtk3): gtk_clist_remove removed */
-        list = next;
+    sel = gtk_tree_view_get_selection(view);
+    selected_rows = gtk_tree_selection_get_selected_rows(sel, &model);
+
+    /* Collect names first — paths become invalid after any row removal */
+    for (node = selected_rows; node; node = node->next) {
+        GtkTreeIter iter;
+        gchar *name = NULL;
+        if (gtk_tree_model_get_iter(model, &iter, (GtkTreePath *)node->data)) {
+            gtk_tree_model_get(model, &iter, 0, &name, -1);
+            if (name)
+                names = g_list_prepend(names, name);
+        }
     }
-    /* TODO(#gtk3): gtk_clist_thaw removed */
+    g_list_free_full(selected_rows, (GDestroyNotify)gtk_tree_path_free);
+
+    /* Delete each name from the store and from the preset file */
+    for (node = names; node; node = node->next) {
+        GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(view));
+        GtkTreeIter iter;
+        if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter)) {
+            do {
+                gchar *row_name = NULL;
+                gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, 0, &row_name, -1);
+                if (row_name && strcmp(row_name, (gchar *)node->data) == 0) {
+                    g_free(row_name);
+                    gtk_list_store_remove(store, &iter);
+                    break;
+                }
+                g_free(row_name);
+            } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+        }
+        equalizer_presets =
+            equalizerwin_delete_preset(equalizer_presets, (gchar *)node->data, "eq.preset");
+    }
+    g_list_free_full(names, g_free);
 }
 
 static void equalizerwin_save_auto_ok(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-
-    text = gtk_entry_get_text(GTK_ENTRY(equalizerwin_save_auto_entry));
+    const gchar *text = gtk_entry_get_text(GTK_ENTRY(equalizerwin_save_auto_entry));
     if (strlen(text) != 0)
         equalizer_auto_presets =
             equalizerwin_save_preset(equalizer_auto_presets, text, "eq.auto_preset");
     gtk_widget_destroy(equalizerwin_save_auto_window);
 }
 
-static void equalizerwin_save_auto_select(GtkTreeView *clist, gint row, gint column,
-                                          GdkEventButton *event, gpointer data)
+/* cursor-changed: fills the auto-save entry on single-click */
+static void equalizerwin_save_auto_select(GtkTreeView *view, gpointer data)
 {
-    gchar *text;
-
-    /* TODO(#gtk3): gtk_clist_get_text removed */
-
-    gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_auto_entry), text);
-    if (event && event->type == GDK_2BUTTON_PRESS)
-        equalizerwin_save_auto_ok(NULL, NULL);
+    gchar *text = equalizerwin_get_selected_preset_name(view);
+    if (text) {
+        gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_auto_entry), text);
+        g_free(text);
+    }
 }
 
 static void equalizerwin_load_auto_ok(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-    GtkTreeView *clist = GTK_TREE_VIEW(data);
-
-    if ((clist && FALSE) /* TODO(#gtk3): clist->selection */) {
-        /* TODO(#gtk3): gtk_clist_get_text removed */
+    GtkTreeView *view = GTK_TREE_VIEW(data);
+    gchar *text = equalizerwin_get_selected_preset_name(view);
+    if (text) {
         equalizerwin_load_preset(equalizer_auto_presets, text);
+        g_free(text);
     }
     gtk_widget_destroy(equalizerwin_load_auto_window);
 }
 
-static void equalizerwin_load_auto_select(GtkWidget *widget, gint row, gint column,
-                                          GdkEventButton *event, gpointer data)
+/* row-activated: fires on double-click / Enter — immediately load auto-preset */
+static void equalizerwin_load_auto_select(GtkTreeView *view, GtkTreePath *path,
+                                          GtkTreeViewColumn *col, gpointer data)
 {
-    if (event && event->type == GDK_2BUTTON_PRESS)
-        equalizerwin_load_auto_ok(NULL, widget);
+    (void)path; (void)col; (void)data;
+    equalizerwin_load_auto_ok(NULL, view);
 }
 
 static void equalizerwin_delete_auto_delete(GtkWidget *widget, gpointer data)
 {
-    gchar *text;
-    GList *list, *next;
-    GtkTreeView *clist = GTK_TREE_VIEW(data);
+    GtkTreeView *view = GTK_TREE_VIEW(data);
+    GtkTreeSelection *sel;
+    GtkTreeModel *model;
+    GList *selected_rows, *node;
+    GList *names = NULL;
 
-    g_return_if_fail(clist != NULL);
+    g_return_if_fail(view != NULL);
 
-    list = NULL; /* TODO(#gtk3): clist->selection removed */
-    /* TODO(#gtk3): gtk_clist_freeze removed */
-    while (list) {
-        next = g_list_next(list);
-        /* TODO(#gtk3): gtk_clist_get_text removed */
-        equalizer_auto_presets =
-            equalizerwin_delete_preset(equalizer_auto_presets, text, "eq.auto_preset");
-        /* TODO(#gtk3): gtk_clist_remove removed */
-        list = next;
+    sel = gtk_tree_view_get_selection(view);
+    selected_rows = gtk_tree_selection_get_selected_rows(sel, &model);
+
+    for (node = selected_rows; node; node = node->next) {
+        GtkTreeIter iter;
+        gchar *name = NULL;
+        if (gtk_tree_model_get_iter(model, &iter, (GtkTreePath *)node->data)) {
+            gtk_tree_model_get(model, &iter, 0, &name, -1);
+            if (name)
+                names = g_list_prepend(names, name);
+        }
     }
-    /* TODO(#gtk3): gtk_clist_thaw removed */
+    g_list_free_full(selected_rows, (GDestroyNotify)gtk_tree_path_free);
+
+    for (node = names; node; node = node->next) {
+        GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(view));
+        GtkTreeIter iter;
+        if (gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter)) {
+            do {
+                gchar *row_name = NULL;
+                gtk_tree_model_get(GTK_TREE_MODEL(store), &iter, 0, &row_name, -1);
+                if (row_name && strcmp(row_name, (gchar *)node->data) == 0) {
+                    g_free(row_name);
+                    gtk_list_store_remove(store, &iter);
+                    break;
+                }
+                g_free(row_name);
+            } while (gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter));
+        }
+        equalizer_auto_presets = equalizerwin_delete_preset(equalizer_auto_presets,
+                                                            (gchar *)node->data, "eq.auto_preset");
+    }
+    g_list_free_full(names, g_free);
 }
 
 static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkWidget *filesel)
@@ -1276,30 +1341,24 @@ static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static gint equalizerwin_list_sort_func(GtkWidget *clist, gconstpointer ptr1, gconstpointer ptr2)
-{
-    (void)clist;
-    (void)ptr1;
-    (void)ptr2; /* TODO(#gtk3): GtkCList sort removed */
-    return 0;
-}
-
 static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *title,
                                                   GtkWidget **window, GtkSelectionMode sel_mode,
                                                   GtkWidget **entry, gchar *btn1_caption,
                                                   gchar *btn2_caption, GCallback btn1_func,
                                                   GCallback select_row_func)
 {
-    GtkWidget *vbox, *scrolled_window, *bbox, *btn1, *btn2, *clist;
-    char *preset_text[1];
-    GList *node;
+    GtkWidget *vbox, *scrolled_window, *bbox, *btn1, *btn2;
+    GtkWidget *view;
+    GtkListStore *store;
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *col;
+    GList *sorted, *node;
 
     *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(G_OBJECT(*window), "destroy", G_CALLBACK(on_widget_destroyed), window);
     gtk_window_set_transient_for(GTK_WINDOW(*window), GTK_WINDOW(equalizerwin));
     gtk_window_set_position(GTK_WINDOW(*window), GTK_WIN_POS_MOUSE);
     gtk_window_set_title(GTK_WINDOW(*window), title);
-
     gtk_widget_set_size_request(*window, 350, 300);
     gtk_container_set_border_width(GTK_CONTAINER(*window), 10);
 
@@ -1307,29 +1366,43 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
     gtk_container_add(GTK_CONTAINER(*window), vbox);
 
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC,
-                                   GTK_POLICY_ALWAYS);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
-    preset_text[0] = _("Presets");
-    clist = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
-    /* GTK3: select_row → row-activated */
-    if (select_row_func)
-        g_signal_connect(G_OBJECT(clist), "row-activated", G_CALLBACK(select_row_func), NULL);
-    /* TODO(#gtk3): gtk_clist_column_titles_passive removed */
-    /* TODO(#gtk3): gtk_clist_set_selection_mode removed */
-
-    node = preset_list;
-    while (node) {
-        /* TODO(#gtk3): gtk_clist_append removed */
-        node = node->next;
+    /* Build the model: one string column, sorted alphabetically */
+    store = gtk_list_store_new(1, G_TYPE_STRING);
+    sorted = g_list_sort(g_list_copy(preset_list),
+                         (GCompareFunc)equalizerwin_preset_name_compare);
+    for (node = sorted; node; node = node->next) {
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter, 0, ((EqualizerPreset *)node->data)->name, -1);
     }
-    /* TODO(#gtk3): gtk_clist_set_compare_func removed */
-    /* TODO(#gtk3): gtk_clist_sort removed */
+    g_list_free(sorted);
 
-    gtk_container_add(GTK_CONTAINER(scrolled_window), clist);
-    gtk_widget_show(clist);
+    view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    g_object_unref(store); /* view holds the only remaining reference */
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(view), FALSE);
+    gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)), sel_mode);
+
+    renderer = gtk_cell_renderer_text_new();
+    col = gtk_tree_view_column_new_with_attributes(_("Preset"), renderer, "text", 0, NULL);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), col);
+
+    if (select_row_func) {
+        if (entry)
+            /* Save dialogs: fill entry on single-click cursor change */
+            g_signal_connect(G_OBJECT(view), "cursor-changed",
+                             G_CALLBACK(select_row_func), NULL);
+        else
+            /* Load dialogs: activate (load) on double-click / Enter */
+            g_signal_connect(G_OBJECT(view), "row-activated",
+                             G_CALLBACK(select_row_func), NULL);
+    }
+
+    gtk_container_add(GTK_CONTAINER(scrolled_window), view);
+    gtk_widget_show(view);
     gtk_widget_show(scrolled_window);
-
     gtk_box_pack_start(GTK_BOX(vbox), scrolled_window, TRUE, TRUE, 0);
 
     if (entry) {
@@ -1344,7 +1417,7 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
     gtk_box_set_spacing(GTK_BOX(bbox), 5);
 
     btn1 = gtk_button_new_with_label(btn1_caption);
-    g_signal_connect(G_OBJECT(btn1), "clicked", G_CALLBACK(btn1_func), clist);
+    g_signal_connect(G_OBJECT(btn1), "clicked", G_CALLBACK(btn1_func), view);
     gtk_widget_set_can_default(btn1, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), btn1, TRUE, TRUE, 0);
     gtk_widget_show(btn1);
