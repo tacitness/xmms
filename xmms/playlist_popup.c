@@ -33,16 +33,31 @@ static PlaylistPopup *popup = NULL;
 static void playlist_popup_do_draw(cairo_t *cr)
 {
     gint i;
+    gint pw = 25, ph = popup->num_items * 18;
 
-    skin_draw_pixmap(cr, SKIN_PLEDIT, popup->barx, popup->bary, 0, 0, 3, popup->num_items * 18);
+    /* GTK3 fix: pre-fill with skin background colour so any window area outside
+     * the 25-px skin art strips is not left as opaque black (app_paintable=TRUE
+     * suppresses GTK's default theme fill, and EXTEND_NONE outside the surface
+     * makes unpainted pixels transparent → black on most compositors). */
+    {
+        GdkColor *bg = get_skin_color(SKIN_PLEDIT_NORMALBG);
+        if (bg)
+            cairo_set_source_rgb(cr, bg->red / 65535.0, bg->green / 65535.0, bg->blue / 65535.0);
+        else
+            cairo_set_source_rgb(cr, 0.0, 0.039, 0.118);
+        /* cairo_paint() fills the ENTIRE allocated GdkWindow, including any
+         * surplus GTK3 gives beyond our requested 25×ph — prevents black overflow. */
+        cairo_paint(cr);
+    }
+
+    skin_draw_pixmap(cr, SKIN_PLEDIT, popup->barx, popup->bary, 0, 0, 3, ph);
     for (i = 0; i < popup->num_items; i++) {
         if (i == popup->active)
             skin_draw_pixmap(cr, SKIN_PLEDIT, popup->sx[i], popup->sy[i], 3, i * 18, 22, 18);
         else
             skin_draw_pixmap(cr, SKIN_PLEDIT, popup->nx[i], popup->ny[i], 3, i * 18, 22, 18);
     }
-    /* FIXME: What is this flush doing here? */
-    gdk_flush();
+    /* gdk_flush() inside a draw callback causes recursive redraws — removed */
 }
 
 static void playlist_popup_draw(PlaylistPopup *popup)
@@ -129,6 +144,9 @@ void playlist_popup(gint x, gint y, gint num_items, gint *nx, gint *ny, gint *sx
     util_set_cursor(popup->window);
     gtk_window_move(GTK_WINDOW(popup->window), x - 1, y - 1);
     gtk_widget_show(popup->window);
+    /* GTK3 fix (#21): force exact pixel size — set_size_request() only sets the
+     * minimum; GTK3 may allocate a larger window leaving unpainted area black. */
+    gtk_window_resize(GTK_WINDOW(popup->window), 25, num_items * 18);
     gdk_window_raise(gtk_widget_get_window(popup->window));
     gdk_flush();
     playlist_popup_draw(popup);

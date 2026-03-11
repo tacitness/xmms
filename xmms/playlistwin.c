@@ -628,12 +628,9 @@ static void playlistwin_show_dirbrowser(void)
     /* GTK3: replaced bare libxmms dirbrowser with GtkFileChooserDialog so the
      * standard GTK folder picker appears with bookmarks/favourites sidebar
      * (fixes issue #20). */
-    dialog = gtk_file_chooser_dialog_new(_("Select directory to add"),
-                                         GTK_WINDOW(playlistwin),
-                                         GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-                                         _("_Cancel"), GTK_RESPONSE_CANCEL,
-                                         _("_Add"), GTK_RESPONSE_ACCEPT,
-                                         NULL);
+    dialog = gtk_file_chooser_dialog_new(_("Select directory to add"), GTK_WINDOW(playlistwin),
+                                         GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, _("_Cancel"),
+                                         GTK_RESPONSE_CANCEL, _("_Add"), GTK_RESPONSE_ACCEPT, NULL);
     gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(dialog), TRUE);
     if (cfg.filesel_path)
         gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), cfg.filesel_path);
@@ -1797,19 +1794,13 @@ static gboolean playlistwin_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer dat
 {
     (void)widget;
     (void)data;
+
     if (playlistwin_bg) {
-        /* GTK3 fix (issue #21): first fill the entire clip region with the skin
-         * background colour.  When the WM or GTK3 allocates the GdkWindow slightly
-         * larger than our backing surface (e.g. resize-handle areas, CSD shadow
-         * padding), any pixel beyond the surface boundary is outside the source
-         * pattern's extent and defaults to transparent → black.  Pre-filling with
-         * the skin's playlist-area background colour prevents that black overflow. */
         GdkColor *bg = get_skin_color(SKIN_PLEDIT_NORMALBG);
         if (bg)
-            cairo_set_source_rgb(cr, bg->red / 65535.0, bg->green / 65535.0,
-                                 bg->blue / 65535.0);
+            cairo_set_source_rgb(cr, bg->red / 65535.0, bg->green / 65535.0, bg->blue / 65535.0);
         else
-            cairo_set_source_rgb(cr, 0.0, 0.039, 0.118); /* xmms dark blue fallback */
+            cairo_set_source_rgb(cr, 0.0, 0.039, 0.118);
         cairo_paint(cr);
 
         cairo_set_source_surface(cr, playlistwin_bg, 0, 0);
