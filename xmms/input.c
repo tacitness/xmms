@@ -311,9 +311,25 @@ gint input_get_time(void)
 
 void input_set_eq(int on, float preamp, float *bands)
 {
+    float adjusted_preamp = preamp;
+
+    /* TODO(#14): eq clipping compensation — when enabled, reduce preamp so
+     * that (preamp + max_band) never exceeds 0 dB, preventing int16 overflow
+     * in the subband synthesis output stage. */
+    if (cfg.eq_auto_level && on) {
+        float max_band = bands[0];
+        int i;
+        for (i = 1; i < 10; i++)
+            if (bands[i] > max_band)
+                max_band = bands[i];
+        float headroom = preamp + max_band;
+        if (headroom > 0.0f)
+            adjusted_preamp = preamp - headroom;
+    }
+
     if (ip_data->playing)
         if (get_current_input_plugin() && get_current_input_plugin()->set_eq)
-            get_current_input_plugin()->set_eq(on, preamp, bands);
+            get_current_input_plugin()->set_eq(on, adjusted_preamp, bands);
 }
 
 void input_get_song_info(gchar *filename, gchar **title, gint *length)

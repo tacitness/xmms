@@ -450,6 +450,7 @@ static void read_config(void)
     cfg.get_info_on_load = FALSE;
     cfg.get_info_on_demand = TRUE;
     cfg.eq_doublesize_linked = TRUE;
+    cfg.eq_auto_level = TRUE; /* TODO(#14): reduce preamp to prevent clipping */
     cfg.player_visible = TRUE;
     cfg.no_playlist_advance = FALSE;
     cfg.smooth_title_scroll = TRUE;
@@ -503,6 +504,7 @@ static void read_config(void)
         xmms_cfg_read_boolean(cfgfile, "xmms", "get_info_on_load", &cfg.get_info_on_load);
         xmms_cfg_read_boolean(cfgfile, "xmms", "get_info_on_demand", &cfg.get_info_on_demand);
         xmms_cfg_read_boolean(cfgfile, "xmms", "eq_doublesize_linked", &cfg.eq_doublesize_linked);
+        xmms_cfg_read_boolean(cfgfile, "xmms", "eq_auto_level", &cfg.eq_auto_level);
         xmms_cfg_read_boolean(cfgfile, "xmms", "no_playlist_advance", &cfg.no_playlist_advance);
         xmms_cfg_read_boolean(cfgfile, "xmms", "sort_jump_to_file", &cfg.sort_jump_to_file);
         xmms_cfg_read_boolean(cfgfile, "xmms", "use_pl_metadata", &cfg.use_pl_metadata);
@@ -664,6 +666,7 @@ void save_config(void)
     xmms_cfg_write_boolean(cfgfile, "xmms", "get_info_on_load", cfg.get_info_on_load);
     xmms_cfg_write_boolean(cfgfile, "xmms", "get_info_on_demand", cfg.get_info_on_demand);
     xmms_cfg_write_boolean(cfgfile, "xmms", "eq_doublesize_linked", cfg.eq_doublesize_linked);
+    xmms_cfg_write_boolean(cfgfile, "xmms", "eq_auto_level", cfg.eq_auto_level);
     xmms_cfg_write_boolean(cfgfile, "xmms", "no_playlist_advance", cfg.no_playlist_advance);
     xmms_cfg_write_boolean(cfgfile, "xmms", "sort_jump_to_file", cfg.sort_jump_to_file);
     xmms_cfg_write_boolean(cfgfile, "xmms", "smooth_title_scroll", cfg.smooth_title_scroll);

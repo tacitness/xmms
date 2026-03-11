@@ -40,6 +40,7 @@ typedef struct {
     gboolean use_backslash_as_dir_delimiter;
     gboolean random_skin_on_play, use_fontsets;
     gboolean mainwin_use_xfont, timer_minutes_only;
+    gboolean eq_auto_level;  /* reduce preamp to prevent clipping (#14) */
     gfloat equalizer_preamp, equalizer_bands[10];
     gchar *skin, *outputplugin, *filesel_path, *playlist_path;
     gchar *playlist_font, *mainwin_font;

@@ -1251,6 +1251,14 @@ void create_prefs_window(void)
             _("Store information such as song title and length to playlists"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 8, 1, 1);
 
+        /* Row 9: EQ auto-level */
+        widget = prefswin_option_new_with_label(&cfg.eq_auto_level,
+                                                _("Auto-level EQ (prevent preamp clipping)"));
+        gtk_widget_set_tooltip_text(widget,
+            _("Automatically reduce EQ preamp when band boosts would cause clipping.\n"
+              "Keeps the combined gain at or below 0 dB."));
+        gtk_grid_attach(GTK_GRID(grid), widget, 0, 9, 2, 1);
+
         gtk_widget_show_all(opt_vbox);
         gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), opt_vbox,
                                  gtk_label_new(_("Options")));
