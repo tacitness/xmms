@@ -11,6 +11,7 @@ project(xmms
 # ---------------------------------------------------------------------------
 option(XMMS_GTK_VERSION     "GTK major version to build against (3 or 4)" 3)
 option(XMMS_ENABLE_ALSA     "Build ALSA output plugin"       ON)
+option(XMMS_ENABLE_PULSE    "Build PulseAudio output plugin" ON)
 option(XMMS_ENABLE_OSS      "Build OSS output plugin"        ON)
 option(XMMS_ENABLE_ESD      "Build ESD/esound output plugin" OFF)  # deprecated
 option(XMMS_ENABLE_DISKWRITER "Build disk-writer output plugin" ON)
@@ -152,6 +153,18 @@ if(XMMS_ENABLE_ALSA)
     endif()
 endif()
 
+# PulseAudio
+if(XMMS_ENABLE_PULSE)
+    pkg_check_modules(PULSE IMPORTED_TARGET "libpulse-simple >= 0.9")
+    if(PULSE_FOUND)
+        list(APPEND XMMS_DEFINES HAVE_PULSE=1)
+        message(STATUS "PulseAudio found: ${PULSE_VERSION}")
+    else()
+        message(WARNING "libpulse-simple not found — disabling PulseAudio output plugin")
+        set(XMMS_ENABLE_PULSE OFF)
+    endif()
+endif()
+
 # OSS — header-only check
 if(XMMS_ENABLE_OSS)
     check_include_file("sys/soundcard.h" HAVE_SYS_SOUNDCARD_H)
@@ -259,6 +272,7 @@ message(STATUS "  GTK version  : ${XMMS_GTK_VERSION}")
 message(STATUS "  Prefix       : ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  Plugin dir   : ${XMMS_PLUGIN_BASE_DIR}")
 message(STATUS "  ALSA         : ${XMMS_ENABLE_ALSA}")
+message(STATUS "  PulseAudio   : ${XMMS_ENABLE_PULSE}")
 message(STATUS "  OSS          : ${XMMS_ENABLE_OSS}")
 message(STATUS "  ESD          : ${XMMS_ENABLE_ESD}")
 message(STATUS "  mpg123       : ${XMMS_ENABLE_MPG123}")
