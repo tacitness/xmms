@@ -303,27 +303,6 @@ void glist_moveup(GList *list)
     }
 }
 
-struct MenuPos {
-    gint x;
-    gint y;
-};
-
-static void util_menu_position(GtkMenu *menu, gint *x, gint *y, gpointer data)
-{
-    GtkRequisition requisition;
-    gint screen_width;
-    gint screen_height;
-    struct MenuPos *pos = data;
-
-    gtk_widget_size_request(GTK_WIDGET(menu), &requisition);
-
-    screen_width = gdk_screen_width();
-    screen_height = gdk_screen_height();
-
-    *x = CLAMP(pos->x - 2, 0, MAX(0, screen_width - requisition.width));
-    *y = CLAMP(pos->y - 2, 0, MAX(0, screen_height - requisition.height));
-}
-
 /* GTK3: GtkObject removed; use GObject and g_object_steal_qdata */
 static void util_menu_delete_popup_data(GObject *object, gpointer ifactory)
 {
@@ -343,23 +322,11 @@ static void util_menu_delete_popup_data(GObject *object, gpointer ifactory)
 void util_item_factory_popup_with_data(GtkWidget *ifactory, gpointer data, GDestroyNotify destroy,
                                        guint x, guint y, guint mouse_button, guint32 time)
 {
-    static GQuark quark_user_menu_pos = 0;
-    struct MenuPos *pos;
-
-    if (!quark_user_menu_pos)
-        quark_user_menu_pos = g_quark_from_static_string("user_menu_pos");
+    (void)mouse_button;
+    (void)time;
 
     if (!quark_popup_data)
         quark_popup_data = g_quark_from_static_string("GtkItemFactory-popup-data");
-
-    /* GTK3: gtk_object_get/set_data_by_id → g_object_get/set_qdata */
-    pos = g_object_get_qdata(G_OBJECT(ifactory), quark_user_menu_pos);
-    if (!pos) {
-        pos = g_malloc0(sizeof(struct MenuPos));
-        g_object_set_qdata_full(G_OBJECT(ifactory), quark_user_menu_pos, pos, g_free);
-    }
-    pos->x = x;
-    pos->y = y;
 
     if (data != NULL) {
         g_object_set_qdata_full(G_OBJECT(ifactory), quark_popup_data, data, destroy);
@@ -367,9 +334,23 @@ void util_item_factory_popup_with_data(GtkWidget *ifactory, gpointer data, GDest
                          G_CALLBACK(util_menu_delete_popup_data), ifactory);
     }
 
-    /* GTK3: ifactory is already a GtkWidget* (the menu); no ->widget indirection needed */
-    gtk_menu_popup(GTK_MENU(ifactory), NULL, NULL, (GtkMenuPositionFunc)util_menu_position, pos,
-                   mouse_button, time);
+    /* GTK3 migration: gtk_menu_popup() + GtkMenuPositionFunc is deprecated in
+     * GTK3.22 and broken in practice: with GDK_CURRENT_TIME (no real button
+     * event) GTK3 cannot acquire a pointer grab, so the position function
+     * result is ignored and the menu appears at (0,0) — top-left of screen.
+     *
+     * gtk_menu_popup_at_rect() (GTK3.22+) does not need a pointer grab: it
+     * positions the menu relative to a GdkWindow + GdkRectangle in screen
+     * coordinates and handles screen-edge clamping internally. */
+    {
+        GdkRectangle rect = { (gint)x, (gint)y, 1, 1 };
+        gtk_menu_popup_at_rect(GTK_MENU(ifactory),
+                               gdk_screen_get_root_window(gdk_screen_get_default()),
+                               &rect,
+                               GDK_GRAVITY_NORTH_WEST,
+                               GDK_GRAVITY_NORTH_WEST,
+                               NULL);
+    }
 }
 
 void util_item_factory_popup(GtkWidget *ifactory, guint x, guint y, guint mouse_button,

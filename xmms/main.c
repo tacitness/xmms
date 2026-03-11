@@ -4390,10 +4390,58 @@ int main(int argc, char **argv)
     /* TODO(#gtk3): gdk_set_sm_client_id removed; sm_client_id = */ (void)sm_client_id;
     mainwin_create();
 
+    /* Load per-user CSS override (may not exist; silently ignored). */
     filename = g_strconcat(g_get_home_dir(), "/.xmms/gtkrc", NULL);
-    /* TODO(#gtk3): gtk_rc_init removed; GTK3 uses CSS via GtkCssProvider */
-    gtk_css_provider_load_from_path(gtk_css_provider_new(), filename, NULL);
+    {
+        GtkCssProvider *user_css = gtk_css_provider_new();
+        gtk_css_provider_load_from_path(user_css, filename, NULL);
+        gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                                  GTK_STYLE_PROVIDER(user_css),
+                                                  GTK_STYLE_PROVIDER_PRIORITY_USER);
+        g_object_unref(user_css);
+    }
     g_free(filename);
+
+    /* Built-in menu CSS: override system theme so menus render as compact
+     * charcoal popups matching the XMMS skin, not a large solid-black box.
+     *
+     * Without this, the menu GdkWindow inherits the application's opaque
+     * dark background and paints a full window-sized black rectangle behind
+     * the items.  Setting an explicit background-color on menu and menuitem
+     * scopes the background to only the drawn widgets. */
+    {
+        static const gchar *menu_css =
+            "menu, menu decoration {\n"
+            "  background-color: #2a2a2e;\n"
+            "  border: 1px solid #555566;\n"
+            "  padding: 1px;\n"
+            "  margin: 0px;\n"
+            "}\n"
+            "menuitem {\n"
+            "  background-color: transparent;\n"
+            "  color: #c8c8d8;\n"
+            "  padding: 1px 6px;\n"
+            "  min-height: 0px;\n"
+            "}\n"
+            "menuitem:hover, menuitem:selected {\n"
+            "  background-color: #0a3a6e;\n"
+            "  color: #ffffff;\n"
+            "}\n"
+            "menuitem:disabled, menuitem:insensitive {\n"
+            "  color: #606070;\n"
+            "}\n"
+            "separator, menuitem > separator {\n"
+            "  background-color: #444455;\n"
+            "  min-height: 1px;\n"
+            "  margin: 2px 0px;\n"
+            "}\n";
+        GtkCssProvider *menu_provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(menu_provider, menu_css, -1, NULL);
+        gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                                  GTK_STYLE_PROVIDER(menu_provider),
+                                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        g_object_unref(menu_provider);
+    }
 
     /* Plugins might start threads that can call gtk */
     GDK_THREADS_ENTER();
