@@ -69,6 +69,7 @@ GtkAccelGroup *mainwin_accel;
 gboolean mainwin_focus = FALSE;
 gboolean setting_volume = FALSE;
 gint mainwin_timeout_tag;
+static guint mainwin_tick_id = 0;
 
 PButton *mainwin_menubtn, *mainwin_minimize, *mainwin_shade, *mainwin_close;
 PButton *mainwin_rew, *mainwin_play, *mainwin_pause, *mainwin_stop, *mainwin_fwd, *mainwin_eject;
@@ -985,6 +986,10 @@ void mainwin_quit_cb(void)
     /* gdk_flush() no-op in GTK3 */
     util_dump_menu_rc();
     g_source_remove(mainwin_timeout_tag);
+    if (mainwin_tick_id) {
+        gtk_widget_remove_tick_callback(mainwin, mainwin_tick_id);
+        mainwin_tick_id = 0;
+    }
     util_set_cursor(NULL);
     save_config();
     cleanup_ctrlsocket();
@@ -3828,15 +3833,11 @@ gint idle_func(gpointer data)
     GDK_THREADS_ENTER();
     check_ctrlsocket();
 
-    draw_main_window(mainwin_force_redraw);
     if (!count) {
         read_volume(VOLSET_UPDATE);
         count = 10;
     } else
         count--;
-    mainwin_force_redraw = FALSE;
-    draw_playlist_window(FALSE);
-    draw_equalizer_window(FALSE);
 
     if (mainwin_title_text) {
         pthread_mutex_lock(&title_mutex);
@@ -3851,6 +3852,48 @@ gint idle_func(gpointer data)
     GDK_THREADS_LEAVE();
 
     return TRUE;
+}
+
+/*
+ * GTK3 frame-tick callback — fires once per vsync frame, synchronized with the
+ * compositor / GdkFrameClock.  This replaces the GTK2 pattern of:
+ *   draw_widget_list() -> skin_draw_pixmap(GdkPixmap) -> gdk_window_clear()
+ *                      -> gdk_flush()
+ * which was a server-side XClearWindow + XFlush: instantaneous because the
+ * backing store lived in the X server (GdkPixmap = XPixmap).
+ *
+ * In GTK3 the backing store is a CPU-side cairo_surface_t (IMAGE format).
+ * gtk_widget_queue_draw() marks the GDK window dirty; the compositor blits
+ * the surface on the next frame-clock tick.  Calling queue_draw() only when
+ * widgets are dirty (the old idle_func behaviour) means repaints only happen
+ * when widget state changes — once per second for the time counter.
+ *
+ * By moving the draw calls here and issuing queue_draw() unconditionally on
+ * every vsync frame we guarantee the latest backing surface is always
+ * presented, giving smooth frame-rate visual updates equivalent to GTK2.
+ */
+static gboolean mainwin_frame_tick(GtkWidget *widget, GdkFrameClock *frame_clock,
+                                   gpointer user_data)
+{
+    (void)widget;
+    (void)frame_clock;
+    (void)user_data;
+
+    draw_main_window(mainwin_force_redraw);
+    mainwin_force_redraw = FALSE;
+    draw_playlist_window(FALSE);
+    draw_equalizer_window(FALSE);
+
+    /* Unconditional queue_draw: ensures both backing surfaces are blitted to
+     * screen this frame regardless of whether any widget was marked dirty.
+     * GTK coalesces multiple queue_draw calls into a single repaint pass. */
+    gtk_widget_queue_draw(mainwin);
+    if (cfg.equalizer_visible)
+        gtk_widget_queue_draw(equalizerwin);
+    if (cfg.playlist_visible)
+        gtk_widget_queue_draw(playlistwin);
+
+    return G_SOURCE_CONTINUE;
 }
 
 static struct option long_options[] = {{"help", 0, NULL, 'h'},
@@ -4392,6 +4435,11 @@ int main(int argc, char **argv)
     draw_main_window(TRUE);
 
     mainwin_timeout_tag = g_timeout_add(10, idle_func, NULL);
+    /* Register the per-frame drawing tick, synchronized with the compositor
+     * frame clock.  Logic (time tracking, input, volume) stays in idle_func
+     * at 100 Hz; visual presentation happens here at vsync rate (~60 Hz). */
+    mainwin_tick_id = gtk_widget_add_tick_callback(mainwin,
+                          (GtkTickCallback)mainwin_frame_tick, NULL, NULL);
     playlist_start_get_info_thread();
 
     enable_x11r5_session_management(argc, argv);
