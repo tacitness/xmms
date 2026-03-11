@@ -287,25 +287,7 @@ void draw_equalizer_window(gboolean force)
             }
         } else
             clear_widget_list_redraw(equalizerwin_wlist);
-        /* GTK3 migration: gtk_widget_queue_draw() schedules a repaint via the
-         * compositor frame clock, adding up to one vsync (~16 ms) of latency.
-         * Bypass the frame clock: create a cairo context directly on the X11
-         * window and blit equalizerwin_bg immediately for real-time response.
-         * gdk_cairo_create() is deprecated in GTK 3.16+ but still available
-         * in GTK 3.24 and has no viable synchronous alternative on X11. */
-        {
-            GdkWindow *gdkwin = gtk_widget_get_window(equalizerwin);
-            if (gdkwin && equalizerwin_bg) {
-                G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-                cairo_t *scr = gdk_cairo_create(gdkwin);
-                G_GNUC_END_IGNORE_DEPRECATIONS
-                cairo_set_source_surface(scr, equalizerwin_bg, 0, 0);
-                cairo_paint(scr);
-                cairo_destroy(scr);
-            } else {
-                gtk_widget_queue_draw(equalizerwin);
-            }
-        }
+        gtk_widget_queue_draw(equalizerwin);
     }
     unlock_widget_list(equalizerwin_wlist);
 }
