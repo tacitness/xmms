@@ -41,7 +41,14 @@ int mpg123_get_xing_header(xing_header_t *xing, unsigned char *buf)
             buf += 9;
     }
 
-    if (strncmp(buf, "Xing", 4))
+    /* Accept both "Xing" (VBR) and "Info" (CBR, written by LAME) — the
+     * header layout is identical; only the four-byte magic differs.
+     * Without this, CBR files at 48 kHz are 2× too long because the
+     * fallback file-size calculation mistakenly uses the bitrate of the
+     * null header frame (typically 64 kbps) instead of the audio frames
+     * (128 kbps), halving bytes-per-frame and doubling the frame count.
+     * Ref: https://github.com/tacitness/xmms/issues/18 */
+    if (strncmp((char *)buf, "Xing", 4) && strncmp((char *)buf, "Info", 4))
         return 0;
     buf += 4;
 
