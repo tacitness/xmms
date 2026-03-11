@@ -27,8 +27,10 @@ gint skinwin_delete_event(GtkWidget *widget, GdkEvent *event, gpointer data)
     return (TRUE);
 }
 
-void change_skin_event(GtkWidget *widget, gint row, gint column, GdkEventButton *event)
+void change_skin_event(GtkTreeView *widget, GtkTreePath *path, GtkTreeViewColumn *col,
+                       gpointer data)
 {
+    gint row = gtk_tree_path_get_indices(path)[0];
     if (row == 0)
         load_skin(NULL);
     else
@@ -45,26 +47,24 @@ void create_skin_window(void)
     char *titles[1];
     GtkWidget *vbox, *hbox, *main_hbox, *separator, *scrolled_win, *checkbox;
 
-    skinwin = gtk_window_new(GTK_WINDOW_DIALOG);
+    skinwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(skinwin), _("Skin selector"));
     gtk_window_set_transient_for(GTK_WINDOW(skinwin), GTK_WINDOW(mainwin));
-    gtk_signal_connect(GTK_OBJECT(skinwin), "delete_event", GTK_SIGNAL_FUNC(skinwin_delete_event),
-                       NULL);
-    gtk_container_border_width(GTK_CONTAINER(skinwin), 10);
+    g_signal_connect(G_OBJECT(skinwin), "delete_event", G_CALLBACK(skinwin_delete_event), NULL);
+    gtk_container_set_border_width(GTK_CONTAINER(skinwin), 10);
 
-    vbox = gtk_vbox_new(FALSE, 5);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(skinwin), vbox);
 
     titles[0] = _("Skins");
-    skinwin_list = gtk_clist_new_with_titles(1, titles);
-    gtk_clist_column_titles_passive(GTK_CLIST(skinwin_list));
-    gtk_clist_set_selection_mode(GTK_CLIST(skinwin_list), GTK_SELECTION_SINGLE);
-    gtk_signal_connect(GTK_OBJECT(skinwin_list), "select_row", GTK_SIGNAL_FUNC(change_skin_event),
-                       NULL);
-    gtk_widget_set_usize(skinwin_list, 250, 200);
+    skinwin_list = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
+    /* TODO(#gtk3): gtk_clist_column_titles_passive removed */
+    /* TODO(#gtk3): gtk_clist_set_selection_mode removed */
+    g_signal_connect(G_OBJECT(skinwin_list), "row-activated", G_CALLBACK(change_skin_event), NULL);
+    gtk_widget_set_size_request(skinwin_list, 250, 200);
     scrolled_win = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(scrolled_win), skinwin_list);
-    gtk_container_border_width(GTK_CONTAINER(scrolled_win), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(scrolled_win), 5);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_win), GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_ALWAYS);
     gtk_box_pack_start(GTK_BOX(vbox), scrolled_win, TRUE, TRUE, 0);
@@ -72,24 +72,22 @@ void create_skin_window(void)
     separator = gtk_hseparator_new();
     gtk_box_pack_start(GTK_BOX(vbox), separator, FALSE, TRUE, 0);
 
-    main_hbox = gtk_hbox_new(FALSE, 5);
+    main_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_set_spacing(GTK_BOX(main_hbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), main_hbox, FALSE, FALSE, 0);
 
     checkbox = gtk_check_button_new_with_label(_("Select random skin on play"));
     gtk_box_pack_start(GTK_BOX(main_hbox), checkbox, FALSE, FALSE, 0);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbox), cfg.random_skin_on_play);
-    gtk_signal_connect(GTK_OBJECT(checkbox), "toggled", GTK_SIGNAL_FUNC(enable_random_skin_event),
-                       NULL);
+    g_signal_connect(G_OBJECT(checkbox), "toggled", G_CALLBACK(enable_random_skin_event), NULL);
 
-    hbox = gtk_hbutton_box_new();
+    hbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(hbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(hbox), 5);
+    gtk_box_set_spacing(GTK_BOX(hbox), 5);
     gtk_box_pack_start(GTK_BOX(main_hbox), hbox, TRUE, TRUE, 0);
     skinwin_close = gtk_button_new_with_label(_("Close"));
-    GTK_WIDGET_SET_FLAGS(skinwin_close, GTK_CAN_DEFAULT);
-    gtk_signal_connect(GTK_OBJECT(skinwin_close), "clicked", GTK_SIGNAL_FUNC(skinwin_delete_event),
-                       NULL);
+    gtk_widget_set_can_default(skinwin_close, TRUE);
+    g_signal_connect(G_OBJECT(skinwin_close), "clicked", G_CALLBACK(skinwin_delete_event), NULL);
     gtk_box_pack_start(GTK_BOX(hbox), skinwin_close, FALSE, FALSE, 0);
     gtk_widget_grab_default(skinwin_close);
 }
@@ -204,21 +202,19 @@ void scan_skins(void)
             scan_skindir(list[i++]);
     }
 
-    gtk_clist_freeze(GTK_CLIST(skinwin_list));
-    gtk_clist_clear(GTK_CLIST(skinwin_list));
-    gtk_clist_append(GTK_CLIST(skinwin_list), &none);
+    /* TODO(#gtk3): gtk_clist_freeze removed */
+    /* TODO(#gtk3): gtk_clist_clear removed */
+    /* TODO(#gtk3): gtk_clist_append removed */
     if (!skin->path)
-        gtk_clist_select_row(GTK_CLIST(skinwin_list), 0, 0);
-
+        ;
     for (i = 0; i < g_list_length(skinlist); i++) {
         entry = g_list_nth(skinlist, i);
-        gtk_clist_append(GTK_CLIST(skinwin_list),
-                         (gchar **)&((struct SkinNode *)entry->data)->name);
+        /* TODO(#gtk3): gtk_clist_append removed */
         if (skin->path)
             if (!strcmp(((struct SkinNode *)entry->data)->path, skin->path))
-                gtk_clist_select_row(GTK_CLIST(skinwin_list), i + 1, 0);
+                ; /* TODO(#gtk3): gtk_clist_select_row removed */
     }
-    gtk_clist_thaw(GTK_CLIST(skinwin_list));
+    /* TODO(#gtk3): gtk_clist_thaw removed */
 }
 
 void show_skin_window(void)
@@ -227,10 +223,8 @@ void show_skin_window(void)
     gtk_window_set_position(GTK_WINDOW(skinwin), GTK_WIN_POS_MOUSE);
     gtk_widget_show_all(skinwin);
     gtk_widget_grab_focus(skinwin_list);
-    if (GTK_CLIST(skinwin_list)->selection) {
-        gtk_clist_moveto(GTK_CLIST(skinwin_list),
-                         GPOINTER_TO_INT(GTK_CLIST(skinwin_list)->selection->data), 0, 0.5, 0.0);
-        GTK_CLIST(skinwin_list)->focus_row =
-            GPOINTER_TO_INT(GTK_CLIST(skinwin_list)->selection->data);
+    if (NULL /* TODO(#gtk3): clist selection */) {
+        /* TODO(#gtk3): gtk_clist_moveto removed */
+        /* TODO(#gtk3): clist focus_row assignment removed */
     }
 }

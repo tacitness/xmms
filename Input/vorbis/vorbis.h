@@ -1,6 +1,8 @@
 #ifndef __VORBIS_H__
 #define __VORBIS_H__
 
+#include <glib.h>
+
 void vorbis_configure(void);
 
 void vorbis_file_info_box(char *filename);

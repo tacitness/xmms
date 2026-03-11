@@ -27,10 +27,10 @@ typedef struct {
     SkinIndex pb_skin_index1, pb_skin_index2;
 } PButton;
 
-PButton *create_pbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
-                        gint nx, gint ny, gint px, gint py, void (*cb)(void), SkinIndex si);
-PButton *create_pbutton_ex(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w,
-                           gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void),
+PButton *create_pbutton(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y, gint w,
+                        gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void), SkinIndex si);
+PButton *create_pbutton_ex(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
+                           gint w, gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void),
                            SkinIndex si1, SkinIndex si2);
 void free_pbutton(PButton *b);
 void pbutton_set_skin_index(PButton *b, SkinIndex si);

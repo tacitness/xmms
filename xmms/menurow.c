@@ -22,27 +22,27 @@ void menurow_draw(Widget *w)
 {
     MenuRow *mr = (MenuRow *)w;
 
-    GdkPixmap *obj = mr->mr_widget.parent;
+    cairo_surface_t *obj = mr->mr_widget.parent;
 
     if (mr->mr_selected == MENUROW_NONE) {
         if (cfg.always_show_cb || mr->mr_bpushed)
-            skin_draw_pixmap(obj, mr->mr_widget.gc, mr->mr_skin_index, mr->mr_nx, mr->mr_ny,
+            skin_draw_pixmap(mr->mr_widget.cr, mr->mr_skin_index, mr->mr_nx, mr->mr_ny,
                              mr->mr_widget.x, mr->mr_widget.y, 8, 43);
         else
-            skin_draw_pixmap(obj, mr->mr_widget.gc, mr->mr_skin_index, mr->mr_nx + 8, mr->mr_ny,
+            skin_draw_pixmap(mr->mr_widget.cr, mr->mr_skin_index, mr->mr_nx + 8, mr->mr_ny,
                              mr->mr_widget.x, mr->mr_widget.y, 8, 43);
     } else {
-        skin_draw_pixmap(obj, mr->mr_widget.gc, mr->mr_skin_index,
+        skin_draw_pixmap(mr->mr_widget.cr, mr->mr_skin_index,
                          mr->mr_sx + ((mr->mr_selected - 1) * 8), mr->mr_sy, mr->mr_widget.x,
                          mr->mr_widget.y, 8, 43);
     }
     if (cfg.always_show_cb || mr->mr_bpushed) {
         if (mr->mr_always_selected)
-            skin_draw_pixmap(obj, mr->mr_widget.gc, mr->mr_skin_index, mr->mr_sx + 8,
-                             mr->mr_sy + 10, mr->mr_widget.x, mr->mr_widget.y + 10, 8, 8);
+            skin_draw_pixmap(mr->mr_widget.cr, mr->mr_skin_index, mr->mr_sx + 8, mr->mr_sy + 10,
+                             mr->mr_widget.x, mr->mr_widget.y + 10, 8, 8);
         if (mr->mr_doublesize_selected)
-            skin_draw_pixmap(obj, mr->mr_widget.gc, mr->mr_skin_index, mr->mr_sx + 24,
-                             mr->mr_sy + 26, mr->mr_widget.x, mr->mr_widget.y + 26, 8, 8);
+            skin_draw_pixmap(mr->mr_widget.cr, mr->mr_skin_index, mr->mr_sx + 24, mr->mr_sy + 26,
+                             mr->mr_widget.x, mr->mr_widget.y + 26, 8, 8);
     }
 }
 
@@ -111,24 +111,26 @@ void menurow_button_release(GtkWidget *w, GdkEventButton *event, gpointer data)
     }
 }
 
-MenuRow *create_menurow(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint nx,
-                        gint ny, gint sx, gint sy, void (*ccb)(MenuRowItem),
+MenuRow *create_menurow(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
+                        gint nx, gint ny, gint sx, gint sy, void (*ccb)(MenuRowItem),
                         void (*rcb)(MenuRowItem), SkinIndex si)
 {
     MenuRow *mr;
 
     mr = (MenuRow *)g_malloc0(sizeof(MenuRow));
     mr->mr_widget.parent = parent;
-    mr->mr_widget.gc = gc;
+    mr->mr_widget.cr = cr;
     mr->mr_widget.x = x;
     mr->mr_widget.y = y;
     mr->mr_widget.width = 8;
     mr->mr_widget.height = 43;
     mr->mr_widget.visible = 1;
     mr->mr_widget.draw = menurow_draw;
-    mr->mr_widget.button_press_cb = menurow_button_press;
-    mr->mr_widget.motion_cb = menurow_motion;
-    mr->mr_widget.button_release_cb = menurow_button_release;
+    mr->mr_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))menurow_button_press;
+    mr->mr_widget.motion_cb = (void (*)(GtkWidget *, GdkEventMotion *, gpointer))menurow_motion;
+    mr->mr_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))menurow_button_release;
     mr->mr_nx = nx;
     mr->mr_ny = ny;
     mr->mr_sx = sx;

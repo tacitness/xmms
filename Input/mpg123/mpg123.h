@@ -172,9 +172,15 @@ int mpg123_http_get_length(void);
 void mpg123_http_seek(long pos);
 
 /* ------ Declarations from "common.c" ------ */
+#ifndef mpg123_get1bit
 extern unsigned int mpg123_get1bit(void);
+#endif
+#ifndef mpg123_getbits
 extern unsigned int mpg123_getbits(int);
+#endif
+#ifndef mpg123_getbits_fast
 extern unsigned int mpg123_getbits_fast(int);
+#endif
 
 extern void mpg123_open_stream(char *bs_filenam, int fd);
 extern int mpg123_head_check(unsigned long);

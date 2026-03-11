@@ -21,17 +21,15 @@
 void pbutton_draw(Widget *w)
 {
     PButton *button = (PButton *)w;
-    GdkPixmap *obj;
 
+    /* GTK3: draw via stored cairo_t *cr instead of GdkPixmap+GdkGC */
     if (button->pb_allow_draw) {
-        obj = button->pb_widget.parent;
-
         if (button->pb_pressed && button->pb_inside) {
-            skin_draw_pixmap(obj, button->pb_widget.gc, button->pb_skin_index2, button->pb_px,
+            skin_draw_pixmap(button->pb_widget.cr, button->pb_skin_index2, button->pb_px,
                              button->pb_py, button->pb_widget.x, button->pb_widget.y,
                              button->pb_widget.width, button->pb_widget.height);
         } else {
-            skin_draw_pixmap(obj, button->pb_widget.gc, button->pb_skin_index1, button->pb_nx,
+            skin_draw_pixmap(button->pb_widget.cr, button->pb_skin_index1, button->pb_nx,
                              button->pb_ny, button->pb_widget.x, button->pb_widget.y,
                              button->pb_widget.width, button->pb_widget.height);
         }
@@ -104,23 +102,25 @@ void pbutton_set_button_data(PButton *b, gint nx, gint ny, gint px, gint py)
 }
 
 
-PButton *create_pbutton_ex(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w,
-                           gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void),
+PButton *create_pbutton_ex(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
+                           gint w, gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void),
                            SkinIndex si1, SkinIndex si2)
 {
     PButton *b;
 
     b = (PButton *)g_malloc0(sizeof(PButton));
     b->pb_widget.parent = parent;
-    b->pb_widget.gc = gc;
+    b->pb_widget.cr = cr; /* GTK3: was .gc */
     b->pb_widget.x = x;
     b->pb_widget.y = y;
     b->pb_widget.width = w;
     b->pb_widget.height = h;
     b->pb_widget.visible = 1;
-    b->pb_widget.button_press_cb = GTK_SIGNAL_FUNC(pbutton_button_press_cb);
-    b->pb_widget.button_release_cb = GTK_SIGNAL_FUNC(pbutton_button_release_cb);
-    b->pb_widget.motion_cb = GTK_SIGNAL_FUNC(pbutton_motion_cb);
+    b->pb_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))pbutton_button_press_cb;
+    b->pb_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))pbutton_button_release_cb;
+    b->pb_widget.motion_cb = (void (*)(GtkWidget *, GdkEventMotion *, gpointer))pbutton_motion_cb;
     b->pb_widget.draw = pbutton_draw;
     b->pb_nx = nx;
     b->pb_ny = ny;
@@ -134,10 +134,10 @@ PButton *create_pbutton_ex(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, 
     return b;
 }
 
-PButton *create_pbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
-                        gint nx, gint ny, gint px, gint py, void (*cb)(void), SkinIndex si)
+PButton *create_pbutton(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y, gint w,
+                        gint h, gint nx, gint ny, gint px, gint py, void (*cb)(void), SkinIndex si)
 {
-    return create_pbutton_ex(wlist, parent, gc, x, y, w, h, nx, ny, px, py, cb, si, si);
+    return create_pbutton_ex(wlist, parent, cr, x, y, w, h, nx, ny, px, py, cb, si, si);
 }
 
 void free_pbutton(PButton *b)

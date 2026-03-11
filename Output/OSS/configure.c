@@ -1,6 +1,6 @@
 /*  XMMS - Cross-platform multimedia player
  *  Copyright (C) 1998-2001  Peter Alm, Mikael Alm, Olle Hallnas, Thomas Nilsson and 4Front
- * Technologies Copyright (C) 1999-2001  Håvard Kvålen
+ * Technologies Copyright (C) 1999-2001  Hï¿½vard Kvï¿½len
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -94,15 +94,14 @@ static void mixer_device_toggled(GtkToggleButton *widget, gpointer data)
     gtk_widget_set_sensitive(mixer_alt_device_entry, use_alt_device);
 }
 
-static void scan_devices(gchar *type, GtkWidget *option_menu, GtkSignalFunc sigfunc)
+static void scan_devices(gchar *type, GtkWidget *combo_menu, GCallback sigfunc)
 {
-    GtkWidget *menu, *item;
     FILE *file;
     gchar buffer[256], *temp, *tmp2;
     gboolean found = FALSE;
     gint index = 0;
 
-    menu = gtk_menu_new();
+    gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT(combo_menu));
 
     if ((file = fopen("/dev/sndstat", "r"))) {
         while (fgets(buffer, 255, file)) {
@@ -120,25 +119,22 @@ static void scan_devices(gchar *type, GtkWidget *option_menu, GtkSignalFunc sigf
                     } else
                         tmp2 = buffer;
                     temp = g_strdup_printf(_("Default (%s)"), tmp2);
-                    item = gtk_menu_item_new_with_label(temp);
+                    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_menu), temp);
                     g_free(temp);
-                } else
-                    item = gtk_menu_item_new_with_label(buffer);
-                gtk_signal_connect(GTK_OBJECT(item), "activate", sigfunc, (gpointer)index++);
-                gtk_widget_show(item);
-                gtk_menu_append(GTK_MENU(menu), item);
+                } else {
+                    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_menu), buffer);
+                }
+                index++;
             }
             if (!strcasecmp(buffer, type))
                 found = 1;
         }
         fclose(file);
     } else {
-        item = gtk_menu_item_new_with_label(_("Default"));
-        gtk_signal_connect(GTK_OBJECT(item), "activate", sigfunc, (gpointer)0);
-        gtk_widget_show(item);
-        gtk_menu_append(GTK_MENU(menu), item);
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_menu), _("Default"));
     }
-    gtk_option_menu_set_menu(GTK_OPTION_MENU(option_menu), menu);
+    if (sigfunc)
+        g_signal_connect(G_OBJECT(combo_menu), "changed", sigfunc, NULL);
 }
 
 void oss_configure(void)
@@ -148,63 +144,64 @@ void oss_configure(void)
     GtkWidget *mdevice_frame, *mdevice_box, *mdevice;
     GtkWidget *buffer_frame, *buffer_vbox, *buffer_table;
     GtkWidget *buffer_size_box, *buffer_size_label;
-    GtkObject *buffer_size_adj, *buffer_pre_adj;
+    GtkAdjustment *buffer_size_adj, *buffer_pre_adj;
     GtkWidget *buffer_pre_box, *buffer_pre_label;
     GtkWidget *audio_alt_box, *mixer_alt_box;
     GtkWidget *bbox, *ok, *cancel;
     GtkWidget *mixer_table, *mixer_frame;
 
     if (configure_win) {
-        gdk_window_raise(configure_win->window);
+        gdk_window_raise(gtk_widget_get_window(configure_win));
         return;
     }
 
-    configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &configure_win);
+    configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &configure_win);
     gtk_window_set_title(GTK_WINDOW(configure_win), _("OSS Driver configuration"));
-    gtk_window_set_policy(GTK_WINDOW(configure_win), FALSE, FALSE, FALSE);
+    /* gtk_window_set_policy removed */
     gtk_window_set_position(GTK_WINDOW(configure_win), GTK_WIN_POS_MOUSE);
-    gtk_container_border_width(GTK_CONTAINER(configure_win), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(configure_win), vbox);
 
     notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-    dev_vbox = gtk_vbox_new(FALSE, 5);
+    dev_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(dev_vbox), 5);
 
     adevice_frame = gtk_frame_new(_("Audio device:"));
     gtk_box_pack_start(GTK_BOX(dev_vbox), adevice_frame, FALSE, FALSE, 0);
 
-    adevice_box = gtk_vbox_new(FALSE, 5);
+    adevice_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(adevice_box), 5);
     gtk_container_add(GTK_CONTAINER(adevice_frame), adevice_box);
 
-    adevice = gtk_option_menu_new();
+    adevice = gtk_combo_box_text_new();
     gtk_box_pack_start(GTK_BOX(adevice_box), adevice, TRUE, TRUE, 0);
 #if defined(HAVE_NEWPCM)
-    scan_devices("Installed devices:", adevice, configure_win_audio_dev_cb);
+    scan_devices("Installed devices:", adevice, G_CALLBACK(configure_win_audio_dev_cb));
 #else
-    scan_devices("Audio devices:", adevice, configure_win_audio_dev_cb);
+    scan_devices("Audio devices:", adevice, G_CALLBACK(configure_win_audio_dev_cb));
 #endif
     audio_device = oss_cfg.audio_device;
-    gtk_option_menu_set_history(GTK_OPTION_MENU(adevice), oss_cfg.audio_device);
-    audio_alt_box = gtk_hbox_new(FALSE, 0);
-    gtk_box_pack_start_defaults(GTK_BOX(adevice_box), audio_alt_box);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(adevice), oss_cfg.audio_device);
+    audio_alt_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(adevice_box), audio_alt_box, TRUE, TRUE, 0);
     adevice_use_alt_check = gtk_check_button_new_with_label(_("Use alternate device:"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(adevice_use_alt_check),
                                  oss_cfg.use_alt_audio_device);
-    gtk_signal_connect(GTK_OBJECT(adevice_use_alt_check), "toggled", audio_device_toggled, adevice);
+    g_signal_connect(G_OBJECT(adevice_use_alt_check), "toggled", G_CALLBACK(audio_device_toggled),
+                     adevice);
     gtk_box_pack_start(GTK_BOX(audio_alt_box), adevice_use_alt_check, FALSE, FALSE, 0);
     audio_alt_device_entry = gtk_entry_new();
     if (oss_cfg.alt_audio_device != NULL)
         gtk_entry_set_text(GTK_ENTRY(audio_alt_device_entry), oss_cfg.alt_audio_device);
     else
         gtk_entry_set_text(GTK_ENTRY(audio_alt_device_entry), DEV_DSP);
-    gtk_box_pack_start_defaults(GTK_BOX(audio_alt_box), audio_alt_device_entry);
+    gtk_box_pack_start(GTK_BOX(audio_alt_box), audio_alt_device_entry, TRUE, TRUE, 0);
 
     if (oss_cfg.use_alt_audio_device)
         gtk_widget_set_sensitive(adevice, FALSE);
@@ -214,32 +211,33 @@ void oss_configure(void)
     mdevice_frame = gtk_frame_new(_("Mixer device:"));
     gtk_box_pack_start(GTK_BOX(dev_vbox), mdevice_frame, FALSE, FALSE, 0);
 
-    mdevice_box = gtk_vbox_new(FALSE, 0);
+    mdevice_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(mdevice_box), 5);
     gtk_container_add(GTK_CONTAINER(mdevice_frame), mdevice_box);
 
-    mdevice = gtk_option_menu_new();
+    mdevice = gtk_combo_box_text_new();
     gtk_box_pack_start(GTK_BOX(mdevice_box), mdevice, TRUE, TRUE, 0);
 #if defined(HAVE_NEWPCM)
-    scan_devices("Installed devices:", mdevice, configure_win_mixer_dev_cb);
+    scan_devices("Installed devices:", mdevice, G_CALLBACK(configure_win_mixer_dev_cb));
 #else
-    scan_devices("Mixers:", mdevice, configure_win_mixer_dev_cb);
+    scan_devices("Mixers:", mdevice, G_CALLBACK(configure_win_mixer_dev_cb));
 #endif
     mixer_device = oss_cfg.mixer_device;
-    gtk_option_menu_set_history(GTK_OPTION_MENU(mdevice), oss_cfg.mixer_device);
-    mixer_alt_box = gtk_hbox_new(FALSE, 0);
-    gtk_box_pack_start_defaults(GTK_BOX(mdevice_box), mixer_alt_box);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(mdevice), oss_cfg.mixer_device);
+    mixer_alt_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(mdevice_box), mixer_alt_box, TRUE, TRUE, 0);
     mdevice_use_alt_check = gtk_check_button_new_with_label(_("Use alternate device:"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mdevice_use_alt_check),
                                  oss_cfg.use_alt_mixer_device);
-    gtk_signal_connect(GTK_OBJECT(mdevice_use_alt_check), "toggled", mixer_device_toggled, mdevice);
+    g_signal_connect(G_OBJECT(mdevice_use_alt_check), "toggled", G_CALLBACK(mixer_device_toggled),
+                     mdevice);
     gtk_box_pack_start(GTK_BOX(mixer_alt_box), mdevice_use_alt_check, FALSE, FALSE, 0);
     mixer_alt_device_entry = gtk_entry_new();
     if (oss_cfg.alt_mixer_device != NULL)
         gtk_entry_set_text(GTK_ENTRY(mixer_alt_device_entry), oss_cfg.alt_mixer_device);
     else
         gtk_entry_set_text(GTK_ENTRY(mixer_alt_device_entry), DEV_MIXER);
-    gtk_box_pack_start_defaults(GTK_BOX(mixer_alt_box), mixer_alt_device_entry);
+    gtk_box_pack_start(GTK_BOX(mixer_alt_box), mixer_alt_device_entry, TRUE, TRUE, 0);
 
     if (oss_cfg.use_alt_mixer_device)
         gtk_widget_set_sensitive(mdevice, FALSE);
@@ -251,29 +249,29 @@ void oss_configure(void)
     buffer_frame = gtk_frame_new(_("Buffering:"));
     gtk_container_set_border_width(GTK_CONTAINER(buffer_frame), 5);
 
-    buffer_vbox = gtk_vbox_new(FALSE, 0);
+    buffer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(buffer_frame), buffer_vbox);
 
     buffer_table = gtk_table_new(2, 1, TRUE);
     gtk_container_set_border_width(GTK_CONTAINER(buffer_table), 5);
     gtk_box_pack_start(GTK_BOX(buffer_vbox), buffer_table, FALSE, FALSE, 0);
 
-    buffer_size_box = gtk_hbox_new(FALSE, 5);
+    buffer_size_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_table_attach_defaults(GTK_TABLE(buffer_table), buffer_size_box, 0, 1, 0, 1);
     buffer_size_label = gtk_label_new(_("Buffer size (ms):"));
     gtk_box_pack_start(GTK_BOX(buffer_size_box), buffer_size_label, FALSE, FALSE, 0);
     buffer_size_adj = gtk_adjustment_new(oss_cfg.buffer_size, 200, 10000, 100, 100, 100);
     buffer_size_spin = gtk_spin_button_new(GTK_ADJUSTMENT(buffer_size_adj), 8, 0);
-    gtk_widget_set_usize(buffer_size_spin, 60, -1);
+    gtk_widget_set_size_request(buffer_size_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(buffer_size_box), buffer_size_spin, FALSE, FALSE, 0);
 
-    buffer_pre_box = gtk_hbox_new(FALSE, 5);
+    buffer_pre_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_table_attach_defaults(GTK_TABLE(buffer_table), buffer_pre_box, 1, 2, 0, 1);
     buffer_pre_label = gtk_label_new(_("Pre-buffer (percent):"));
     gtk_box_pack_start(GTK_BOX(buffer_pre_box), buffer_pre_label, FALSE, FALSE, 0);
     buffer_pre_adj = gtk_adjustment_new(oss_cfg.prebuffer, 0, 90, 1, 1, 1);
     buffer_pre_spin = gtk_spin_button_new(GTK_ADJUSTMENT(buffer_pre_adj), 1, 0);
-    gtk_widget_set_usize(buffer_pre_spin, 60, -1);
+    gtk_widget_set_size_request(buffer_pre_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(buffer_pre_box), buffer_pre_spin, FALSE, FALSE, 0);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), buffer_frame, gtk_label_new(_("Buffering")));
@@ -287,21 +285,21 @@ void oss_configure(void)
     gtk_table_attach_defaults(GTK_TABLE(mixer_table), mixer_usemaster_check, 0, 1, 0, 1);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), mixer_frame, gtk_label_new(_("Mixer")));
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(configure_win_ok_cb), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(configure_win_ok_cb), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(ok);
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(configure_win));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             configure_win);
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(configure_win);

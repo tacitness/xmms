@@ -113,49 +113,52 @@ static const char *translators[] =
 
 static GtkWidget *generate_credit_list(const char *text[], gboolean sec_space)
 {
-    GtkWidget *clist, *scrollwin;
+    GtkWidget *textview, *scrollwin;
+    GtkTextBuffer *buf;
+    GtkTextIter iter;
     int i = 0;
 
-    clist = gtk_clist_new(2);
-
+    buf = gtk_text_buffer_new(NULL);
+    gtk_text_buffer_get_start_iter(buf, &iter);
     while (text[i]) {
-        gchar *temp[2];
-        guint row;
-
-        temp[0] = gettext(text[i++]);
-        temp[1] = gettext(text[i++]);
-        row = gtk_clist_append(GTK_CLIST(clist), temp);
-        gtk_clist_set_selectable(GTK_CLIST(clist), row, FALSE);
-        temp[0] = "";
+        gchar *line;
+        /* section header */
+        line = g_strdup_printf("%s\t%s\n", gettext(text[i]), gettext(text[i + 1]));
+        gtk_text_buffer_insert(buf, &iter, line, -1);
+        g_free(line);
+        i += 2;
         while (text[i]) {
-            temp[1] = gettext(text[i++]);
-            row = gtk_clist_append(GTK_CLIST(clist), temp);
-            gtk_clist_set_selectable(GTK_CLIST(clist), row, FALSE);
+            line = g_strdup_printf("\t%s\n", gettext(text[i++]));
+            gtk_text_buffer_insert(buf, &iter, line, -1);
+            g_free(line);
         }
         i++;
-        if (text[i] && sec_space) {
-            temp[1] = "";
-            row = gtk_clist_append(GTK_CLIST(clist), temp);
-            gtk_clist_set_selectable(GTK_CLIST(clist), row, FALSE);
-        }
+        if (text[i] && sec_space)
+            gtk_text_buffer_insert(buf, &iter, "\n", -1);
     }
-    gtk_clist_columns_autosize(GTK_CLIST(clist));
-    gtk_clist_set_column_justification(GTK_CLIST(clist), 0, GTK_JUSTIFY_RIGHT);
+    textview = gtk_text_view_new_with_buffer(buf);
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(textview), FALSE);
+    gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(textview), FALSE);
+    g_object_unref(buf);
 
     scrollwin = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollwin), GTK_POLICY_NEVER,
                                    GTK_POLICY_ALWAYS);
-    gtk_container_add(GTK_CONTAINER(scrollwin), clist);
+    gtk_container_add(GTK_CONTAINER(scrollwin), textview);
     gtk_container_set_border_width(GTK_CONTAINER(scrollwin), 10);
-    gtk_widget_set_usize(scrollwin, -1, 120);
-
+    gtk_widget_set_size_request(scrollwin, -1, 120);
     return scrollwin;
+}
+
+static void on_widget_destroyed(GtkWidget *w, gpointer data)
+{
+    gtk_widget_destroyed(w, (GtkWidget **)data);
 }
 
 void show_about_window(void)
 {
     static GtkWidget *about_window = NULL;
-    static GdkPixmap *xmms_logo_pmap = NULL, *xmms_logo_mask = NULL;
+    static GdkPixbuf *xmms_logo_pixbuf = NULL;
 
     GtkWidget *about_vbox, *about_notebook;
     GtkWidget *about_credits_logo_box, *about_credits_logo_frame;
@@ -167,30 +170,31 @@ void show_about_window(void)
     if (about_window)
         return;
 
-    about_window = gtk_window_new(GTK_WINDOW_DIALOG);
+    about_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(about_window), _("About XMMS"));
-    gtk_window_set_policy(GTK_WINDOW(about_window), FALSE, TRUE, FALSE);
+    gtk_window_set_resizable(GTK_WINDOW(about_window), TRUE);
     gtk_container_set_border_width(GTK_CONTAINER(about_window), 10);
-    gtk_signal_connect(GTK_OBJECT(about_window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &about_window);
-    gtk_signal_connect(GTK_OBJECT(about_window), "key_press_event", util_dialog_keypress_cb, NULL);
+    g_signal_connect(G_OBJECT(about_window), "destroy", G_CALLBACK(on_widget_destroyed),
+                     &about_window);
+    g_signal_connect(G_OBJECT(about_window), "key_press_event", G_CALLBACK(util_dialog_keypress_cb),
+                     NULL);
     gtk_widget_realize(about_window);
 
-    about_vbox = gtk_vbox_new(FALSE, 5);
+    about_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(about_window), about_vbox);
 
-    if (!xmms_logo_pmap)
-        xmms_logo_pmap =
-            gdk_pixmap_create_from_xpm_d(about_window->window, &xmms_logo_mask, NULL, xmms_logo);
+    if (!xmms_logo_pixbuf)
+        xmms_logo_pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)xmms_logo);
 
-    about_credits_logo_box = gtk_hbox_new(TRUE, 0);
+    about_credits_logo_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_set_homogeneous(GTK_BOX(about_credits_logo_box), TRUE);
     gtk_box_pack_start(GTK_BOX(about_vbox), about_credits_logo_box, FALSE, FALSE, 0);
 
     about_credits_logo_frame = gtk_frame_new(NULL);
     gtk_frame_set_shadow_type(GTK_FRAME(about_credits_logo_frame), GTK_SHADOW_OUT);
     gtk_box_pack_start(GTK_BOX(about_credits_logo_box), about_credits_logo_frame, FALSE, FALSE, 0);
 
-    about_credits_logo = gtk_pixmap_new(xmms_logo_pmap, xmms_logo_mask);
+    about_credits_logo = gtk_image_new_from_pixbuf(xmms_logo_pixbuf);
     gtk_container_add(GTK_CONTAINER(about_credits_logo_frame), about_credits_logo);
 
     text = g_strdup_printf(_("XMMS %s - Cross platform multimedia player"), VERSION);
@@ -213,15 +217,15 @@ void show_about_window(void)
     list = generate_credit_list(translators, FALSE);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(about_notebook), list, gtk_label_new(_("Translators")));
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(about_vbox), bbox, FALSE, FALSE, 0);
 
     close_btn = gtk_button_new_with_label(_("Close"));
-    gtk_signal_connect_object(GTK_OBJECT(close_btn), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(about_window));
-    GTK_WIDGET_SET_FLAGS(close_btn, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(close_btn), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             about_window);
+    gtk_widget_set_can_default(close_btn, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), close_btn, TRUE, TRUE, 0);
     gtk_widget_grab_default(close_btn);
 

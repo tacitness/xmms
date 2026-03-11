@@ -1154,8 +1154,7 @@ static void aboutbox(void)
                                    "Plugin by The XMMS team"),
                                  _("OK"), FALSE, NULL, NULL);
 
-    gtk_signal_connect(GTK_OBJECT(aboutbox), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &aboutbox);
+    g_signal_connect(G_OBJECT(aboutbox), "destroy", G_CALLBACK(gtk_widget_destroyed), &aboutbox);
 }
 
 InputPlugin mpg123_ip = {NULL,

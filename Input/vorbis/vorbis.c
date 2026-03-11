@@ -704,7 +704,7 @@ static void vorbis_aboutbox()
     static GtkWidget *about_window;
 
     if (about_window)
-        gdk_window_raise(about_window->window);
+        gdk_window_raise(gtk_widget_get_window(about_window));
 
     about_window = xmms_show_message(_("About Ogg Vorbis Plugin"),
                                      /*
@@ -724,8 +724,8 @@ static void vorbis_aboutbox()
                                        "Gian-Carlo Pascutto <gcp@sjeng.org>\n\n"
                                        "Visit the Xiph.org Foundation at http://www.xiph.org/\n"),
                                      _("OK"), FALSE, NULL, NULL);
-    gtk_signal_connect(GTK_OBJECT(about_window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &about_window);
+    g_signal_connect(G_OBJECT(about_window), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &about_window);
 }
 
 static void vorbis_init(void)

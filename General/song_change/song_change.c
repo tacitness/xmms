@@ -72,13 +72,13 @@ static void init(void)
     read_config();
 
     previous_song = -1;
-    timeout_tag = gtk_timeout_add(100, timeout_func, NULL);
+    timeout_tag = g_timeout_add(100, timeout_func, NULL);
 }
 
 static void cleanup(void)
 {
     if (timeout_tag)
-        gtk_timeout_remove(timeout_tag);
+        g_source_remove(timeout_tag);
     timeout_tag = 0;
 
     g_free(cmd_line);
@@ -121,14 +121,14 @@ static void warn_user(void)
     GtkWidget *warn_win, *warn_vbox, *warn_desc;
     GtkWidget *warn_bbox, *warn_yes, *warn_no;
 
-    warn_win = gtk_window_new(GTK_WINDOW_DIALOG);
+    warn_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(warn_win), _("Warning"));
     gtk_window_set_transient_for(GTK_WINDOW(warn_win), GTK_WINDOW(configure_win));
     gtk_window_set_modal(GTK_WINDOW(warn_win), TRUE);
 
     gtk_container_set_border_width(GTK_CONTAINER(warn_win), 10);
 
-    warn_vbox = gtk_vbox_new(FALSE, 10);
+    warn_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(warn_win), warn_vbox);
 
     warn_desc = gtk_label_new(_("Filename and song title tags should be inside "
@@ -139,23 +139,23 @@ static void warn_user(void)
     gtk_box_pack_start(GTK_BOX(warn_vbox), warn_desc, FALSE, FALSE, 0);
     gtk_label_set_line_wrap(GTK_LABEL(warn_desc), TRUE);
 
-    warn_bbox = gtk_hbutton_box_new();
+    warn_bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(warn_bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(warn_bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(warn_bbox), 5);
     gtk_box_pack_start(GTK_BOX(warn_vbox), warn_bbox, FALSE, FALSE, 0);
 
     warn_yes = gtk_button_new_with_label(_("Yes"));
-    gtk_signal_connect(GTK_OBJECT(warn_yes), "clicked", GTK_SIGNAL_FUNC(save_and_close), NULL);
-    gtk_signal_connect_object(GTK_OBJECT(warn_yes), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(warn_win));
-    GTK_WIDGET_SET_FLAGS(warn_yes, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(warn_yes), "clicked", G_CALLBACK(save_and_close), NULL);
+    g_signal_connect_swapped(G_OBJECT(warn_yes), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(warn_win));
+    gtk_widget_set_can_default(warn_yes, TRUE);
     gtk_box_pack_start(GTK_BOX(warn_bbox), warn_yes, TRUE, TRUE, 0);
     gtk_widget_grab_default(warn_yes);
 
     warn_no = gtk_button_new_with_label(_("No"));
-    gtk_signal_connect_object(GTK_OBJECT(warn_no), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(warn_win));
-    GTK_WIDGET_SET_FLAGS(warn_no, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(warn_no), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(warn_win));
+    gtk_widget_set_can_default(warn_no, TRUE);
     gtk_box_pack_start(GTK_BOX(warn_bbox), warn_no, TRUE, TRUE, 0);
 
     gtk_widget_show_all(warn_win);
@@ -207,19 +207,19 @@ static void configure(void)
 
     read_config();
 
-    configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &configure_win);
+    configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &configure_win);
     gtk_window_set_title(GTK_WINDOW(configure_win), _("Song Change Configuration"));
 
     gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 
-    configure_vbox = gtk_vbox_new(FALSE, 10);
+    configure_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(configure_win), configure_vbox);
 
     song_frame = gtk_frame_new(_("Commands"));
     gtk_box_pack_start(GTK_BOX(configure_vbox), song_frame, FALSE, FALSE, 0);
-    song_vbox = gtk_vbox_new(FALSE, 10);
+    song_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_set_border_width(GTK_CONTAINER(song_vbox), 5);
     gtk_container_add(GTK_CONTAINER(song_frame), song_vbox);
 
@@ -229,7 +229,7 @@ static void configure(void)
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_desc, FALSE, FALSE, 0);
     gtk_label_set_line_wrap(GTK_LABEL(cmd_desc), TRUE);
 
-    cmd_hbox = gtk_hbox_new(FALSE, 5);
+    cmd_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_hbox, FALSE, FALSE, 0);
 
     cmd_label = gtk_label_new(_("Command:"));
@@ -238,7 +238,7 @@ static void configure(void)
     cmd_entry = gtk_entry_new();
     if (cmd_line)
         gtk_entry_set_text(GTK_ENTRY(cmd_entry), cmd_line);
-    gtk_widget_set_usize(cmd_entry, 200, -1);
+    gtk_widget_set_size_request(cmd_entry, 200, -1);
     gtk_box_pack_start(GTK_BOX(cmd_hbox), cmd_entry, TRUE, TRUE, 0);
 
     sep1 = gtk_hseparator_new();
@@ -251,7 +251,7 @@ static void configure(void)
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_after_desc, FALSE, FALSE, 0);
     gtk_label_set_line_wrap(GTK_LABEL(cmd_after_desc), TRUE);
 
-    cmd_after_hbox = gtk_hbox_new(FALSE, 5);
+    cmd_after_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_after_hbox, FALSE, FALSE, 0);
 
     cmd_after_label = gtk_label_new(_("Command:"));
@@ -260,7 +260,7 @@ static void configure(void)
     cmd_after_entry = gtk_entry_new();
     if (cmd_line_after)
         gtk_entry_set_text(GTK_ENTRY(cmd_after_entry), cmd_line_after);
-    gtk_widget_set_usize(cmd_after_entry, 200, -1);
+    gtk_widget_set_size_request(cmd_after_entry, 200, -1);
     gtk_box_pack_start(GTK_BOX(cmd_after_hbox), cmd_after_entry, TRUE, TRUE, 0);
     sep2 = gtk_hseparator_new();
     gtk_box_pack_start(GTK_BOX(song_vbox), sep2, TRUE, TRUE, 0);
@@ -273,7 +273,7 @@ static void configure(void)
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_end_desc, FALSE, FALSE, 0);
     gtk_label_set_line_wrap(GTK_LABEL(cmd_end_desc), TRUE);
 
-    cmd_end_hbox = gtk_hbox_new(FALSE, 5);
+    cmd_end_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(song_vbox), cmd_end_hbox, FALSE, FALSE, 0);
 
     cmd_end_label = gtk_label_new(_("Command:"));
@@ -282,7 +282,7 @@ static void configure(void)
     cmd_end_entry = gtk_entry_new();
     if (cmd_line_end)
         gtk_entry_set_text(GTK_ENTRY(cmd_end_entry), cmd_line_end);
-    gtk_widget_set_usize(cmd_end_entry, 200, -1);
+    gtk_widget_set_size_request(cmd_end_entry, 200, -1);
     gtk_box_pack_start(GTK_BOX(cmd_end_hbox), cmd_end_entry, TRUE, TRUE, 0);
     sep3 = gtk_hseparator_new();
     gtk_box_pack_start(GTK_BOX(song_vbox), sep3, TRUE, TRUE, 0);
@@ -308,21 +308,21 @@ static void configure(void)
     gtk_label_set_line_wrap(GTK_LABEL(f_desc), TRUE);
 
 
-    configure_bbox = gtk_hbutton_box_new();
+    configure_bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(configure_bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(configure_bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(configure_bbox), 5);
     gtk_box_pack_start(GTK_BOX(configure_vbox), configure_bbox, FALSE, FALSE, 0);
 
     configure_ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(configure_ok), "clicked", GTK_SIGNAL_FUNC(configure_ok_cb), NULL);
-    GTK_WIDGET_SET_FLAGS(configure_ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(configure_ok), "clicked", G_CALLBACK(configure_ok_cb), NULL);
+    gtk_widget_set_can_default(configure_ok, TRUE);
     gtk_box_pack_start(GTK_BOX(configure_bbox), configure_ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(configure_ok);
 
     configure_cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(configure_cancel), "clicked",
-                              GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
-    GTK_WIDGET_SET_FLAGS(configure_cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(configure_cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(configure_win));
+    gtk_widget_set_can_default(configure_cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(configure_bbox), configure_cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(configure_win);

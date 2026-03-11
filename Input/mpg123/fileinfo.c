@@ -204,12 +204,15 @@ static void file_info_http(char *filename)
     }
 }
 
-static void genre_selected(GtkList *list, GtkWidget *w, gpointer data)
+/* GTK3: genre ID lookup array (populated by genre_set_popdown) */
+static int *genre_id_array = NULL;
+static int genre_id_count = 0;
+
+static void genre_selected(GtkWidget *combo, gpointer data)
 {
-    void *p;
-    p = gtk_object_get_data(GTK_OBJECT(w), "genre_id");
-    if (p != NULL)
-        current_genre = GPOINTER_TO_INT(p);
+    int idx = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+    if (idx >= 0 && idx < genre_id_count && genre_id_array)
+        current_genre = genre_id_array[idx];
     else
         current_genre = 0;
 }
@@ -217,21 +220,28 @@ static void genre_selected(GtkList *list, GtkWidget *w, gpointer data)
 static void genre_set_popdown(GtkWidget *combo, GList *genres)
 {
     struct genre_item *item;
-    GtkWidget *w;
+    int count;
+    int i = 0;
+
+    count = (int)g_list_length(genres);
+    g_free(genre_id_array);
+    genre_id_array = g_new0(int, count + 1);
+    genre_id_count = 0;
+
+    gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT(combo));
 
     while (genres) {
         item = genres->data;
-        w = gtk_list_item_new_with_label(item->name);
-        gtk_object_set_data(GTK_OBJECT(w), "genre_id", GINT_TO_POINTER(item->id));
-        gtk_widget_show(w);
-        gtk_container_add(GTK_CONTAINER(GTK_COMBO(combo)->list), w);
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), item->name);
+        genre_id_array[i++] = item->id;
+        genre_id_count++;
         genres = genres->next;
     }
 }
 
 static void file_info_box_keypress_cb(GtkWidget *w, GdkEventKey *event, gpointer data)
 {
-    if (event && event->keyval == GDK_Escape)
+    if (event && event->keyval == GDK_KEY_Escape)
         gtk_widget_destroy(w);
 }
 
@@ -257,16 +267,17 @@ void mpg123_file_info_box(char *filename)
         GtkWidget *label, *filename_hbox;
         GtkWidget *bbox, *save, *remove_id3, *cancel;
 
-        window = gtk_window_new(GTK_WINDOW_DIALOG);
-        gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
-        gtk_signal_connect(GTK_OBJECT(window), "destroy", gtk_widget_destroyed, &window);
-        gtk_signal_connect(GTK_OBJECT(window), "key_press_event", file_info_box_keypress_cb, NULL);
+        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        /* TODO(#gtk3): gtk_window_set_policy removed */
+        g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
+        g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK(file_info_box_keypress_cb),
+                         NULL);
         gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
-        vbox = gtk_vbox_new(FALSE, 10);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_container_add(GTK_CONTAINER(window), vbox);
 
-        filename_hbox = gtk_hbox_new(FALSE, 5);
+        filename_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(vbox), filename_hbox, FALSE, TRUE, 0);
 
         label = gtk_label_new(_("Filename:"));
@@ -275,10 +286,10 @@ void mpg123_file_info_box(char *filename)
         gtk_editable_set_editable(GTK_EDITABLE(filename_entry), FALSE);
         gtk_box_pack_start(GTK_BOX(filename_hbox), filename_entry, TRUE, TRUE, 0);
 
-        hbox = gtk_hbox_new(FALSE, 10);
+        hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
         gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
 
-        left_vbox = gtk_vbox_new(FALSE, 10);
+        left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_box_pack_start(GTK_BOX(hbox), left_vbox, FALSE, FALSE, 0);
 
         id3_frame = gtk_frame_new(_("ID3 Tag:"));
@@ -292,7 +303,8 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 0, 1, GTK_FILL, GTK_FILL, 5, 5);
 
-        title_entry = gtk_entry_new_with_max_length(30);
+        title_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(title_entry), 30);
         gtk_table_attach(GTK_TABLE(table), title_entry, 1, 4, 0, 1,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -301,7 +313,8 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 1, 2, GTK_FILL, GTK_FILL, 5, 5);
 
-        artist_entry = gtk_entry_new_with_max_length(30);
+        artist_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(artist_entry), 30);
         gtk_table_attach(GTK_TABLE(table), artist_entry, 1, 4, 1, 2,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -310,7 +323,8 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 2, 3, GTK_FILL, GTK_FILL, 5, 5);
 
-        album_entry = gtk_entry_new_with_max_length(30);
+        album_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(album_entry), 30);
         gtk_table_attach(GTK_TABLE(table), album_entry, 1, 4, 2, 3,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -319,7 +333,8 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 3, 4, GTK_FILL, GTK_FILL, 5, 5);
 
-        comment_entry = gtk_entry_new_with_max_length(30);
+        comment_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(comment_entry), 30);
         gtk_table_attach(GTK_TABLE(table), comment_entry, 1, 4, 3, 4,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -328,8 +343,9 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 4, 5, GTK_FILL, GTK_FILL, 5, 5);
 
-        year_entry = gtk_entry_new_with_max_length(4);
-        gtk_widget_set_usize(year_entry, 40, -1);
+        year_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(year_entry), 4);
+        gtk_widget_set_size_request(year_entry, 40, -1);
         gtk_table_attach(GTK_TABLE(table), year_entry, 1, 2, 4, 5,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -338,8 +354,9 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 2, 3, 4, 5, GTK_FILL, GTK_FILL, 5, 5);
 
-        tracknum_entry = gtk_entry_new_with_max_length(3);
-        gtk_widget_set_usize(tracknum_entry, 40, -1);
+        tracknum_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(tracknum_entry), 3);
+        gtk_widget_set_size_request(tracknum_entry, 40, -1);
         gtk_table_attach(GTK_TABLE(table), tracknum_entry, 3, 4, 4, 5,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -348,8 +365,8 @@ void mpg123_file_info_box(char *filename)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 5, 6, GTK_FILL, GTK_FILL, 5, 5);
 
-        genre_combo = gtk_combo_new();
-        gtk_entry_set_editable(GTK_ENTRY(GTK_COMBO(genre_combo)->entry), FALSE);
+        genre_combo = gtk_combo_box_text_new();
+        /* GTK3: GtkComboBoxText entry is not directly editable via gtk_entry_set_editable */
         if (!genre_list) {
             struct genre_item *item;
 
@@ -366,45 +383,44 @@ void mpg123_file_info_box(char *filename)
             genre_list = g_list_sort(genre_list, genre_comp_func);
         }
         genre_set_popdown(genre_combo, genre_list);
-        gtk_signal_connect(GTK_OBJECT(GTK_COMBO(genre_combo)->list), "select-child", genre_selected,
-                           NULL);
+        g_signal_connect(G_OBJECT(genre_combo), "changed", G_CALLBACK(genre_selected), NULL);
 
         gtk_table_attach(GTK_TABLE(table), genre_combo, 1, 4, 5, 6,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
 
-        bbox = gtk_hbutton_box_new();
+        bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-        gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+        gtk_box_set_spacing(GTK_BOX(bbox), 5);
         gtk_box_pack_start(GTK_BOX(left_vbox), bbox, FALSE, FALSE, 0);
 
         save = gtk_button_new_with_label(_("Save"));
-        gtk_signal_connect(GTK_OBJECT(save), "clicked", save_cb, NULL);
-        GTK_WIDGET_SET_FLAGS(save, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(save), "clicked", G_CALLBACK(save_cb), NULL);
+        gtk_widget_set_can_default(save, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), save, TRUE, TRUE, 0);
         gtk_widget_grab_default(save);
 
         remove_id3 = gtk_button_new_with_label(_("Remove ID3"));
-        gtk_signal_connect(GTK_OBJECT(remove_id3), "clicked", remove_id3_cb, NULL);
-        GTK_WIDGET_SET_FLAGS(remove_id3, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(remove_id3), "clicked", G_CALLBACK(remove_id3_cb), NULL);
+        gtk_widget_set_can_default(remove_id3, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), remove_id3, TRUE, TRUE, 0);
 
         cancel = gtk_button_new_with_label(_("Cancel"));
-        gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", gtk_widget_destroy,
-                                  GTK_OBJECT(window));
-        GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 window);
+        gtk_widget_set_can_default(cancel, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
         mpeg_frame = gtk_frame_new(_("MPEG Info:"));
         gtk_box_pack_start(GTK_BOX(hbox), mpeg_frame, FALSE, FALSE, 0);
 
-        mpeg_box = gtk_vbox_new(FALSE, 5);
+        mpeg_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
         gtk_container_add(GTK_CONTAINER(mpeg_frame), mpeg_box);
         gtk_container_set_border_width(GTK_CONTAINER(mpeg_box), 10);
         gtk_box_set_spacing(GTK_BOX(mpeg_box), 0);
 
         mpeg_level = gtk_label_new("");
-        gtk_widget_set_usize(mpeg_level, 120, -2);
+        gtk_widget_set_size_request(mpeg_level, 120, -2);
         gtk_misc_set_alignment(GTK_MISC(mpeg_level), 0, 0);
         gtk_box_pack_start(GTK_BOX(mpeg_box), mpeg_level, FALSE, FALSE, 0);
 
@@ -452,8 +468,7 @@ void mpg123_file_info_box(char *filename)
     gtk_entry_set_text(GTK_ENTRY(year_entry), "");
     gtk_entry_set_text(GTK_ENTRY(tracknum_entry), "");
     gtk_entry_set_text(GTK_ENTRY(comment_entry), "");
-    gtk_list_select_item(GTK_LIST(GTK_COMBO(genre_combo)->list),
-                         genre_find_index(genre_list, 0xff));
+    gtk_combo_box_set_active(GTK_COMBO_BOX(genre_combo), genre_find_index(genre_list, 0xff));
     gtk_label_set_text(GTK_LABEL(mpeg_level), "MPEG ?, layer ?");
     gtk_label_set_text(GTK_LABEL(mpeg_bitrate), "");
     gtk_label_set_text(GTK_LABEL(mpeg_samplerate), "");
@@ -495,8 +510,8 @@ void mpg123_file_info_box(char *filename)
                     gtk_entry_set_text(GTK_ENTRY(tracknum_entry), "");
                 }
 
-                gtk_list_select_item(GTK_LIST(GTK_COMBO(genre_combo)->list),
-                                     genre_find_index(genre_list, tag.genre));
+                gtk_combo_box_set_active(GTK_COMBO_BOX(genre_combo),
+                                         genre_find_index(genre_list, tag.genre));
             }
         }
         rewind(fh);

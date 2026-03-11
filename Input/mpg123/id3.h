@@ -22,6 +22,7 @@
 #define ID3_H
 
 #include <glib.h>
+#include <stdio.h>
 
 /*
  * Option flags to id3_open_*().

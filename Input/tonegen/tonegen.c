@@ -55,7 +55,7 @@ static void tone_about(void)
                               "To use it, add a URL: tone://frequency1;frequency2;frequency3;...\n"
                               "e.g. tone://2000;2005 to play a 2000Hz tone and a 2005Hz tone"),
                             _("OK"), FALSE, NULL, NULL);
-    gtk_signal_connect(GTK_OBJECT(box), "destroy", gtk_widget_destroyed, &box);
+    g_signal_connect(G_OBJECT(box), "destroy", G_CALLBACK(gtk_widget_destroyed), &box);
 }
 
 static int tone_is_our_file(char *filename)

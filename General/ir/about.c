@@ -23,37 +23,36 @@ void ir_about(void)
 
     if (ir_about_win)
         return;
-    ir_about_win = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(ir_about_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &ir_about_win);
+    ir_about_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(ir_about_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &ir_about_win);
     gtk_window_set_title(GTK_WINDOW(ir_about_win), _("About"));
-    gtk_window_set_policy(GTK_WINDOW(ir_about_win), FALSE, FALSE, FALSE);
     gtk_window_set_position(GTK_WINDOW(ir_about_win), GTK_WIN_POS_MOUSE);
-    gtk_container_border_width(GTK_CONTAINER(ir_about_win), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(ir_about_win), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(ir_about_win), vbox);
 
     frame = gtk_frame_new(_("XMMS IRman Plugin:"));
     gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0);
-    textbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(textbox), 10);
+    textbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(textbox), 10);
     gtk_container_add(GTK_CONTAINER(frame), textbox);
 
     label = gtk_label_new(_("Created by Charles Sielski <stray@teklabs.net>\n"
                             "Control XMMS with your TV / VCR / Stereo remote \n"
                             "IRman page - http://www.evation.com/irman/"));
 
-    gtk_box_pack_start_defaults(GTK_BOX(textbox), label);
+    gtk_box_pack_start(GTK_BOX(textbox), label, TRUE, TRUE, 0);
 
-    box = gtk_hbutton_box_new();
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(box), 5);
+    box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+    gtk_box_set_spacing(GTK_BOX(box), 5);
     gtk_box_pack_start(GTK_BOX(vbox), box, FALSE, FALSE, 0);
 
     button = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect_object(GTK_OBJECT(button), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(ir_about_win));
-    GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(button), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(ir_about_win));
+    gtk_widget_set_can_default(button, TRUE);
     gtk_box_pack_start(GTK_BOX(box), button, TRUE, TRUE, 0);
     gtk_widget_grab_default(button);
 

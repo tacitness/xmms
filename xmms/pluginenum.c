@@ -36,6 +36,11 @@
 #endif
 
 
+/* GTK3: PLUGINSUBS was injected by autotools; provide defaults for CMake builds */
+#ifndef PLUGINSUBS
+#    define PLUGINSUBS "Output", "Input", "Effect", "General", "Visualization"
+#endif
+
 char *plugin_dir_list[] = {PLUGINSUBS, NULL};
 
 extern struct InputPluginData *ip_data;

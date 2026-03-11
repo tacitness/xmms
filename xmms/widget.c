@@ -124,7 +124,7 @@ void draw_widget_list(GList *wlist, gboolean *redraw, gboolean force)
     }
 }
 
-void widget_list_change_pixmap(GList *wlist, GdkPixmap *pixmap)
+void widget_list_change_surface(GList *wlist, cairo_surface_t *pixmap)
 {
     GList *wl;
 

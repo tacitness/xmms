@@ -18,7 +18,6 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 #include <ctype.h>
-#include <gdk/gdkprivate.h>
 
 #include "xmms.h"
 
@@ -28,28 +27,39 @@ static void textbox_draw(Widget *w)
 {
     TextBox *tb = (TextBox *)w;
     gint cw;
-    GdkPixmap *obj;
-    GdkPixmap *src;
+    cairo_t *cr = tb->tb_widget.cr;
 
-    if (tb->tb_text && (!tb->tb_pixmap_text || strcmp(tb->tb_text, tb->tb_pixmap_text)))
+    if (tb->tb_text && (!tb->tb_surface_text || strcmp(tb->tb_text, tb->tb_surface_text)))
         textbox_generate_pixmap(tb);
 
-    if (tb->tb_pixmap) {
+    if (tb->tb_surface) {
         if (skin_get_id() != tb->tb_skin_id) {
             tb->tb_skin_id = skin_get_id();
             textbox_generate_pixmap(tb);
         }
-        obj = tb->tb_widget.parent;
-        src = tb->tb_pixmap;
 
-        cw = tb->tb_pixmap_width - tb->tb_offset;
+        cw = tb->tb_surface_width - tb->tb_offset;
         if (cw > tb->tb_widget.width)
             cw = tb->tb_widget.width;
-        gdk_draw_pixmap(obj, tb->tb_widget.gc, src, tb->tb_offset, 0, tb->tb_widget.x,
-                        tb->tb_widget.y, cw, tb->tb_widget.height);
-        if (cw < tb->tb_widget.width)
-            gdk_draw_pixmap(obj, tb->tb_widget.gc, src, 0, 0, tb->tb_widget.x + cw, tb->tb_widget.y,
-                            tb->tb_widget.width - cw, tb->tb_widget.height);
+
+        /* GTK3: blit surface segment via cairo */
+        cairo_save(cr);
+        cairo_rectangle(cr, tb->tb_widget.x, tb->tb_widget.y, cw, tb->tb_widget.height);
+        cairo_clip(cr);
+        cairo_set_source_surface(cr, tb->tb_surface, tb->tb_widget.x - tb->tb_offset,
+                                 tb->tb_widget.y);
+        cairo_paint(cr);
+        cairo_restore(cr);
+
+        if (cw < tb->tb_widget.width) {
+            cairo_save(cr);
+            cairo_rectangle(cr, tb->tb_widget.x + cw, tb->tb_widget.y, tb->tb_widget.width - cw,
+                            tb->tb_widget.height);
+            cairo_clip(cr);
+            cairo_set_source_surface(cr, tb->tb_surface, tb->tb_widget.x + cw, tb->tb_widget.y);
+            cairo_paint(cr);
+            cairo_restore(cr);
+        }
     }
 }
 
@@ -62,8 +72,8 @@ static gint textbox_scroll(gpointer data)
             tb->tb_offset++;
         else
             tb->tb_offset += 5;
-        if (tb->tb_offset >= tb->tb_pixmap_width)
-            tb->tb_offset -= tb->tb_pixmap_width;
+        if (tb->tb_offset >= tb->tb_surface_width)
+            tb->tb_offset -= tb->tb_surface_width;
         draw_widget(tb);
     }
     return TRUE;
@@ -76,7 +86,7 @@ static void textbox_button_press(GtkWidget *w, GdkEventButton *event, gpointer d
     if (event->button != 1)
         return;
     if (inside_widget(event->x, event->y, &tb->tb_widget) && tb->tb_scroll_allowed &&
-        tb->tb_pixmap_width > tb->tb_widget.width && tb->tb_is_scrollable) {
+        tb->tb_surface_width > tb->tb_widget.width && tb->tb_is_scrollable) {
         tb->tb_is_dragging = TRUE;
         tb->tb_drag_off = tb->tb_offset;
         tb->tb_drag_x = event->x;
@@ -88,12 +98,12 @@ static void textbox_motion(GtkWidget *w, GdkEventMotion *event, gpointer data)
     TextBox *tb = (TextBox *)data;
 
     if (tb->tb_is_dragging) {
-        if (tb->tb_scroll_allowed && tb->tb_pixmap_width > tb->tb_widget.width) {
+        if (tb->tb_scroll_allowed && tb->tb_surface_width > tb->tb_widget.width) {
             tb->tb_offset = tb->tb_drag_off - (event->x - tb->tb_drag_x);
             while (tb->tb_offset < 0)
-                tb->tb_offset += tb->tb_pixmap_width;
-            while (tb->tb_offset > tb->tb_pixmap_width)
-                tb->tb_offset -= tb->tb_pixmap_width;
+                tb->tb_offset += tb->tb_surface_width;
+            while (tb->tb_offset > tb->tb_surface_width)
+                tb->tb_offset -= tb->tb_surface_width;
             draw_widget(tb);
         }
     }
@@ -113,7 +123,17 @@ static gboolean textbox_should_scroll(TextBox *tb)
         return FALSE;
 
     if (tb->tb_font) {
-        int width = gdk_text_width(tb->tb_font, tb->tb_text, strlen(tb->tb_text));
+        /* GTK3: measure text width via Pango */
+        cairo_surface_t *tmp_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+        cairo_t *tmp_cr = cairo_create(tmp_surf);
+        PangoLayout *layout = pango_cairo_create_layout(tmp_cr);
+        pango_layout_set_font_description(layout, tb->tb_font);
+        pango_layout_set_text(layout, tb->tb_text, -1);
+        int width;
+        pango_layout_get_pixel_size(layout, &width, NULL);
+        g_object_unref(layout);
+        cairo_destroy(tmp_cr);
+        cairo_surface_destroy(tmp_surf);
         if (width <= tb->tb_widget.width)
             return FALSE;
         else
@@ -146,43 +166,81 @@ void textbox_set_text(TextBox *tb, gchar *text)
 
 static void textbox_generate_xfont_pixmap(TextBox *tb, gchar *pixmaptext)
 {
-    gint length, i;
-    GdkGC *gc, *maskgc;
-    GdkColor *c, pattern;
-    GdkBitmap *mask;
+    /* GTK3: rewritten to use cairo/Pango for xfont rendering */
+    gint length, i, height;
+    cairo_t *surf_cr;
+    PangoLayout *layout;
+    GdkColor *bg_colors, *fg_colors;
+    cairo_pattern_t *pat;
 
     length = strlen(pixmaptext);
+    height = tb->tb_widget.height;
 
-    tb->tb_pixmap_width = gdk_text_width(tb->tb_font, pixmaptext, length);
-    if (tb->tb_pixmap_width < tb->tb_widget.width)
-        tb->tb_pixmap_width = tb->tb_widget.width;
-    tb->tb_pixmap = gdk_pixmap_new(mainwin->window, tb->tb_pixmap_width, tb->tb_widget.height,
-                                   gdk_rgb_get_visual()->depth);
-    gc = tb->tb_widget.gc;
-    c = get_skin_color(SKIN_TEXTBG);
-    for (i = 0; i < tb->tb_widget.height; i++) {
-        gdk_gc_set_foreground(gc, &c[6 * i / tb->tb_widget.height]);
-        gdk_draw_line(tb->tb_pixmap, gc, 0, i, tb->tb_pixmap_width, i);
+    /* Measure text width via Pango using a temporary surface */
+    {
+        cairo_surface_t *tmp_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+        cairo_t *tmp_cr = cairo_create(tmp_surf);
+        layout = pango_cairo_create_layout(tmp_cr);
+        pango_layout_set_font_description(layout, tb->tb_font);
+        pango_layout_set_text(layout, pixmaptext, length);
+        pango_layout_get_pixel_size(layout, &tb->tb_surface_width, NULL);
+        g_object_unref(layout);
+        cairo_destroy(tmp_cr);
+        cairo_surface_destroy(tmp_surf);
     }
+    if (tb->tb_surface_width < tb->tb_widget.width)
+        tb->tb_surface_width = tb->tb_widget.width;
 
-    mask = gdk_pixmap_new(mainwin->window, tb->tb_pixmap_width, tb->tb_widget.height, 1);
-    maskgc = gdk_gc_new(mask);
-    pattern.pixel = 0;
-    gdk_gc_set_foreground(maskgc, &pattern);
-    gdk_draw_rectangle(mask, maskgc, TRUE, 0, 0, tb->tb_pixmap_width, tb->tb_widget.height);
-    pattern.pixel = 1;
-    gdk_gc_set_foreground(maskgc, &pattern);
-    gdk_draw_text(mask, tb->tb_font, maskgc, 0, tb->tb_font->ascent, pixmaptext, length);
-    gdk_gc_unref(maskgc);
+    /* Create off-screen surface */
+    if (tb->tb_surface)
+        cairo_surface_destroy(tb->tb_surface);
+    tb->tb_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, tb->tb_surface_width, height);
+    surf_cr = cairo_create(tb->tb_surface);
 
-    gdk_gc_set_clip_mask(gc, mask);
-    c = get_skin_color(SKIN_TEXTFG);
-    for (i = 0; i < tb->tb_widget.height; i++) {
-        gdk_gc_set_foreground(gc, &c[6 * i / tb->tb_widget.height]);
-        gdk_draw_line(tb->tb_pixmap, gc, 0, i, tb->tb_pixmap_width, i);
+    /* Draw background gradient (6-band) */
+    bg_colors = get_skin_color(SKIN_TEXTBG);
+    pat = cairo_pattern_create_linear(0, 0, 0, height);
+    for (i = 0; i < 6; i++) {
+        cairo_pattern_add_color_stop_rgb(pat, i / 6.0, bg_colors[i].red / 65535.0,
+                                         bg_colors[i].green / 65535.0, bg_colors[i].blue / 65535.0);
     }
-    gdk_pixmap_unref(mask);
-    gdk_gc_set_clip_mask(gc, NULL);
+    cairo_set_source(surf_cr, pat);
+    cairo_paint(surf_cr);
+    cairo_pattern_destroy(pat);
+
+    /* Draw text with foreground gradient using cairo mask */
+    {
+        cairo_surface_t *mask_surf =
+            cairo_image_surface_create(CAIRO_FORMAT_A8, tb->tb_surface_width, height);
+        cairo_t *mask_cr = cairo_create(mask_surf);
+        cairo_set_operator(mask_cr, CAIRO_OPERATOR_CLEAR);
+        cairo_paint(mask_cr);
+        cairo_set_operator(mask_cr, CAIRO_OPERATOR_OVER);
+        cairo_set_source_rgba(mask_cr, 1, 1, 1, 1);
+        layout = pango_cairo_create_layout(mask_cr);
+        pango_layout_set_font_description(layout, tb->tb_font);
+        pango_layout_set_text(layout, pixmaptext, length);
+        /* Draw text at origin; pango_cairo_show_layout uses top-left as origin */
+        cairo_move_to(mask_cr, 0, 0);
+        pango_cairo_show_layout(mask_cr, layout);
+        g_object_unref(layout);
+        cairo_destroy(mask_cr);
+        cairo_surface_flush(mask_surf);
+
+        /* Paint fg gradient through text mask */
+        fg_colors = get_skin_color(SKIN_TEXTFG);
+        pat = cairo_pattern_create_linear(0, 0, 0, height);
+        for (i = 0; i < 6; i++) {
+            cairo_pattern_add_color_stop_rgb(pat, i / 6.0, fg_colors[i].red / 65535.0,
+                                             fg_colors[i].green / 65535.0,
+                                             fg_colors[i].blue / 65535.0);
+        }
+        cairo_set_source(surf_cr, pat);
+        cairo_mask_surface(surf_cr, mask_surf, 0, 0);
+        cairo_pattern_destroy(pat);
+        cairo_surface_destroy(mask_surf);
+    }
+    cairo_destroy(surf_cr);
 }
 
 static void textbox_handle_special_char(char c, int *x, int *y)
@@ -270,23 +328,23 @@ static void textbox_handle_special_char(char c, int *x, int *y)
         *x = 150;
         *y = 6;
         break;
-    case 'å':
-    case 'Å':
+    case '\xc5':
+    case '\xe5':
         *x = 0;
         *y = 12;
         break;
-    case 'ö':
-    case 'Ö':
+    case '\xc4':
+    case '\xe4':
         *x = 5;
         *y = 12;
         break;
-    case 'ä':
-    case 'Ä':
+    case '\xd6':
+    case '\xf6':
         *x = 10;
         *y = 12;
         break;
-    case 'ü':
-    case 'Ü':
+    case '\xe9':
+    case '\xc9':
         *x = 100;
         *y = 0;
         break;
@@ -309,23 +367,22 @@ static void textbox_generate_pixmap(TextBox *tb)
 {
     gint length, i, x, y, wl;
     gchar *pixmaptext;
-    GdkGC *gc;
 
-    if (tb->tb_pixmap)
-        gdk_pixmap_unref(tb->tb_pixmap);
-    tb->tb_pixmap = NULL;
+    if (tb->tb_surface)
+        cairo_surface_destroy(tb->tb_surface);
+    tb->tb_surface = NULL;
 
     /*
      * Don't reset the offset if only text after the last '(' has
      * changed.  This is a hack to avoid visual noise on vbr files
      * where we guess the length.
      */
-    if (!(tb->tb_pixmap_text && strrchr(tb->tb_text, '(') &&
-          !strncmp(tb->tb_pixmap_text, tb->tb_text, strrchr(tb->tb_text, '(') - tb->tb_text)))
+    if (!(tb->tb_surface_text && strrchr(tb->tb_text, '(') &&
+          !strncmp(tb->tb_surface_text, tb->tb_text, strrchr(tb->tb_text, '(') - tb->tb_text)))
         tb->tb_offset = 0;
 
-    g_free(tb->tb_pixmap_text);
-    tb->tb_pixmap_text = g_strdup(tb->tb_text);
+    g_free(tb->tb_surface_text);
+    tb->tb_surface_text = g_strdup(tb->tb_text);
 
     /*
      * wl is the number of (partial) letters visible. Only makes
@@ -342,17 +399,17 @@ static void textbox_generate_pixmap(TextBox *tb)
 
     if (textbox_should_scroll(tb)) {
         tb->tb_is_scrollable = TRUE;
-        pixmaptext = g_strconcat(tb->tb_pixmap_text, "  ***  ", NULL);
+        pixmaptext = g_strconcat(tb->tb_surface_text, "  ***  ", NULL);
         length += 7;
     } else if (!tb->tb_font && length <= wl) {
         gint pad = wl - length;
         char *padchars = g_strnfill(pad, ' ');
 
-        pixmaptext = g_strconcat(tb->tb_pixmap_text, padchars, NULL);
+        pixmaptext = g_strconcat(tb->tb_surface_text, padchars, NULL);
         g_free(padchars);
         length += pad;
     } else
-        pixmaptext = g_strdup(tb->tb_pixmap_text);
+        pixmaptext = g_strdup(tb->tb_surface_text);
 
 
     if (tb->tb_is_scrollable) {
@@ -363,11 +420,11 @@ static void textbox_generate_pixmap(TextBox *tb)
             else
                 tag = TEXTBOX_SCROLL_TIMEOUT;
 
-            tb->tb_timeout_tag = gtk_timeout_add(tag, textbox_scroll, tb);
+            tb->tb_timeout_tag = g_timeout_add(tag, textbox_scroll, tb);
         }
     } else {
         if (tb->tb_timeout_tag) {
-            gtk_timeout_remove(tb->tb_timeout_tag);
+            g_source_remove(tb->tb_timeout_tag);
             tb->tb_timeout_tag = 0;
         }
         tb->tb_offset = 0;
@@ -379,25 +436,28 @@ static void textbox_generate_pixmap(TextBox *tb)
         return;
     }
 
-    tb->tb_pixmap_width = length * 5;
-    tb->tb_pixmap =
-        gdk_pixmap_new(mainwin->window, tb->tb_pixmap_width, 6, gdk_rgb_get_visual()->depth);
-    gc = tb->tb_widget.gc;
+    tb->tb_surface_width = length * 5;
+    /* GTK3: create cairo surface instead of GdkPixmap */
+    tb->tb_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, tb->tb_surface_width, 6);
+    {
+        cairo_t *surf_cr = cairo_create(tb->tb_surface);
 
-    for (i = 0; i < length; i++) {
-        char c;
-        x = y = -1;
-        c = toupper(pixmaptext[i]);
-        if (c >= 'A' && c <= 'Z') {
-            x = 5 * (c - 'A');
-            y = 0;
-        } else if (c >= '0' && c <= '9') {
-            x = 5 * (c - '0');
-            y = 6;
-        } else
-            textbox_handle_special_char(c, &x, &y);
+        for (i = 0; i < length; i++) {
+            char c;
+            x = y = -1;
+            c = toupper(pixmaptext[i]);
+            if (c >= 'A' && c <= 'Z') {
+                x = 5 * (c - 'A');
+                y = 0;
+            } else if (c >= '0' && c <= '9') {
+                x = 5 * (c - '0');
+                y = 6;
+            } else
+                textbox_handle_special_char(c, &x, &y);
 
-        skin_draw_pixmap(tb->tb_pixmap, gc, tb->tb_skin_index, x, y, i * 5, 0, 5, 6);
+            skin_draw_pixmap(surf_cr, tb->tb_skin_index, x, y, i * 5, 0, 5, 6);
+        }
+        cairo_destroy(surf_cr);
     }
     g_free(pixmaptext);
 }
@@ -412,10 +472,10 @@ void textbox_set_scroll(TextBox *tb, gboolean s)
         else
             tag = TEXTBOX_SCROLL_TIMEOUT;
 
-        tb->tb_timeout_tag = gtk_timeout_add(tag, textbox_scroll, tb);
+        tb->tb_timeout_tag = g_timeout_add(tag, textbox_scroll, tb);
     } else {
         if (tb->tb_timeout_tag) {
-            gtk_timeout_remove(tb->tb_timeout_tag);
+            g_source_remove(tb->tb_timeout_tag);
             tb->tb_timeout_tag = 0;
         }
         tb->tb_offset = 0;
@@ -426,14 +486,14 @@ void textbox_set_scroll(TextBox *tb, gboolean s)
 void textbox_set_xfont(TextBox *tb, gboolean use_xfont, gchar *fontname)
 {
     if (tb->tb_font)
-        gdk_font_unref(tb->tb_font);
+        pango_font_description_free(tb->tb_font);
     tb->tb_font = NULL;
     tb->tb_widget.y = tb->tb_nominal_y;
     tb->tb_widget.height = tb->tb_nominal_height;
 
     /* Make sure the pixmap is regenerated */
-    g_free(tb->tb_pixmap_text);
-    tb->tb_pixmap_text = NULL;
+    g_free(tb->tb_surface_text);
+    tb->tb_surface_text = NULL;
 
     if (!use_xfont || strlen(fontname) == 0)
         return;
@@ -441,21 +501,34 @@ void textbox_set_xfont(TextBox *tb, gboolean use_xfont, gchar *fontname)
     if (tb->tb_font == NULL)
         return;
 
-    tb->tb_widget.height = tb->tb_font->ascent + tb->tb_font->descent;
+    /* GTK3: compute font height via PangoFontMetrics */
+    {
+        cairo_surface_t *tmp_surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+        cairo_t *tmp_cr = cairo_create(tmp_surf);
+        PangoLayout *layout = pango_cairo_create_layout(tmp_cr);
+        PangoFontMetrics *metrics =
+            pango_context_get_metrics(pango_layout_get_context(layout), tb->tb_font, NULL);
+        tb->tb_widget.height = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics) +
+                                            pango_font_metrics_get_descent(metrics));
+        pango_font_metrics_unref(metrics);
+        g_object_unref(layout);
+        cairo_destroy(tmp_cr);
+        cairo_surface_destroy(tmp_surf);
+    }
     if (tb->tb_widget.height > tb->tb_nominal_height)
         tb->tb_widget.y -= (tb->tb_widget.height - tb->tb_nominal_height) / 2;
     else
         tb->tb_widget.height = tb->tb_nominal_height;
 }
 
-TextBox *create_textbox(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w,
+TextBox *create_textbox(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y, gint w,
                         gboolean allow_scroll, SkinIndex si)
 {
     TextBox *tb;
 
     tb = g_malloc0(sizeof(TextBox));
     tb->tb_widget.parent = parent;
-    tb->tb_widget.gc = gc;
+    tb->tb_widget.cr = cr;
     tb->tb_widget.x = x;
     tb->tb_widget.y = y;
     tb->tb_widget.width = w;
@@ -476,10 +549,10 @@ TextBox *create_textbox(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gin
 
 void free_textbox(TextBox *tb)
 {
-    if (tb->tb_pixmap)
-        gdk_pixmap_unref(tb->tb_pixmap);
+    if (tb->tb_surface)
+        cairo_surface_destroy(tb->tb_surface);
     if (tb->tb_font)
-        gdk_font_unref(tb->tb_font);
+        pango_font_description_free(tb->tb_font);
     g_free(tb->tb_text);
     g_free(tb);
 }

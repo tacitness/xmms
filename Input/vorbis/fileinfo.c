@@ -342,7 +342,7 @@ static void save_cb(GtkWidget *w, gpointer data)
     performer = gtk_entry_get_text(GTK_ENTRY(performer_entry));
     album_name = gtk_entry_get_text(GTK_ENTRY(album_entry));
     track_number = gtk_entry_get_text(GTK_ENTRY(tracknumber_entry));
-    genre = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(genre_combo)->entry));
+    genre = gtk_entry_get_text(GTK_ENTRY(gtk_bin_get_child(GTK_BIN(genre_combo))));
     date = gtk_entry_get_text(GTK_ENTRY(date_entry));
     user_comment = gtk_entry_get_text(GTK_ENTRY(user_comment_entry));
 #ifdef ALL_VORBIS_TAGS
@@ -512,7 +512,7 @@ static void label_set_text(GtkWidget *label, char *str, ...)
 
 static void keypress_cb(GtkWidget *w, GdkEventKey *event, gpointer data)
 {
-    if (event && event->keyval == GDK_Escape)
+    if (event && event->keyval == GDK_KEY_Escape)
         gtk_widget_destroy(w);
 }
 
@@ -544,17 +544,15 @@ void vorbis_file_info_box(char *fn)
         GtkWidget *table, *bbox, *cancel_button;
         GtkWidget *save_button, *remove_button;
 
-        window = gtk_window_new(GTK_WINDOW_DIALOG);
-        gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
-        gtk_signal_connect(GTK_OBJECT(window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                           &window);
-        gtk_signal_connect(GTK_OBJECT(window), "key_press_event", keypress_cb, NULL);
+        window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
+        g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK(keypress_cb), NULL);
         gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
-        vbox = gtk_vbox_new(FALSE, 10);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_container_add(GTK_CONTAINER(window), vbox);
 
-        filename_hbox = gtk_hbox_new(FALSE, 5);
+        filename_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(vbox), filename_hbox, FALSE, TRUE, 0);
 
         label = gtk_label_new(_("Filename:"));
@@ -563,10 +561,10 @@ void vorbis_file_info_box(char *fn)
         gtk_editable_set_editable(GTK_EDITABLE(filename_entry), FALSE);
         gtk_box_pack_start(GTK_BOX(filename_hbox), filename_entry, TRUE, TRUE, 0);
 
-        hbox = gtk_hbox_new(FALSE, 10);
+        hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
         gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, TRUE, 0);
 
-        left_vbox = gtk_vbox_new(FALSE, 10);
+        left_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_box_pack_start(GTK_BOX(hbox), left_vbox, FALSE, FALSE, 0);
 
         tag_frame = gtk_frame_new(_("Ogg Vorbis Tag:"));
@@ -617,7 +615,7 @@ void vorbis_file_info_box(char *fn)
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 4, 5, GTK_FILL, GTK_FILL, 5, 5);
 
         date_entry = gtk_entry_new();
-        gtk_widget_set_usize(date_entry, 60, -1);
+        gtk_widget_set_size_request(date_entry, 60, -1);
         gtk_table_attach(GTK_TABLE(table), date_entry, 1, 2, 4, 5,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -626,8 +624,9 @@ void vorbis_file_info_box(char *fn)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 2, 3, 4, 5, GTK_FILL, GTK_FILL, 5, 5);
 
-        tracknumber_entry = gtk_entry_new_with_max_length(4);
-        gtk_widget_set_usize(tracknumber_entry, 20, -1);
+        tracknumber_entry = gtk_entry_new();
+        gtk_entry_set_max_length(GTK_ENTRY(tracknumber_entry), 4);
+        gtk_widget_set_size_request(tracknumber_entry, 20, -1);
         gtk_table_attach(GTK_TABLE(table), tracknumber_entry, 3, 4, 4, 5,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -636,13 +635,18 @@ void vorbis_file_info_box(char *fn)
         gtk_misc_set_alignment(GTK_MISC(label), 1, 0.5);
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 5, 6, GTK_FILL, GTK_FILL, 5, 5);
 
-        genre_combo = gtk_combo_new();
+        genre_combo = gtk_combo_box_text_new_with_entry();
         if (!genre_list) {
             for (i = 0; i < sizeof(vorbis_genres) / sizeof(*vorbis_genres); i++)
                 genre_list = g_list_prepend(genre_list, _(vorbis_genres[i]));
             genre_list = g_list_sort(genre_list, (GCompareFunc)g_strcasecmp);
         }
-        gtk_combo_set_popdown_strings(GTK_COMBO(genre_combo), genre_list);
+        {
+            GList *_gl;
+            for (_gl = genre_list; _gl; _gl = _gl->next)
+                gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(genre_combo),
+                                               (const gchar *)_gl->data);
+        }
         gtk_table_attach(GTK_TABLE(table), genre_combo, 1, 4, 5, 6,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -671,7 +675,7 @@ void vorbis_file_info_box(char *fn)
         gtk_table_attach(GTK_TABLE(table), label, 0, 1, 8, 9, GTK_FILL, GTK_FILL, 5, 5);
 
         version_entry = gtk_entry_new();
-        gtk_widget_set_usize(version_entry, 60, -1);
+        gtk_widget_set_size_request(version_entry, 60, -1);
         gtk_table_attach(GTK_TABLE(table), version_entry, 1, 2, 8, 9,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -681,7 +685,7 @@ void vorbis_file_info_box(char *fn)
         gtk_table_attach(GTK_TABLE(table), label, 2, 3, 8, 9, GTK_FILL, GTK_FILL, 5, 5);
 
         isrc_entry = gtk_entry_new();
-        gtk_widget_set_usize(isrc_entry, 20, -1);
+        gtk_widget_set_size_request(isrc_entry, 20, -1);
         gtk_table_attach(GTK_TABLE(table), isrc_entry, 3, 4, 8, 9,
                          GTK_FILL | GTK_EXPAND | GTK_SHRINK, GTK_FILL | GTK_EXPAND | GTK_SHRINK, 0,
                          5);
@@ -706,8 +710,7 @@ void vorbis_file_info_box(char *fn)
 #endif
 
         rg_show_button = gtk_check_button_new_with_label(_("ReplayGain Settings:"));
-        gtk_signal_connect(GTK_OBJECT(rg_show_button), "toggled", GTK_SIGNAL_FUNC(rg_show_cb),
-                           NULL);
+        g_signal_connect(G_OBJECT(rg_show_button), "toggled", G_CALLBACK(rg_show_cb), NULL);
         gtk_table_attach(GTK_TABLE(table), rg_show_button, 0, 2, 11, 12, GTK_FILL, GTK_FILL, 5, 5);
 
 
@@ -751,33 +754,32 @@ void vorbis_file_info_box(char *fn)
                          5);
 
 
-        bbox = gtk_hbutton_box_new();
+        bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-        gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+        gtk_box_set_spacing(GTK_BOX(bbox), 5);
         gtk_box_pack_start(GTK_BOX(left_vbox), bbox, FALSE, FALSE, 0);
 
         save_button = gtk_button_new_with_label(_("Save"));
-        gtk_signal_connect(GTK_OBJECT(save_button), "clicked", GTK_SIGNAL_FUNC(save_cb), NULL);
-        GTK_WIDGET_SET_FLAGS(save_button, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(save_button), "clicked", G_CALLBACK(save_cb), NULL);
+        gtk_widget_set_can_default(save_button, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), save_button, TRUE, TRUE, 0);
         gtk_widget_grab_default(save_button);
 
         remove_button = gtk_button_new_with_label(_("Remove Tag"));
-        gtk_signal_connect_object(GTK_OBJECT(remove_button), "clicked", GTK_SIGNAL_FUNC(remove_cb),
-                                  NULL);
-        GTK_WIDGET_SET_FLAGS(remove_button, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(remove_button), "clicked", G_CALLBACK(remove_cb), NULL);
+        gtk_widget_set_can_default(remove_button, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), remove_button, TRUE, TRUE, 0);
 
         cancel_button = gtk_button_new_with_label(_("Cancel"));
-        gtk_signal_connect_object(GTK_OBJECT(cancel_button), "clicked",
-                                  GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(window));
-        GTK_WIDGET_SET_FLAGS(cancel_button, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(cancel_button), "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 G_OBJECT(window));
+        gtk_widget_set_can_default(cancel_button, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), cancel_button, TRUE, TRUE, 0);
 
         info_frame = gtk_frame_new(_("Ogg Vorbis Info:"));
         gtk_box_pack_start(GTK_BOX(hbox), info_frame, FALSE, FALSE, 0);
 
-        info_box = gtk_vbox_new(FALSE, 5);
+        info_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
         gtk_container_add(GTK_CONTAINER(info_frame), info_box);
         gtk_container_set_border_width(GTK_CONTAINER(info_box), 10);
         gtk_box_set_spacing(GTK_BOX(info_box), 0);
@@ -834,7 +836,7 @@ void vorbis_file_info_box(char *fn)
 
         gtk_widget_show_all(window);
     } else
-        gdk_window_raise(window->window);
+        gdk_window_raise(gtk_widget_get_window(window));
 
     if (!g_strncasecmp(vte.filename, "http://", 7))
         gtk_widget_set_sensitive(tag_frame, FALSE);
@@ -932,7 +934,7 @@ void vorbis_file_info_box(char *fn)
     gtk_entry_set_text(GTK_ENTRY(performer_entry), performer);
     gtk_entry_set_text(GTK_ENTRY(album_entry), album_name);
     gtk_entry_set_text(GTK_ENTRY(user_comment_entry), user_comment);
-    gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(genre_combo)->entry), genre);
+    gtk_entry_set_text(GTK_ENTRY(gtk_bin_get_child(GTK_BIN(genre_combo))), genre);
     gtk_entry_set_text(GTK_ENTRY(tracknumber_entry), track_number);
     gtk_entry_set_text(GTK_ENTRY(date_entry), date);
 #ifdef ALL_VORBIS_TAGS

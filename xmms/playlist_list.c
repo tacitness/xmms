@@ -19,12 +19,12 @@
  */
 #include "xmms.h"
 
-#ifdef HAVE_WCHAR_H
+#if 0 /* GTK3: GdkWChar and gdk_text_width_wc removed; use UTF-8 draw_string */
 #    include <wchar.h>
 #endif
 #include <X11/Xatom.h>
 
-static GdkFont *playlist_list_font = NULL;
+static PangoFontDescription *playlist_list_font = NULL;
 
 static int playlist_list_auto_drag_down_func(gpointer data)
 {
@@ -184,7 +184,7 @@ void playlist_list_motion_cb(GtkWidget *widget, GdkEventMotion *event, PlayList_
             nr = 0;
             if (!pl->pl_auto_drag_up) {
                 pl->pl_auto_drag_up = TRUE;
-                pl->pl_auto_drag_up_tag = gtk_timeout_add(100, playlist_list_auto_drag_up_func, pl);
+                pl->pl_auto_drag_up_tag = g_timeout_add(100, playlist_list_auto_drag_up_func, pl);
             }
         } else if (pl->pl_auto_drag_up)
             pl->pl_auto_drag_up = FALSE;
@@ -194,7 +194,7 @@ void playlist_list_motion_cb(GtkWidget *widget, GdkEventMotion *event, PlayList_
             if (!pl->pl_auto_drag_down) {
                 pl->pl_auto_drag_down = TRUE;
                 pl->pl_auto_drag_down_tag =
-                    gtk_timeout_add(100, playlist_list_auto_drag_down_func, pl);
+                    g_timeout_add(100, playlist_list_auto_drag_down_func, pl);
             }
         } else if (pl->pl_auto_drag_down)
             pl->pl_auto_drag_down = FALSE;
@@ -220,7 +220,7 @@ void playlist_list_button_release_cb(GtkWidget *widget, GdkEventButton *event, P
     pl->pl_auto_drag_up = FALSE;
 }
 
-#ifdef HAVE_WCHAR_H
+#if 0 /* GTK3: GdkWChar and gdk_text_width_wc removed; use UTF-8 draw_string */
 
 static GdkWChar *find_in_wstr(GdkWChar *haystack, char *needle)
 {
@@ -248,7 +248,7 @@ static GdkWChar *find_in_wstr(GdkWChar *haystack, char *needle)
 }
 
 
-void playlist_list_draw_string_wc(PlayList_List *pl, GdkFont *font, gint line, gint width,
+void playlist_list_draw_string_wc(PlayList_List *pl, PangoFontDescription *font, gint line, gint width,
                                   gchar *text)
 {
     GdkWChar *wtext;
@@ -305,7 +305,7 @@ void playlist_list_draw_string_wc(PlayList_List *pl, GdkFont *font, gint line, g
         wtext[len] = L'\0';
     }
 
-    gdk_draw_text_wc(pl->pl_widget.parent, font, pl->pl_widget.gc, pl->pl_widget.x,
+    gdk_draw_text_wc(pl->pl_widget.parent, font, pl->pl_widget.cr, pl->pl_widget.x,
                      pl->pl_widget.y + line * pl->pl_fheight + font->ascent, wtext, len);
     g_free(wtext);
 }
@@ -316,7 +316,58 @@ void playlist_list_draw_string_wc(PlayList_List *pl, GdkFont *font, gint line, g
 
 #endif /* HAVE_WCHAR_H */
 
-void playlist_list_draw_string(PlayList_List *pl, GdkFont *font, gint line, gint width, gchar *text)
+static gint pl_font_ascent(PangoFontDescription *font, cairo_t *cr)
+{
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+    PangoContext *ctx = pango_layout_get_context(layout);
+    PangoFontMetrics *metrics = pango_context_get_metrics(ctx, font, NULL);
+    gint ascent = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics));
+    pango_font_metrics_unref(metrics);
+    g_object_unref(layout);
+    return ascent;
+}
+
+static gint pl_font_height(PangoFontDescription *font, cairo_t *cr)
+{
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+    PangoContext *ctx = pango_layout_get_context(layout);
+    PangoFontMetrics *metrics = pango_context_get_metrics(ctx, font, NULL);
+    gint h = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics) +
+                          pango_font_metrics_get_descent(metrics)) +
+             1;
+    pango_font_metrics_unref(metrics);
+    g_object_unref(layout);
+    return h;
+}
+
+static gint pl_text_width(PangoFontDescription *font, cairo_t *cr, const char *text, gint len)
+{
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+    pango_layout_set_font_description(layout, font);
+    pango_layout_set_text(layout, text, len < 0 ? -1 : len);
+    gint w;
+    pango_layout_get_pixel_size(layout, &w, NULL);
+    g_object_unref(layout);
+    return w;
+}
+
+static void pl_draw_text(PangoFontDescription *font, cairo_t *cr, gint x, gint baseline_y,
+                         const char *text, gint len)
+{
+    PangoLayout *layout = pango_cairo_create_layout(cr);
+    PangoContext *ctx = pango_layout_get_context(layout);
+    PangoFontMetrics *metrics = pango_context_get_metrics(ctx, font, NULL);
+    gint ascent = PANGO_PIXELS(pango_font_metrics_get_ascent(metrics));
+    pango_font_metrics_unref(metrics);
+    pango_layout_set_font_description(layout, font);
+    pango_layout_set_text(layout, text, len < 0 ? -1 : len);
+    cairo_move_to(cr, x, baseline_y - ascent);
+    pango_cairo_show_layout(cr, layout);
+    g_object_unref(layout);
+}
+
+void playlist_list_draw_string(PlayList_List *pl, PangoFontDescription *font, gint line, gint width,
+                               gchar *text)
 {
     int len;
     char *tmp;
@@ -333,7 +384,7 @@ void playlist_list_draw_string(PlayList_List *pl, GdkFont *font, gint line, gint
             *tmp = '\0';
         }
     len = strlen(text);
-    while (gdk_text_width(font, text, len) > width && len > 4) {
+    while (pl_text_width(font, pl->pl_widget.cr, text, len) > width && len > 4) {
         len--;
         text[len - 3] = '.';
         text[len - 2] = '.';
@@ -341,28 +392,35 @@ void playlist_list_draw_string(PlayList_List *pl, GdkFont *font, gint line, gint
         text[len] = '\0';
     }
 
-    gdk_draw_text(pl->pl_widget.parent, font, pl->pl_widget.gc, pl->pl_widget.x,
-                  pl->pl_widget.y + line * pl->pl_fheight + font->ascent, text, len);
+    {
+        gint baseline_y =
+            pl->pl_widget.y + line * pl->pl_fheight + pl_font_ascent(font, pl->pl_widget.cr);
+        pl_draw_text(font, pl->pl_widget.cr, pl->pl_widget.x, baseline_y, text, len);
+    }
 }
 
 void playlist_list_draw(Widget *w)
 {
     PlayList_List *pl = (PlayList_List *)w;
     GList *list;
-    GdkGC *gc;
-    GdkPixmap *obj;
+    cairo_t *cr;
+    cairo_surface_t *obj;
     int width, height;
     char *text, *title;
     int i, tw, max_first;
 
-    gc = pl->pl_widget.gc;
+    cr = pl->pl_widget.cr;
     width = pl->pl_widget.width;
     height = pl->pl_widget.height;
 
     obj = pl->pl_widget.parent;
 
-    gdk_gc_set_foreground(gc, get_skin_color(SKIN_PLEDIT_NORMALBG));
-    gdk_draw_rectangle(obj, gc, TRUE, pl->pl_widget.x, pl->pl_widget.y, width, height);
+    {
+        GdkColor *_c = get_skin_color(SKIN_PLEDIT_NORMALBG);
+        cairo_set_source_rgb(cr, _c->red / 65535.0, _c->green / 65535.0, _c->blue / 65535.0);
+    }
+    cairo_rectangle(cr, pl->pl_widget.x, pl->pl_widget.y, width, height);
+    cairo_fill(cr);
 
     if (playlist_list_font == NULL) {
         g_log(NULL, G_LOG_LEVEL_CRITICAL, "Couldn't open playlist font");
@@ -372,7 +430,7 @@ void playlist_list_draw(Widget *w)
 
     PL_LOCK();
     list = get_playlist();
-    pl->pl_fheight = playlist_list_font->ascent + playlist_list_font->descent + 1;
+    pl->pl_fheight = pl_font_height(playlist_list_font, cr);
     pl->pl_num_visible = height / pl->pl_fheight;
 
     max_first = g_list_length(list) - pl->pl_num_visible;
@@ -391,15 +449,23 @@ void playlist_list_draw(Widget *w)
 
         PlaylistEntry *entry = (PlaylistEntry *)list->data;
         if (entry->selected) {
-            gdk_gc_set_foreground(gc, get_skin_color(SKIN_PLEDIT_SELECTEDBG));
-            gdk_draw_rectangle(obj, gc, TRUE, pl->pl_widget.x,
-                               pl->pl_widget.y + ((i - pl->pl_first) * pl->pl_fheight), width,
-                               pl->pl_fheight);
+            {
+                GdkColor *_c = get_skin_color(SKIN_PLEDIT_SELECTEDBG);
+                cairo_set_source_rgb(cr, _c->red / 65535.0, _c->green / 65535.0,
+                                     _c->blue / 65535.0);
+            }
+            cairo_rectangle(cr, pl->pl_widget.x,
+                            pl->pl_widget.y + ((i - pl->pl_first) * pl->pl_fheight), width,
+                            pl->pl_fheight);
+            cairo_fill(cr);
         }
-        if (i == __get_playlist_position())
-            gdk_gc_set_foreground(gc, get_skin_color(SKIN_PLEDIT_CURRENT));
-        else
-            gdk_gc_set_foreground(gc, get_skin_color(SKIN_PLEDIT_NORMAL));
+        if (i == __get_playlist_position()) {
+            GdkColor *_c = get_skin_color(SKIN_PLEDIT_CURRENT);
+            cairo_set_source_rgb(cr, _c->red / 65535.0, _c->green / 65535.0, _c->blue / 65535.0);
+        } else {
+            GdkColor *_c = get_skin_color(SKIN_PLEDIT_NORMAL);
+            cairo_set_source_rgb(cr, _c->red / 65535.0, _c->green / 65535.0, _c->blue / 65535.0);
+        }
 
         if (entry->title)
             title = entry->title;
@@ -419,11 +485,12 @@ void playlist_list_draw(Widget *w)
             char tail[60];
 
             sprintf(tail, "%s%s", qstr, length);
-            x = pl->pl_widget.x + width - gdk_text_width(playlist_list_font, tail, strlen(tail)) -
-                2;
-            y = pl->pl_widget.y + (i - pl->pl_first) * pl->pl_fheight + playlist_list_font->ascent;
-            gdk_draw_text(obj, playlist_list_font, gc, x, y, tail, strlen(tail));
-            tw = width - gdk_text_width(playlist_list_font, tail, strlen(tail)) - 5;
+            x = pl->pl_widget.x + width -
+                pl_text_width(playlist_list_font, cr, tail, strlen(tail)) - 2;
+            y = pl->pl_widget.y + (i - pl->pl_first) * pl->pl_fheight +
+                pl_font_ascent(playlist_list_font, cr);
+            pl_draw_text(playlist_list_font, cr, x, y, tail, strlen(tail));
+            tw = width - pl_text_width(playlist_list_font, cr, tail, strlen(tail)) - 5;
         } else
             tw = width;
         if (cfg.show_numbers_in_pl)
@@ -440,22 +507,25 @@ void playlist_list_draw(Widget *w)
     PL_UNLOCK();
 }
 
-PlayList_List *create_playlist_list(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
-                                    gint w, gint h)
+PlayList_List *create_playlist_list(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x,
+                                    gint y, gint w, gint h)
 {
     PlayList_List *pl;
 
     pl = (PlayList_List *)g_malloc0(sizeof(PlayList_List));
     pl->pl_widget.parent = parent;
-    pl->pl_widget.gc = gc;
+    pl->pl_widget.cr = cr;
     pl->pl_widget.x = x;
     pl->pl_widget.y = y;
     pl->pl_widget.width = w;
     pl->pl_widget.height = h;
     pl->pl_widget.visible = TRUE;
-    pl->pl_widget.button_press_cb = GTK_SIGNAL_FUNC(playlist_list_button_press_cb);
-    pl->pl_widget.button_release_cb = GTK_SIGNAL_FUNC(playlist_list_button_release_cb);
-    pl->pl_widget.motion_cb = GTK_SIGNAL_FUNC(playlist_list_motion_cb);
+    pl->pl_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))playlist_list_button_press_cb;
+    pl->pl_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))playlist_list_button_release_cb;
+    pl->pl_widget.motion_cb =
+        (void (*)(GtkWidget *, GdkEventMotion *, gpointer))playlist_list_motion_cb;
     pl->pl_widget.draw = playlist_list_draw;
     pl->pl_prev_selected = -1;
     pl->pl_prev_min = -1;
@@ -467,7 +537,7 @@ PlayList_List *create_playlist_list(GList **wlist, GdkPixmap *parent, GdkGC *gc,
 void playlist_list_set_font(char *font)
 {
     if (playlist_list_font)
-        gdk_font_unref(playlist_list_font);
+        pango_font_description_free(playlist_list_font);
 
     playlist_list_font = util_font_load(font);
 }

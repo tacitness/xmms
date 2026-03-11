@@ -20,7 +20,6 @@
 
 typedef struct {
     GtkWidget *window;
-    GdkGC *gc;
     gint num_items;
     gint *nx, *ny;
     gint *sx, *sy;
@@ -31,22 +30,24 @@ typedef struct {
 
 static PlaylistPopup *popup = NULL;
 
-static void playlist_popup_draw(PlaylistPopup *popup)
+static void playlist_popup_do_draw(cairo_t *cr)
 {
     gint i;
 
-    skin_draw_pixmap(popup->window->window, popup->gc, SKIN_PLEDIT, popup->barx, popup->bary, 0, 0,
-                     3, popup->num_items * 18);
+    skin_draw_pixmap(cr, SKIN_PLEDIT, popup->barx, popup->bary, 0, 0, 3, popup->num_items * 18);
     for (i = 0; i < popup->num_items; i++) {
         if (i == popup->active)
-            skin_draw_pixmap(popup->window->window, popup->gc, SKIN_PLEDIT, popup->sx[i],
-                             popup->sy[i], 3, i * 18, 22, 18);
+            skin_draw_pixmap(cr, SKIN_PLEDIT, popup->sx[i], popup->sy[i], 3, i * 18, 22, 18);
         else
-            skin_draw_pixmap(popup->window->window, popup->gc, SKIN_PLEDIT, popup->nx[i],
-                             popup->ny[i], 3, i * 18, 22, 18);
+            skin_draw_pixmap(cr, SKIN_PLEDIT, popup->nx[i], popup->ny[i], 3, i * 18, 22, 18);
     }
     /* FIXME: What is this flush doing here? */
     gdk_flush();
+}
+
+static void playlist_popup_draw(PlaylistPopup *popup)
+{
+    gtk_widget_queue_draw(popup->window);
 }
 
 void playlist_popup_destroy(void)
@@ -55,7 +56,6 @@ void playlist_popup_destroy(void)
         gdk_pointer_ungrab(GDK_CURRENT_TIME);
         gdk_flush();
         gtk_widget_destroy(popup->window);
-        gdk_gc_unref(popup->gc);
         g_free(popup->nx);
         g_free(popup->ny);
         g_free(popup->sx);
@@ -67,9 +67,10 @@ void playlist_popup_destroy(void)
     }
 }
 
-static void playlist_popup_expose(GtkWidget *widget, GdkEvent *event, gpointer callback_data)
+static gboolean playlist_popup_expose(GtkWidget *widget, cairo_t *cr, gpointer callback_data)
 {
-    playlist_popup_draw(popup);
+    playlist_popup_do_draw(cr);
+    return FALSE;
 }
 
 static void playlist_popup_motion(GtkWidget *widget, GdkEventMotion *event, gpointer callback_data)
@@ -119,21 +120,20 @@ void playlist_popup(gint x, gint y, gint num_items, gint *nx, gint *ny, gint *sx
                           GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK | GDK_EXPOSURE_MASK);
     gtk_widget_realize(popup->window);
 
-    gtk_widget_set_usize(popup->window, 25, num_items * 18);
-    popup->gc = gdk_gc_new(popup->window->window);
-    gtk_signal_connect(GTK_OBJECT(popup->window), "expose_event",
-                       GTK_SIGNAL_FUNC(playlist_popup_expose), NULL);
-    gtk_signal_connect(GTK_OBJECT(popup->window), "motion_notify_event",
-                       GTK_SIGNAL_FUNC(playlist_popup_motion), NULL);
-    gtk_signal_connect(GTK_OBJECT(popup->window), "button_release_event",
-                       GTK_SIGNAL_FUNC(playlist_popup_release), NULL);
+    gtk_widget_set_size_request(popup->window, 25, num_items * 18);
+    g_signal_connect(G_OBJECT(popup->window), "draw", G_CALLBACK(playlist_popup_expose), NULL);
+    g_signal_connect(G_OBJECT(popup->window), "motion-notify-event",
+                     G_CALLBACK(playlist_popup_motion), NULL);
+    g_signal_connect(G_OBJECT(popup->window), "button-release-event",
+                     G_CALLBACK(playlist_popup_release), NULL);
     util_set_cursor(popup->window);
-    gdk_window_move(popup->window->window, x - 1, y - 1);
+    gtk_window_move(GTK_WINDOW(popup->window), x - 1, y - 1);
     gtk_widget_show(popup->window);
-    gdk_window_raise(popup->window->window);
+    gdk_window_raise(gtk_widget_get_window(popup->window));
     gdk_flush();
     playlist_popup_draw(popup);
-    gdk_pointer_grab(popup->window->window, FALSE, GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK,
-                     GDK_NONE, GDK_NONE, GDK_CURRENT_TIME);
+    gdk_pointer_grab(gtk_widget_get_window(popup->window), FALSE,
+                     GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
+                     GDK_CURRENT_TIME);
     gdk_flush();
 }

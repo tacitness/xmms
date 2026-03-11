@@ -28,7 +28,7 @@ typedef struct {
 
 void svis_draw(Widget *w);
 void svis_timeout_func(SVis *svis, guchar *data);
-SVis *create_svis(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
+SVis *create_svis(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y);
 void svis_set_data(SVis *vis, guchar *data);
 void svis_clear_data(SVis *vis);
 void svis_clear(SVis *vis);

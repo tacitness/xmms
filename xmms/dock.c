@@ -8,8 +8,8 @@ typedef struct {
 
 void dock_get_widget_pos(GtkWidget *w, gint *x, gint *y)
 {
-    *x = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(w), "window_x"));
-    *y = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(w), "window_y"));
+    *x = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "window_x"));
+    *y = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "window_y"));
 }
 
 static gint docked_list_compare(DockedWindow *a, DockedWindow *b)
@@ -65,7 +65,8 @@ static void calc_snap_offset(GList *dlist, GList *wlist, gint x, gint y, gint *o
      */
     for (dnode = dlist; dnode; dnode = g_list_next(dnode)) {
         dw = dnode->data;
-        gdk_window_get_size(dw->w->window, &nw, &nh);
+        nw = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        nh = gdk_window_get_height(gtk_widget_get_window(dw->w));
 
 
         nx = dw->offset_x + *off_x + x;
@@ -90,7 +91,8 @@ static void calc_snap_offset(GList *dlist, GList *wlist, gint x, gint y, gint *o
 
             w = GTK_WIDGET(wnode->data);
             dock_get_widget_pos(w, &sx, &sy);
-            gdk_window_get_size(w->window, &sw, &sh);
+            sw = gdk_window_get_width(gtk_widget_get_window(w));
+            sh = gdk_window_get_height(gtk_widget_get_window(w));
 
             nx = dw->offset_x + *off_x + x;
             ny = dw->offset_y + *off_y + y;
@@ -133,7 +135,8 @@ static GList *get_docked_list(GList *dlist, GList *wlist, GtkWidget *w, gint ini
 
 
     dock_get_widget_pos(w, &w_x, &w_y);
-    gdk_window_get_size(w->window, &w_width, &w_height);
+    w_width = gdk_window_get_width(gtk_widget_get_window(w));
+    w_height = gdk_window_get_height(gtk_widget_get_window(w));
     if (!dlist) {
         dwin = g_malloc0(sizeof(DockedWindow));
         dwin->w = w;
@@ -146,7 +149,8 @@ static GList *get_docked_list(GList *dlist, GList *wlist, GtkWidget *w, gint ini
             continue;
 
         dock_get_widget_pos(GTK_WIDGET(node->data), &t_x, &t_y);
-        gdk_window_get_size(GTK_WIDGET(node->data)->window, &t_width, &t_height);
+        t_width = gdk_window_get_width(gtk_widget_get_window(GTK_WIDGET(node->data)));
+        t_height = gdk_window_get_height(gtk_widget_get_window(GTK_WIDGET(node->data)));
         if (is_docked(w_x, w_y, w_width, w_height, t_x, t_y, t_width, t_height)) {
             dwin = g_malloc(sizeof(DockedWindow));
             dwin->w = node->data;
@@ -190,7 +194,8 @@ static GList *shade_move_list(GList *list, GtkWidget *widget, gint offset)
     DockedWindow *dw;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
 
 
     for (node = list; node;) {
@@ -198,7 +203,8 @@ static GList *shade_move_list(GList *list, GtkWidget *widget, gint offset)
 
         dw = node->data;
         dock_get_widget_pos(dw->w, &dx, &dy);
-        gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+        dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
         if (is_docked(x, y, w, h, dx, dy, dwidth, dheight) && ((dx + dwidth) > x && dx < (x + w))) {
             list = g_list_remove_link(list, node);
             g_list_free_1(node);
@@ -225,13 +231,15 @@ static GList *find_shade_list(GtkWidget *widget, GList *winlist, GList *shade_li
     GList *node;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
     for (node = winlist; node; node = g_list_next(node)) {
         DockedWindow *dw = node->data;
         if (g_list_find_custom(shade_list, dw, (GCompareFunc)docked_list_compare))
             continue;
         dock_get_widget_pos(dw->w, &dx, &dy);
-        gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+        dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
 
         /* FIXME. Is the is_docked() necessary? */
         if (is_docked(x, y, w, h, dx, dy, dwidth, dheight) && ((dx + dwidth) > x && dx < (x + w))) {
@@ -244,11 +252,20 @@ static GList *find_shade_list(GtkWidget *widget, GList *winlist, GList *shade_li
 
 static void dock_window_resize(GtkWidget *widget, int new_w, int new_h, int w, int h)
 {
-    gdk_window_set_hints(widget->window, 0, 0, MIN(w, new_w), MIN(h, new_h), MAX(w, new_w),
-                         MAX(h, new_h), GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
-    gdk_window_resize(widget->window, new_w, new_h);
-    gdk_window_set_hints(widget->window, 0, 0, new_w, new_h, new_w, new_h,
-                         GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+    /* GTK3: gdk_window_set_hints removed */
+    {
+        GdkGeometry geom =
+            {MIN(w, new_w),         MIN(h, new_h), MAX(w, new_w), MAX(h, new_h), 0, 0, 0, 0, 0, 0,
+             GDK_GRAVITY_NORTH_WEST};
+        gdk_window_set_geometry_hints(gtk_widget_get_window(widget), &geom,
+                                      GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+    };
+    gdk_window_resize(gtk_widget_get_window(widget), new_w, new_h);
+    {
+        GdkGeometry geom = {new_w, new_h, new_w, new_h, 0, 0, 0, 0, 0, 0, GDK_GRAVITY_NORTH_WEST};
+        gdk_window_set_geometry_hints(gtk_widget_get_window(widget), &geom,
+                                      GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+    };
 }
 
 void dock_shade(GList *window_list, GtkWidget *widget, gint new_h)
@@ -258,7 +275,8 @@ void dock_shade(GList *window_list, GtkWidget *widget, gint new_h)
     DockedWindow *dw;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
 
     if (cfg.show_wm_decorations) {
         dock_window_resize(widget, w, new_h, w, h);
@@ -278,7 +296,8 @@ void dock_shade(GList *window_list, GtkWidget *widget, gint new_h)
             if (dw->w == widget)
                 continue;
             dock_get_widget_pos(dw->w, &dx, &dy);
-            gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+            dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+            dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
             if ((dy >= y) && ((dy + off_y + dheight) > gdk_screen_height()))
                 off_y -= (dy + off_y + dheight) - gdk_screen_height();
             else if ((dy >= y) && ((dy + dheight) == gdk_screen_height()))
@@ -309,7 +328,8 @@ void dock_shade(GList *window_list, GtkWidget *widget, gint new_h)
             dw = node->data;
 
             dock_get_widget_pos(dw->w, &dx, &dy);
-            gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+            dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+            dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
             /*
              * Find windows that are directly docked to this window,
              * move it, and any windows docked to that window again
@@ -343,14 +363,16 @@ static GList *resize_move_list(GList *list, GtkWidget *widget, gint offset_x, gi
     DockedWindow *dw;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
 
 
     for (node = list; node;) {
         gint dx, dy, dwidth, dheight;
         dw = node->data;
         dock_get_widget_pos(dw->w, &dx, &dy);
-        gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+        dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
         if (is_docked(x, y, w, h, dx, dy, dwidth, dheight)) {
 
             list = g_list_remove_link(list, node);
@@ -371,14 +393,16 @@ static GList *resize_calc_offset(GList *list, GtkWidget *widget, gint offset_x, 
     DockedWindow *dw;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
 
 
     for (node = list; node;) {
         gint dx, dy, dwidth, dheight;
         dw = node->data;
         dock_get_widget_pos(dw->w, &dx, &dy);
-        gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+        dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
         if (is_docked(x, y, w, h, dx, dy, dwidth, dheight)) {
             if (dx + offset_x + dwidth > gdk_screen_width()) {
                 offset_x -= dx + offset_x + dwidth - gdk_screen_width();
@@ -406,7 +430,8 @@ void dock_resize(GList *window_list, GtkWidget *widget, gint new_w, gint new_h)
     DockedWindow *dw;
 
     dock_get_widget_pos(widget, &x, &y);
-    gdk_window_get_size(widget->window, &w, &h);
+    w = gdk_window_get_width(gtk_widget_get_window(widget));
+    h = gdk_window_get_height(gtk_widget_get_window(widget));
     if (cfg.show_wm_decorations) {
         dock_window_resize(widget, new_w, new_h, w, h);
         return;
@@ -421,7 +446,8 @@ void dock_resize(GList *window_list, GtkWidget *widget, gint new_w, gint new_h)
         dw = node->data;
         if (dw->w != widget) {
             dock_get_widget_pos(dw->w, &dx, &dy);
-            gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+            dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+            dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
             if (is_docked(x, y, w, h, dx, dy, dwidth, dheight))
                 dlist = g_list_append(dlist, dw);
             else
@@ -433,7 +459,8 @@ void dock_resize(GList *window_list, GtkWidget *widget, gint new_w, gint new_h)
         gint doff_x, doff_y;
         dw = node->data;
         dock_get_widget_pos(dw->w, &dx, &dy);
-        gdk_window_get_size(dw->w->window, &dwidth, &dheight);
+        dwidth = gdk_window_get_width(gtk_widget_get_window(dw->w));
+        dheight = gdk_window_get_height(gtk_widget_get_window(dw->w));
         if (dx - x - w == 0)
             doff_x = (x + off_x + new_w) - dx;
         else
@@ -490,20 +517,26 @@ void dock_move_press(GList *window_list, GtkWidget *w, GdkEventButton *event, gb
     if (cfg.show_wm_decorations)
         return;
 
-    gdk_window_raise(w->window);
-    gdk_window_get_pointer(w->window, &mx, &my, NULL);
-    gtk_object_set_data(GTK_OBJECT(w), "move_offset_x", GINT_TO_POINTER(mx));
-    gtk_object_set_data(GTK_OBJECT(w), "move_offset_y", GINT_TO_POINTER(my));
+    gdk_window_raise(gtk_widget_get_window(w));
+    {
+        GdkDisplay *display = gdk_display_get_default();
+        GdkSeat *seat = gdk_display_get_default_seat(display);
+        GdkDevice *dev = gdk_seat_get_pointer(seat);
+        GdkWindow *win = gtk_widget_get_window(w);
+        if (win)
+            gdk_window_get_device_position(win, dev, &mx, &my, NULL);
+    }
+    g_object_set_data(G_OBJECT(w), "move_offset_x", GINT_TO_POINTER(mx));
+    g_object_set_data(G_OBJECT(w), "move_offset_y", GINT_TO_POINTER(my));
     if (move_list)
-        gtk_object_set_data(GTK_OBJECT(w), "docked_list",
-                            get_docked_list(NULL, window_list, w, 0, 0));
+        g_object_set_data(G_OBJECT(w), "docked_list", get_docked_list(NULL, window_list, w, 0, 0));
     else {
         dwin = g_malloc0(sizeof(DockedWindow));
         dwin->w = w;
-        gtk_object_set_data(GTK_OBJECT(w), "docked_list", g_list_append(NULL, dwin));
+        g_object_set_data(G_OBJECT(w), "docked_list", g_list_append(NULL, dwin));
     }
-    gtk_object_set_data(GTK_OBJECT(w), "window_list", window_list);
-    gtk_object_set_data(GTK_OBJECT(w), "is_moving", GINT_TO_POINTER(1));
+    g_object_set_data(G_OBJECT(w), "window_list", window_list);
+    g_object_set_data(G_OBJECT(w), "is_moving", GINT_TO_POINTER(1));
 }
 
 void dock_move_motion(GtkWidget *w, GdkEventMotion *event)
@@ -514,20 +547,24 @@ void dock_move_motion(GtkWidget *w, GdkEventMotion *event)
     XEvent ev;
 
     gdk_flush();
-    while (XCheckTypedEvent(GDK_DISPLAY(), MotionNotify, &ev))
-        ;
+    /* GTK3: GDK_DISPLAY() removed; skip X11-specific event flush */
 
-    if (!gtk_object_get_data(GTK_OBJECT(w), "is_moving"))
+    if (!g_object_get_data(G_OBJECT(w), "is_moving"))
         return;
 
-    offset_x = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(w), "move_offset_x"));
-    offset_y = GPOINTER_TO_INT(gtk_object_get_data(GTK_OBJECT(w), "move_offset_y"));
-    dlist = gtk_object_get_data(GTK_OBJECT(w), "docked_list");
-    window_list = gtk_object_get_data(GTK_OBJECT(w), "window_list");
+    offset_x = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "move_offset_x"));
+    offset_y = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(w), "move_offset_y"));
+    dlist = g_object_get_data(G_OBJECT(w), "docked_list");
+    window_list = g_object_get_data(G_OBJECT(w), "window_list");
 
     dock_get_widget_pos(w, &win_x, &win_y);
 
-    gdk_window_get_pointer(NULL, &mx, &my, NULL);
+    {
+        GdkDisplay *display = gdk_display_get_default();
+        GdkSeat *seat = gdk_display_get_default_seat(display);
+        GdkDevice *dev = gdk_seat_get_pointer(seat);
+        gdk_device_get_position(dev, NULL, &mx, &my);
+    }
 
     x = mx - offset_x;
     y = my - offset_y;
@@ -542,18 +579,19 @@ void dock_move_motion(GtkWidget *w, GdkEventMotion *event)
 void dock_move_release(GtkWidget *w)
 {
     GList *dlist;
-    gtk_object_remove_data(GTK_OBJECT(w), "is_moving");
-    gtk_object_remove_data(GTK_OBJECT(w), "move_offset_x");
-    gtk_object_remove_data(GTK_OBJECT(w), "move_offset_y");
-    if ((dlist = gtk_object_get_data(GTK_OBJECT(w), "docked_list")) != NULL)
+    /* GTK3: gtk_object_remove_data → g_object_set_data with NULL */
+    g_object_set_data(G_OBJECT(w), "is_moving", NULL);
+    g_object_set_data(G_OBJECT(w), "move_offset_x", NULL);
+    g_object_set_data(G_OBJECT(w), "move_offset_y", NULL);
+    if ((dlist = g_object_get_data(G_OBJECT(w), "docked_list")) != NULL)
         free_docked_list(dlist);
-    gtk_object_remove_data(GTK_OBJECT(w), "docked_list");
-    gtk_object_remove_data(GTK_OBJECT(w), "window_list");
+    g_object_set_data(G_OBJECT(w), "docked_list", NULL);
+    g_object_set_data(G_OBJECT(w), "window_list", NULL);
 }
 
 gboolean dock_is_moving(GtkWidget *w)
 {
-    if (gtk_object_get_data(GTK_OBJECT(w), "is_moving"))
+    if (g_object_get_data(G_OBJECT(w), "is_moving"))
         return TRUE;
     return FALSE;
 }
@@ -562,12 +600,12 @@ static gboolean configure_event(GtkWidget *w, GdkEventConfigure *event, gpointer
 {
     gint x, y;
 
-    if (!GTK_WIDGET_VISIBLE(w))
+    if (!gtk_widget_get_visible(w))
         return FALSE;
 
-    gdk_window_get_deskrelative_origin(w->window, &x, &y);
-    gtk_object_set_data(GTK_OBJECT(w), "window_x", GINT_TO_POINTER(x));
-    gtk_object_set_data(GTK_OBJECT(w), "window_y", GINT_TO_POINTER(y));
+    gdk_window_get_origin(gtk_widget_get_window(w), &x, &y);
+    g_object_set_data(G_OBJECT(w), "window_x", GINT_TO_POINTER(x));
+    g_object_set_data(G_OBJECT(w), "window_y", GINT_TO_POINTER(y));
 
     return FALSE;
 }
@@ -575,13 +613,13 @@ static gboolean configure_event(GtkWidget *w, GdkEventConfigure *event, gpointer
 GList *dock_add_window(GList *list, GtkWidget *w)
 {
     list = g_list_append(list, w);
-    gtk_signal_connect(GTK_OBJECT(w), "configure_event", GTK_SIGNAL_FUNC(configure_event), NULL);
+    g_signal_connect(G_OBJECT(w), "configure-event", G_CALLBACK(configure_event), NULL);
     return list;
 }
 
 void dock_set_uposition(GtkWidget *w, gint x, gint y)
 {
-    gtk_widget_set_uposition(w, x, y);
-    gtk_object_set_data(GTK_OBJECT(w), "window_x", GINT_TO_POINTER(x));
-    gtk_object_set_data(GTK_OBJECT(w), "window_y", GINT_TO_POINTER(y));
+    gtk_window_move(GTK_WINDOW(w), x, y);
+    g_object_set_data(G_OBJECT(w), "window_x", GINT_TO_POINTER(x));
+    g_object_set_data(G_OBJECT(w), "window_y", GINT_TO_POINTER(y));
 }

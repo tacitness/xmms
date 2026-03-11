@@ -45,6 +45,8 @@
 #include "dnd.h"
 #include "dock.h"
 #include "effect.h"
+/* GTK3: skin.h, widget.h, and vis.h included early — all widget constructors depend on
+ * SkinIndex (skin.h), Widget (widget.h), and VisType/Vis (vis.h) being defined before use */
 #include "eq_graph.h"
 #include "eq_slider.h"
 #include "equalizer.h"

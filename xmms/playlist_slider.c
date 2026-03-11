@@ -22,7 +22,7 @@
 void playlistslider_draw(Widget *w)
 {
     PlaylistSlider *ps = (PlaylistSlider *)w;
-    GdkPixmap *obj;
+    cairo_surface_t *obj G_GNUC_UNUSED;
     int y, skinx;
 
     if (get_playlist_length() > ps->ps_list->pl_num_visible)
@@ -32,25 +32,12 @@ void playlistslider_draw(Widget *w)
         y = 0;
 
     obj = ps->ps_widget.parent;
-
-    if (ps->ps_back_image) {
-        if (skin_get_id() != ps->ps_skin_id)
-            ps->ps_skin_id = skin_get_id();
-        else if (ps->ps_widget.height == ps->ps_prev_height)
-            gdk_draw_image(obj, ps->ps_widget.gc, ps->ps_back_image, 0, 0, ps->ps_widget.x,
-                           ps->ps_widget.y + ps->ps_prev_y, 8, 18);
-        gdk_image_destroy(ps->ps_back_image);
-    }
-
-    ps->ps_prev_y = y;
-    ps->ps_prev_height = ps->ps_widget.height;
-    ps->ps_back_image = gdk_image_get(obj, ps->ps_widget.x, ps->ps_widget.y + y, 8, 18);
     if (ps->ps_is_draging)
         skinx = 61;
     else
         skinx = 52;
-    skin_draw_pixmap(obj, ps->ps_widget.gc, SKIN_PLEDIT, skinx, 53, ps->ps_widget.x,
-                     ps->ps_widget.y + y, 8, 18);
+    skin_draw_pixmap(ps->ps_widget.cr, SKIN_PLEDIT, skinx, 53, ps->ps_widget.x, ps->ps_widget.y + y,
+                     8, 18);
 }
 
 static void playlistslider_set_pos(PlaylistSlider *ps, int y)
@@ -110,22 +97,25 @@ void playlistslider_motion_cb(GtkWidget *widget, GdkEventMotion *event, Playlist
     playlistslider_set_pos(ps, y);
 }
 
-PlaylistSlider *create_playlistslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
-                                      gint h, PlayList_List *list)
+PlaylistSlider *create_playlistslider(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x,
+                                      gint y, gint h, PlayList_List *list)
 {
     PlaylistSlider *ps;
 
     ps = g_malloc0(sizeof(PlaylistSlider));
     ps->ps_widget.parent = parent;
-    ps->ps_widget.gc = gc;
+    ps->ps_widget.cr = cr;
     ps->ps_widget.x = x;
     ps->ps_widget.y = y;
     ps->ps_widget.width = 8;
     ps->ps_widget.height = h;
     ps->ps_widget.visible = 1;
-    ps->ps_widget.button_press_cb = GTK_SIGNAL_FUNC(playlistslider_button_press_cb);
-    ps->ps_widget.button_release_cb = GTK_SIGNAL_FUNC(playlistslider_button_release_cb);
-    ps->ps_widget.motion_cb = GTK_SIGNAL_FUNC(playlistslider_motion_cb);
+    ps->ps_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))playlistslider_button_press_cb;
+    ps->ps_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))playlistslider_button_release_cb;
+    ps->ps_widget.motion_cb =
+        (void (*)(GtkWidget *, GdkEventMotion *, gpointer))playlistslider_motion_cb;
     ps->ps_widget.draw = playlistslider_draw;
     ps->ps_list = list;
     add_widget(wlist, ps);

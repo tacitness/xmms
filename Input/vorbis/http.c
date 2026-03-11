@@ -195,8 +195,8 @@ static void show_error_message(gchar *error)
     if (!error_dialog) {
         GDK_THREADS_ENTER();
         error_dialog = xmms_show_message(_("Error"), error, _("OK"), FALSE, NULL, NULL);
-        gtk_signal_connect(GTK_OBJECT(error_dialog), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &error_dialog);
+        g_signal_connect(G_OBJECT(error_dialog), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                         &error_dialog);
         GDK_THREADS_LEAVE();
     }
 }

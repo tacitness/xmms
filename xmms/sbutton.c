@@ -53,22 +53,24 @@ void sbutton_motion_cb(GtkWidget *widget, GdkEventMotion *event, SButton *button
     }
 }
 
-SButton *create_sbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
-                        void (*cb)(void))
+SButton *create_sbutton(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y, gint w,
+                        gint h, void (*cb)(void))
 {
     SButton *b;
 
     b = (SButton *)g_malloc0(sizeof(SButton));
     b->sb_widget.parent = parent;
-    b->sb_widget.gc = gc;
+    b->sb_widget.cr = cr; /* GTK3: was .gc */
     b->sb_widget.x = x;
     b->sb_widget.y = y;
     b->sb_widget.width = w;
     b->sb_widget.height = h;
     b->sb_widget.visible = 1;
-    b->sb_widget.button_press_cb = GTK_SIGNAL_FUNC(sbutton_button_press_cb);
-    b->sb_widget.button_release_cb = GTK_SIGNAL_FUNC(sbutton_button_release_cb);
-    b->sb_widget.motion_cb = GTK_SIGNAL_FUNC(sbutton_motion_cb);
+    b->sb_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))sbutton_button_press_cb;
+    b->sb_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))sbutton_button_release_cb;
+    b->sb_widget.motion_cb = (void (*)(GtkWidget *, GdkEventMotion *, gpointer))sbutton_motion_cb;
     b->sb_push_cb = cb;
     add_widget(wlist, b);
     return b;

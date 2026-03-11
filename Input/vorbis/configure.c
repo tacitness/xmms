@@ -151,8 +151,8 @@ static void streaming_save_browse_cb(GtkWidget *w, gpointer data)
                                   "to store the Ogg Vorbis streams:"),
                                 vorbis_cfg.save_http_path, GTK_SELECTION_SINGLE,
                                 streaming_save_dirbrowser_cb);
-    gtk_signal_connect(GTK_OBJECT(streaming_save_dirbrowser), "destroy",
-                       GTK_SIGNAL_FUNC(gtk_widget_destroyed), &streaming_save_dirbrowser);
+    g_signal_connect(G_OBJECT(streaming_save_dirbrowser), "destroy",
+                     G_CALLBACK(gtk_widget_destroyed), &streaming_save_dirbrowser);
     gtk_window_set_transient_for(GTK_WINDOW(streaming_save_dirbrowser),
                                  GTK_WINDOW(vorbis_configurewin));
     gtk_widget_show(streaming_save_dirbrowser);
@@ -200,56 +200,55 @@ void vorbis_configure(void)
     GtkWidget *rg_frame, *rg_vbox;
     GtkWidget *bbox, *ok, *cancel;
     GtkWidget *rg_type_frame, *rg_type_vbox, *rg_album_gain;
-    GtkObject *streaming_size_adj, *streaming_pre_adj;
+    GtkAdjustment *streaming_size_adj, *streaming_pre_adj;
 
     char *temp;
 
     if (vorbis_configurewin != NULL) {
-        gdk_window_raise(vorbis_configurewin->window);
+        gdk_window_raise(gtk_widget_get_window(vorbis_configurewin));
         return;
     }
 
-    vorbis_configurewin = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(vorbis_configurewin), "destroy",
-                       GTK_SIGNAL_FUNC(gtk_widget_destroyed), &vorbis_configurewin);
-    gtk_signal_connect(GTK_OBJECT(vorbis_configurewin), "destroy",
-                       GTK_SIGNAL_FUNC(configure_destroy), &vorbis_configurewin);
+    vorbis_configurewin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(vorbis_configurewin), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &vorbis_configurewin);
+    g_signal_connect(G_OBJECT(vorbis_configurewin), "destroy", G_CALLBACK(configure_destroy),
+                     &vorbis_configurewin);
     gtk_window_set_title(GTK_WINDOW(vorbis_configurewin), _("Ogg Vorbis Configuration"));
-    gtk_window_set_policy(GTK_WINDOW(vorbis_configurewin), FALSE, FALSE, FALSE);
-    gtk_container_border_width(GTK_CONTAINER(vorbis_configurewin), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(vorbis_configurewin), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(vorbis_configurewin), vbox);
 
     notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-    streaming_vbox = gtk_vbox_new(FALSE, 0);
+    streaming_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     streaming_buf_frame = gtk_frame_new(_("Buffering:"));
     gtk_container_set_border_width(GTK_CONTAINER(streaming_buf_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_buf_frame, FALSE, FALSE, 0);
 
-    streaming_buf_hbox = gtk_hbox_new(TRUE, 5);
+    streaming_buf_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_buf_hbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_buf_frame), streaming_buf_hbox);
 
-    streaming_size_box = gtk_hbox_new(FALSE, 5);
+    streaming_size_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(streaming_buf_hbox), streaming_size_box, TRUE, TRUE, 0);
     streaming_size_label = gtk_label_new(_("Buffer size (kb):"));
     gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_size_label, FALSE, FALSE, 0);
     streaming_size_adj = gtk_adjustment_new(vorbis_cfg.http_buffer_size, 4, 4096, 4, 4, 4);
     streaming_size_spin = gtk_spin_button_new(GTK_ADJUSTMENT(streaming_size_adj), 8, 0);
-    gtk_widget_set_usize(streaming_size_spin, 60, -1);
+    gtk_widget_set_size_request(streaming_size_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_size_spin, FALSE, FALSE, 0);
 
-    streaming_pre_box = gtk_hbox_new(FALSE, 5);
+    streaming_pre_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(streaming_buf_hbox), streaming_pre_box, TRUE, TRUE, 0);
     streaming_pre_label = gtk_label_new(_("Pre-buffer (percent):"));
     gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_pre_label, FALSE, FALSE, 0);
     streaming_pre_adj = gtk_adjustment_new(vorbis_cfg.http_prebuffer, 0, 90, 1, 1, 1);
     streaming_pre_spin = gtk_spin_button_new(GTK_ADJUSTMENT(streaming_pre_adj), 1, 0);
-    gtk_widget_set_usize(streaming_pre_spin, 60, -1);
+    gtk_widget_set_size_request(streaming_pre_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_pre_spin, FALSE, FALSE, 0);
 
     /*
@@ -259,17 +258,16 @@ void vorbis_configure(void)
     gtk_container_set_border_width(GTK_CONTAINER(streaming_proxy_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_proxy_frame, FALSE, FALSE, 0);
 
-    streaming_proxy_vbox = gtk_vbox_new(FALSE, 5);
+    streaming_proxy_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_proxy_vbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_proxy_frame), streaming_proxy_vbox);
 
     streaming_proxy_use = gtk_check_button_new_with_label(_("Use proxy"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_use), vorbis_cfg.use_proxy);
-    gtk_signal_connect(GTK_OBJECT(streaming_proxy_use), "clicked", GTK_SIGNAL_FUNC(proxy_use_cb),
-                       NULL);
+    g_signal_connect(G_OBJECT(streaming_proxy_use), "clicked", G_CALLBACK(proxy_use_cb), NULL);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_use, FALSE, FALSE, 0);
 
-    streaming_proxy_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_proxy_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_proxy_hbox, vorbis_cfg.use_proxy);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_hbox, FALSE, FALSE, 0);
 
@@ -284,7 +282,7 @@ void vorbis_configure(void)
     gtk_box_pack_start(GTK_BOX(streaming_proxy_hbox), streaming_proxy_port_label, FALSE, FALSE, 0);
 
     streaming_proxy_port_entry = gtk_entry_new();
-    gtk_widget_set_usize(streaming_proxy_port_entry, 50, -1);
+    gtk_widget_set_size_request(streaming_proxy_port_entry, 50, -1);
     temp = g_strdup_printf("%d", vorbis_cfg.proxy_port);
     gtk_entry_set_text(GTK_ENTRY(streaming_proxy_port_entry), temp);
     g_free(temp);
@@ -294,11 +292,11 @@ void vorbis_configure(void)
     gtk_widget_set_sensitive(streaming_proxy_auth_use, vorbis_cfg.use_proxy);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use),
                                  vorbis_cfg.proxy_use_auth);
-    gtk_signal_connect(GTK_OBJECT(streaming_proxy_auth_use), "clicked",
-                       GTK_SIGNAL_FUNC(proxy_auth_use_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_proxy_auth_use), "clicked", G_CALLBACK(proxy_auth_use_cb),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_use, FALSE, FALSE, 0);
 
-    streaming_proxy_auth_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_proxy_auth_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_proxy_auth_hbox,
                              vorbis_cfg.use_proxy && vorbis_cfg.proxy_use_auth);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_hbox, FALSE, FALSE, 0);
@@ -332,18 +330,18 @@ void vorbis_configure(void)
     gtk_container_set_border_width(GTK_CONTAINER(streaming_save_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_save_frame, FALSE, FALSE, 0);
 
-    streaming_save_vbox = gtk_vbox_new(FALSE, 5);
+    streaming_save_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_save_vbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_save_frame), streaming_save_vbox);
 
     streaming_save_use = gtk_check_button_new_with_label(_("Save stream to disk"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_save_use),
                                  vorbis_cfg.save_http_stream);
-    gtk_signal_connect(GTK_OBJECT(streaming_save_use), "clicked",
-                       GTK_SIGNAL_FUNC(streaming_save_use_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_save_use), "clicked", G_CALLBACK(streaming_save_use_cb),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(streaming_save_vbox), streaming_save_use, FALSE, FALSE, 0);
 
-    streaming_save_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_save_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_save_hbox, vorbis_cfg.save_http_stream);
     gtk_box_pack_start(GTK_BOX(streaming_save_vbox), streaming_save_hbox, FALSE, FALSE, 0);
 
@@ -355,8 +353,8 @@ void vorbis_configure(void)
     gtk_box_pack_start(GTK_BOX(streaming_save_hbox), streaming_save_entry, TRUE, TRUE, 0);
 
     streaming_save_browse = gtk_button_new_with_label(_("Browse"));
-    gtk_signal_connect(GTK_OBJECT(streaming_save_browse), "clicked",
-                       GTK_SIGNAL_FUNC(streaming_save_browse_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_save_browse), "clicked",
+                     G_CALLBACK(streaming_save_browse_cb), NULL);
     gtk_box_pack_start(GTK_BOX(streaming_save_hbox), streaming_save_browse, FALSE, FALSE, 0);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), streaming_vbox, gtk_label_new(_("Streaming")));
@@ -364,18 +362,19 @@ void vorbis_configure(void)
     /* Title config.. */
 
     title_frame = gtk_frame_new(_("Ogg Vorbis Tags:"));
-    gtk_container_border_width(GTK_CONTAINER(title_frame), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(title_frame), 5);
 
-    title_tag_vbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(title_tag_vbox), 5);
+    title_tag_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(title_tag_vbox), 5);
     gtk_container_add(GTK_CONTAINER(title_frame), title_tag_vbox);
 
     title_tag_override = gtk_check_button_new_with_label(_("Override generic titles"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(title_tag_override), vorbis_cfg.tag_override);
-    gtk_signal_connect(GTK_OBJECT(title_tag_override), "clicked", title_tag_override_cb, NULL);
+    g_signal_connect(G_OBJECT(title_tag_override), "clicked", G_CALLBACK(title_tag_override_cb),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(title_tag_vbox), title_tag_override, FALSE, FALSE, 0);
 
-    title_tag_box = gtk_hbox_new(FALSE, 5);
+    title_tag_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(title_tag_box, vorbis_cfg.tag_override);
     gtk_box_pack_start(GTK_BOX(title_tag_vbox), title_tag_box, FALSE, FALSE, 0);
 
@@ -395,10 +394,10 @@ void vorbis_configure(void)
     /* Replay Gain.. */
 
     rg_frame = gtk_frame_new(_("ReplayGain Settings:"));
-    gtk_container_border_width(GTK_CONTAINER(rg_frame), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(rg_frame), 5);
 
-    rg_vbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(rg_vbox), 5);
+    rg_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(rg_vbox), 5);
     gtk_container_add(GTK_CONTAINER(rg_frame), rg_vbox);
 
     rg_clip_switch = gtk_check_button_new_with_label(_("Enable Clipping Prevention"));
@@ -412,9 +411,9 @@ void vorbis_configure(void)
     rg_type_frame = gtk_frame_new(_("ReplayGain Type:"));
     gtk_box_pack_start(GTK_BOX(rg_vbox), rg_type_frame, FALSE, FALSE, 0);
 
-    gtk_signal_connect(GTK_OBJECT(rg_switch), "toggled", rg_switch_cb, rg_type_frame);
+    g_signal_connect(G_OBJECT(rg_switch), "toggled", G_CALLBACK(rg_switch_cb), rg_type_frame);
 
-    rg_type_vbox = gtk_vbox_new(FALSE, 5);
+    rg_type_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(rg_type_vbox), 5);
     gtk_container_add(GTK_CONTAINER(rg_type_frame), rg_type_vbox);
 
@@ -426,7 +425,7 @@ void vorbis_configure(void)
     gtk_box_pack_start(GTK_BOX(rg_type_vbox), rg_track_gain, FALSE, FALSE, 0);
 
     rg_album_gain =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(rg_track_gain)),
+        gtk_radio_button_new_with_label(gtk_radio_button_get_group(GTK_RADIO_BUTTON(rg_track_gain)),
                                         _("use Album Gain/Peak"));
     if (vorbis_cfg.replaygain_mode == REPLAYGAIN_MODE_ALBUM)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rg_album_gain), TRUE);
@@ -445,21 +444,21 @@ void vorbis_configure(void)
 
     /* Buttons */
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(vorbis_configurewin_ok), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(vorbis_configurewin_ok), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(ok);
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(vorbis_configurewin));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(vorbis_configurewin));
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(vorbis_configurewin);

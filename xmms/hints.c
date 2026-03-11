@@ -20,7 +20,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xmd.h>
-#include <gdk/gdkprivate.h>
+/* GTK3: gdk/gdkprivate.h removed */
 #include <gdk/gdkx.h>
 
 #include "xmms.h"
@@ -62,8 +62,11 @@ static void (*move_resize_func)(GtkWidget *, int, int, gboolean);
 
 void hint_set_skip_winlist(GtkWidget *window)
 {
-    if (set_skip_taskbar_func)
-        set_skip_taskbar_func(window);
+    /* GTK3: use native GtkWindow hint API instead of raw Xlib property.
+     * This keeps GTK3's internal WM-hint state consistent and avoids
+     * compositor conflicts that caused focus/hide bugs. */
+    gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
+    gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
 }
 
 void hint_set_always(gboolean always)
@@ -102,36 +105,40 @@ void hint_move_resize(GtkWidget *window, int x, int y, gboolean move)
 static void gnome_wm_set_skip_taskbar(GtkWidget *widget)
 {
     long data[1];
-    Atom xa_win_hints = gdk_atom_intern("_WIN_HINTS", FALSE);
+    Atom xa_win_hints = gdk_x11_get_xatom_by_name("_WIN_HINTS");
 
     data[0] = WIN_HINTS_SKIP_TASKBAR;
-    XChangeProperty(GDK_DISPLAY(), GDK_WINDOW_XWINDOW(widget->window), xa_win_hints, XA_CARDINAL,
-                    32, PropModeReplace, (unsigned char *)data, 1);
+    XChangeProperty(gdk_x11_get_default_xdisplay(),
+                    gdk_x11_window_get_xid(gtk_widget_get_window(widget)), xa_win_hints,
+                    XA_CARDINAL, 32, PropModeReplace, (unsigned char *)data, 1);
 }
 
 static void gnome_wm_set_window_always(GtkWidget *window, gboolean always)
 {
     XEvent xev;
     long layer = WIN_LAYER_ONTOP;
-    Atom xa_win_layer = gdk_atom_intern("_WIN_LAYER", FALSE);
+    Atom xa_win_layer = gdk_x11_get_xatom_by_name("_WIN_LAYER");
 
     if (always == FALSE)
         layer = WIN_LAYER_NORMAL;
 
-    if (GTK_WIDGET_MAPPED(window)) {
+    if (gtk_widget_get_mapped(window)) {
         xev.type = ClientMessage;
         xev.xclient.type = ClientMessage;
-        xev.xclient.window = GDK_WINDOW_XWINDOW(window->window);
+        xev.xclient.window = gdk_x11_window_get_xid(gtk_widget_get_window(window));
         xev.xclient.message_type = xa_win_layer;
         xev.xclient.format = 32;
         xev.xclient.data.l[0] = layer;
 
-        XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False, SubstructureNotifyMask, &xev);
+        XSendEvent(gdk_x11_get_default_xdisplay(),
+                   DefaultRootWindow(gdk_x11_get_default_xdisplay()), False, SubstructureNotifyMask,
+                   &xev);
     } else {
         long data[1];
 
         data[0] = layer;
-        XChangeProperty(GDK_DISPLAY(), GDK_WINDOW_XWINDOW(window->window), xa_win_layer,
+        XChangeProperty(gdk_x11_get_default_xdisplay(),
+                        gdk_x11_window_get_xid(gtk_widget_get_window(window)), xa_win_layer,
                         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)data, 1);
     }
 }
@@ -140,26 +147,29 @@ static void gnome_wm_set_window_sticky(GtkWidget *window, gboolean sticky)
 {
     XEvent xev;
     long state = 0;
-    Atom xa_win_state = gdk_atom_intern("_WIN_STATE", FALSE);
+    Atom xa_win_state = gdk_x11_get_xatom_by_name("_WIN_STATE");
 
     if (sticky)
         state = WIN_STATE_STICKY;
 
-    if (GTK_WIDGET_MAPPED(window)) {
+    if (gtk_widget_get_mapped(window)) {
         xev.type = ClientMessage;
         xev.xclient.type = ClientMessage;
-        xev.xclient.window = GDK_WINDOW_XWINDOW(window->window);
+        xev.xclient.window = gdk_x11_window_get_xid(gtk_widget_get_window(window));
         xev.xclient.message_type = xa_win_state;
         xev.xclient.format = 32;
         xev.xclient.data.l[0] = WIN_STATE_STICKY;
         xev.xclient.data.l[1] = state;
 
-        XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False, SubstructureNotifyMask, &xev);
+        XSendEvent(gdk_x11_get_default_xdisplay(),
+                   DefaultRootWindow(gdk_x11_get_default_xdisplay()), False, SubstructureNotifyMask,
+                   &xev);
     } else {
         long data[2];
 
         data[0] = state;
-        XChangeProperty(GDK_DISPLAY(), GDK_WINDOW_XWINDOW(window->window), xa_win_state,
+        XChangeProperty(gdk_x11_get_default_xdisplay(),
+                        gdk_x11_window_get_xid(gtk_widget_get_window(window)), xa_win_state,
                         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)data, 1);
     }
 }
@@ -174,16 +184,17 @@ static gboolean gnome_wm_found(void)
 
     gdk_error_trap_push();
 
-    support_check = gdk_atom_intern("_WIN_SUPPORTING_WM_CHECK", FALSE);
+    support_check = gdk_x11_get_xatom_by_name("_WIN_SUPPORTING_WM_CHECK");
 
-    p = XGetWindowProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(), support_check, 0, 1, False,
-                           XA_CARDINAL, &r_type, &r_format, &count, &bytes_remain, &prop);
+    p = XGetWindowProperty(gdk_x11_get_default_xdisplay(),
+                           DefaultRootWindow(gdk_x11_get_default_xdisplay()), support_check, 0, 1,
+                           False, XA_CARDINAL, &r_type, &r_format, &count, &bytes_remain, &prop);
 
     if (p == Success && prop && r_type == XA_CARDINAL && r_format == 32 && count == 1) {
         Window n = *(long *)prop;
 
-        p = XGetWindowProperty(GDK_DISPLAY(), n, support_check, 0, 1, False, XA_CARDINAL, &r_type,
-                               &r_format, &count, &bytes_remain, &prop2);
+        p = XGetWindowProperty(gdk_x11_get_default_xdisplay(), n, support_check, 0, 1, False,
+                               XA_CARDINAL, &r_type, &r_format, &count, &bytes_remain, &prop2);
 
         if (p == Success && prop2 && r_type == XA_CARDINAL && r_format == 32 && count == 1)
             ret = TRUE;
@@ -207,16 +218,17 @@ static gboolean net_wm_found(void)
     gboolean ret = FALSE;
 
     gdk_error_trap_push();
-    support_check = gdk_atom_intern("_NET_SUPPORTING_WM_CHECK", FALSE);
+    support_check = gdk_x11_get_xatom_by_name("_NET_SUPPORTING_WM_CHECK");
 
-    p = XGetWindowProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(), support_check, 0, 1, False, XA_WINDOW,
-                           &r_type, &r_format, &count, &bytes_remain, &prop);
+    p = XGetWindowProperty(gdk_x11_get_default_xdisplay(),
+                           DefaultRootWindow(gdk_x11_get_default_xdisplay()), support_check, 0, 1,
+                           False, XA_WINDOW, &r_type, &r_format, &count, &bytes_remain, &prop);
 
     if (p == Success && prop && r_type == XA_WINDOW && r_format == 32 && count == 1) {
         Window n = *(Window *)prop;
 
-        p = XGetWindowProperty(GDK_DISPLAY(), n, support_check, 0, 1, False, XA_WINDOW, &r_type,
-                               &r_format, &count, &bytes_remain, &prop2);
+        p = XGetWindowProperty(gdk_x11_get_default_xdisplay(), n, support_check, 0, 1, False,
+                               XA_WINDOW, &r_type, &r_format, &count, &bytes_remain, &prop2);
 
         if (p == Success && prop2 && *prop2 == *prop && r_type == XA_WINDOW && r_format == 32 &&
             count == 1)
@@ -241,19 +253,20 @@ static void net_wm_set_property(GtkWidget *window, char *atom, gboolean state)
     if (state == FALSE)
         set = _NET_WM_STATE_REMOVE;
 
-    type = gdk_atom_intern("_NET_WM_STATE", FALSE);
-    property = gdk_atom_intern(atom, FALSE);
+    type = gdk_x11_get_xatom_by_name("_NET_WM_STATE");
+    property = gdk_x11_get_xatom_by_name(atom);
 
     xev.type = ClientMessage;
     xev.xclient.type = ClientMessage;
-    xev.xclient.window = GDK_WINDOW_XWINDOW(window->window);
+    xev.xclient.window = gdk_x11_window_get_xid(gtk_widget_get_window(window));
     xev.xclient.message_type = type;
     xev.xclient.format = 32;
     xev.xclient.data.l[0] = set;
     xev.xclient.data.l[1] = property;
     xev.xclient.data.l[2] = 0;
 
-    XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False, SubstructureNotifyMask, &xev);
+    XSendEvent(gdk_x11_get_default_xdisplay(), DefaultRootWindow(gdk_x11_get_default_xdisplay()),
+               False, SubstructureNotifyMask, &xev);
 }
 
 static void net_wm_set_desktop(GtkWidget *window, gboolean all)
@@ -266,9 +279,10 @@ static void net_wm_set_desktop(GtkWidget *window, gboolean all)
         unsigned long count, bytes_remain;
         unsigned char *prop;
         Atom r_type;
-        Atom current = gdk_atom_intern("_NET_WM_DESKTOP", FALSE);
+        Atom current = gdk_x11_get_xatom_by_name("_NET_WM_DESKTOP");
 
-        p = XGetWindowProperty(GDK_DISPLAY(), GDK_WINDOW_XWINDOW(window->window), current, 0, 1,
+        p = XGetWindowProperty(gdk_x11_get_default_xdisplay(),
+                               gdk_x11_window_get_xid(gtk_widget_get_window(window)), current, 0, 1,
                                False, XA_CARDINAL, &r_type, &r_format, &count, &bytes_remain,
                                &prop);
 
@@ -283,10 +297,12 @@ static void net_wm_set_desktop(GtkWidget *window, gboolean all)
              */
             return;
 
-        current = gdk_atom_intern("_NET_CURRENT_DESKTOP", FALSE);
+        current = gdk_x11_get_xatom_by_name("_NET_CURRENT_DESKTOP");
 
-        p = XGetWindowProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(), current, 0, 1, False, XA_CARDINAL,
-                               &r_type, &r_format, &count, &bytes_remain, &prop);
+        p = XGetWindowProperty(gdk_x11_get_default_xdisplay(),
+                               DefaultRootWindow(gdk_x11_get_default_xdisplay()), current, 0, 1,
+                               False, XA_CARDINAL, &r_type, &r_format, &count, &bytes_remain,
+                               &prop);
 
         if (p == Success && prop && r_type == XA_CARDINAL && r_format == 32 && count == 1) {
             current_desktop = *(long *)prop;
@@ -297,12 +313,13 @@ static void net_wm_set_desktop(GtkWidget *window, gboolean all)
 
     xev.type = ClientMessage;
     xev.xclient.type = ClientMessage;
-    xev.xclient.window = GDK_WINDOW_XWINDOW(window->window);
-    xev.xclient.message_type = gdk_atom_intern("_NET_WM_DESKTOP", FALSE);
+    xev.xclient.window = gdk_x11_window_get_xid(gtk_widget_get_window(window));
+    xev.xclient.message_type = gdk_x11_get_xatom_by_name("_NET_WM_DESKTOP");
     xev.xclient.format = 32;
     xev.xclient.data.l[0] = current_desktop;
 
-    XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False, SubstructureNotifyMask, &xev);
+    XSendEvent(gdk_x11_get_default_xdisplay(), DefaultRootWindow(gdk_x11_get_default_xdisplay()),
+               False, SubstructureNotifyMask, &xev);
 }
 
 static void net_wm_set_window_always(GtkWidget *window, gboolean always)
@@ -333,11 +350,11 @@ static void net_wm_move_resize(GtkWidget *window, int x, int y, gboolean move)
 
     gdk_pointer_ungrab(GDK_CURRENT_TIME);
 
-    type = gdk_atom_intern("_NET_WM_MOVERESIZE", FALSE);
+    type = gdk_x11_get_xatom_by_name("_NET_WM_MOVERESIZE");
 
     xev.type = ClientMessage;
     xev.xclient.type = ClientMessage;
-    xev.xclient.window = GDK_WINDOW_XWINDOW(window->window);
+    xev.xclient.window = gdk_x11_window_get_xid(gtk_widget_get_window(window));
     xev.xclient.message_type = type;
     xev.xclient.format = 32;
     xev.xclient.data.l[0] = x;
@@ -346,12 +363,13 @@ static void net_wm_move_resize(GtkWidget *window, int x, int y, gboolean move)
     xev.xclient.data.l[3] = 1; /* button */
 
 
-    XSendEvent(GDK_DISPLAY(), GDK_ROOT_WINDOW(), False, SubstructureNotifyMask, &xev);
+    XSendEvent(gdk_x11_get_default_xdisplay(), DefaultRootWindow(gdk_x11_get_default_xdisplay()),
+               False, SubstructureNotifyMask, &xev);
 }
 
 static gboolean find_atom(Atom *atoms, int n, const char *name)
 {
-    Atom a = gdk_atom_intern(name, FALSE);
+    Atom a = gdk_x11_get_xatom_by_name(name);
     int i;
 
     for (i = 0; i < n; i++)
@@ -362,14 +380,16 @@ static gboolean find_atom(Atom *atoms, int n, const char *name)
 
 static gboolean get_supported_atoms(Atom **atoms, unsigned long *natoms, const char *name)
 {
-    Atom supported = gdk_atom_intern(name, FALSE), r_type;
+    Atom supported = gdk_x11_get_xatom_by_name(name), r_type;
     unsigned long bremain;
     int r_format, p;
 
     *atoms = NULL;
     gdk_error_trap_push();
-    p = XGetWindowProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(), supported, 0, 1000, False, XA_ATOM,
-                           &r_type, &r_format, natoms, &bremain, (unsigned char **)atoms);
+    p = XGetWindowProperty(gdk_x11_get_default_xdisplay(),
+                           DefaultRootWindow(gdk_x11_get_default_xdisplay()), supported, 0, 1000,
+                           False, XA_ATOM, &r_type, &r_format, natoms, &bremain,
+                           (unsigned char **)atoms);
     if (gdk_error_trap_pop() || p != Success || r_type != XA_ATOM || *natoms == 0 || *atoms == NULL)
         return FALSE;
 

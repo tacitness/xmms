@@ -63,8 +63,10 @@ target_link_libraries(xmms PRIVATE
     libxmms
     PkgConfig::GTK
     Threads::Threads
+    ${X11_LIBRARIES}
     ${SM_LIBS}
     ${VM_LIBS}
+    m
     # dlopen for plugin loading
     ${CMAKE_DL_LIBS}
 )

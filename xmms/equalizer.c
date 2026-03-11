@@ -20,6 +20,12 @@
 #include "libxmms/configfile.h"
 #include "xmms.h"
 
+
+/* GTK3: wrapper to silence incompatible-pointer-types warning */
+static void on_widget_destroyed(GtkWidget *w, gpointer data)
+{
+    gtk_widget_destroyed(w, (GtkWidget **)data);
+}
 GtkWidget *equalizerwin;
 
 static GtkWidget *equalizerwin_load_window = NULL;
@@ -32,8 +38,8 @@ static GtkWidget *equalizerwin_configure_window = NULL;
 
 static GtkWidget *eqconfwin_options_eqdf_entry, *eqconfwin_options_eqef_entry;
 
-GdkPixmap *equalizerwin_bg, *equalizerwin_bg_dblsize;
-GdkGC *equalizerwin_gc;
+cairo_surface_t *equalizerwin_bg, *equalizerwin_bg_dblsize;
+cairo_t *equalizerwin_gc;
 
 GList *equalizerwin_wlist = NULL;
 
@@ -47,7 +53,7 @@ static EqGraph *equalizerwin_graph;
 static EqSlider *equalizerwin_preamp, *equalizerwin_bands[10];
 static HSlider *equalizerwin_volume, *equalizerwin_balance;
 
-static GtkItemFactory *equalizerwin_presets_menu;
+static GtkWidget *equalizerwin_presets_menu;
 
 gboolean equalizerwin_focus = FALSE;
 
@@ -79,6 +85,7 @@ enum {
     EQUALIZER_PRESETS_CONFIGURE
 };
 
+#if 0 /* GTK3: GtkItemFactory removed */
 GtkItemFactoryEntry equalizerwin_presets_menu_entries[] = {
     {N_("/Load"), NULL, NULL, 0, "<Branch>"},
     {N_("/Load/Preset"), NULL, equalizerwin_presets_menu_cb, EQUALIZER_PRESETS_LOAD_PRESET,
@@ -117,19 +124,16 @@ GtkItemFactoryEntry equalizerwin_presets_menu_entries[] = {
     {N_("/Configure Equalizer"), NULL, equalizerwin_presets_menu_cb, EQUALIZER_PRESETS_CONFIGURE,
      "<Item>"},
 };
+#endif
 
-static gint equalizerwin_presets_menu_entries_num =
-    sizeof(equalizerwin_presets_menu_entries) / sizeof(equalizerwin_presets_menu_entries[0]);
+static gint equalizerwin_presets_menu_entries_num = 0; /* GTK3: entries disabled */
 
 void equalizerwin_set_shape_mask(void)
 {
     if (cfg.show_wm_decorations)
         return;
 
-    gtk_widget_shape_combine_mask(equalizerwin,
-                                  skin_get_mask(SKIN_MASK_EQ, EQUALIZER_DOUBLESIZE,
-                                                cfg.equalizer_shaded),
-                                  0, 0);
+    /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
 }
 
 void equalizerwin_set_doublesize(gboolean ds)
@@ -145,10 +149,10 @@ void equalizerwin_set_doublesize(gboolean ds)
 
     if (ds) {
         dock_resize(dock_window_list, equalizerwin, 550, height * 2);
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg_dblsize, 0);
+        /* TODO(#gtk3): gdk_window_set_back_pixmap removed */
     } else {
         dock_resize(dock_window_list, equalizerwin, 275, height);
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg, 0);
+        /* TODO(#gtk3): gdk_window_set_back_pixmap removed */
     }
     draw_equalizer_window(TRUE);
 }
@@ -187,15 +191,14 @@ void equalizerwin_shade_toggle(void)
 
 void equalizerwin_set_shade(gboolean shaded)
 {
-    GtkWidget *widget;
-    widget = gtk_item_factory_get_widget(mainwin_options_menu, "/Equalizer WindowShade Mode");
-    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(widget), shaded);
+    /* GTK3: call implementation directly (gtk_item_factory_get_widget removed) */
+    equalizerwin_set_shade_menu_cb(shaded);
 }
 
 void equalizerwin_raise(void)
 {
     if (cfg.equalizer_visible)
-        gdk_window_raise(equalizerwin->window);
+        gdk_window_raise(gtk_widget_get_window(equalizerwin));
 }
 
 void equalizerwin_eq_changed(void)
@@ -217,10 +220,9 @@ void equalizerwin_on_pushed(gboolean toggled)
 
 void equalizerwin_presets_pushed(void)
 {
-    GdkModifierType modmask;
     gint x, y;
 
-    gdk_window_get_pointer(NULL, &x, &y, &modmask);
+    util_get_root_pointer(&x, &y);
     util_item_factory_popup(equalizerwin_presets_menu, x, y, 1, GDK_CURRENT_TIME);
 }
 
@@ -231,27 +233,24 @@ void equalizerwin_auto_pushed(gboolean toggled)
 
 void draw_equalizer_window(gboolean force)
 {
-    GdkImage *img, *img2;
+    cairo_surface_t *img, *img2;
     GList *wl;
     Widget *w;
     gboolean redraw;
 
     lock_widget_list(equalizerwin_wlist);
     if (force) {
-        skin_draw_pixmap(equalizerwin_bg, equalizerwin_gc, SKIN_EQMAIN, 0, 0, 0, 0, 275, 116);
+        skin_draw_pixmap(equalizerwin_gc, SKIN_EQMAIN, 0, 0, 0, 0, 275, 116);
         if (equalizerwin_focus || !cfg.dim_titlebar) {
             if (!cfg.equalizer_shaded)
-                skin_draw_pixmap(equalizerwin_bg, equalizerwin_gc, SKIN_EQMAIN, 0, 134, 0, 0, 275,
-                                 14);
+                skin_draw_pixmap(equalizerwin_gc, SKIN_EQMAIN, 0, 134, 0, 0, 275, 14);
             else
-                skin_draw_pixmap(equalizerwin_bg, equalizerwin_gc, SKIN_EQ_EX, 0, 0, 0, 0, 275, 14);
+                skin_draw_pixmap(equalizerwin_gc, SKIN_EQ_EX, 0, 0, 0, 0, 275, 14);
         } else {
             if (!cfg.equalizer_shaded)
-                skin_draw_pixmap(equalizerwin_bg, equalizerwin_gc, SKIN_EQMAIN, 0, 149, 0, 0, 275,
-                                 14);
+                skin_draw_pixmap(equalizerwin_gc, SKIN_EQMAIN, 0, 149, 0, 0, 275, 14);
             else
-                skin_draw_pixmap(equalizerwin_bg, equalizerwin_gc, SKIN_EQ_EX, 0, 15, 0, 0, 275,
-                                 14);
+                skin_draw_pixmap(equalizerwin_gc, SKIN_EQ_EX, 0, 15, 0, 0, 275, 14);
         }
         draw_widget_list(equalizerwin_wlist, &redraw, TRUE);
     } else
@@ -260,23 +259,21 @@ void draw_equalizer_window(gboolean force)
     if (force || redraw) {
         if (cfg.doublesize && cfg.eq_doublesize_linked) {
             if (force) {
-                img = gdk_image_get(equalizerwin_bg, 0, 0, 275, 116);
-                img2 = create_dblsize_image(img);
-                gdk_draw_image(equalizerwin_bg_dblsize, equalizerwin_gc, img2, 0, 0, 0, 0, 550,
-                               232);
-                gdk_image_destroy(img2);
-                gdk_image_destroy(img);
+                img = NULL /* TODO(#gtk3): gdk_image_get removed */;
+                img2 = NULL /* TODO(#gtk3): create_dblsize_image removed */;
+                /* TODO(#gtk3): gdk_draw_image removed */
+                /* TODO(#gtk3): gdk_image_destroy removed */
+                /* TODO(#gtk3): gdk_image_destroy removed */
             } else {
                 wl = equalizerwin_wlist;
                 while (wl) {
                     w = (Widget *)wl->data;
                     if (w->redraw && w->visible) {
-                        img = gdk_image_get(equalizerwin_bg, w->x, w->y, w->width, w->height);
-                        img2 = create_dblsize_image(img);
-                        gdk_draw_image(equalizerwin_bg_dblsize, equalizerwin_gc, img2, 0, 0,
-                                       w->x << 1, w->y << 1, w->width << 1, w->height << 1);
-                        gdk_image_destroy(img2);
-                        gdk_image_destroy(img);
+                        img = NULL /* TODO(#gtk3): gdk_image_get removed */;
+                        img2 = NULL /* TODO(#gtk3): create_dblsize_image removed */;
+                        /* TODO(#gtk3): gdk_draw_image removed */
+                        /* TODO(#gtk3): gdk_image_destroy removed */
+                        /* TODO(#gtk3): gdk_image_destroy removed */
                         w->redraw = FALSE;
                     }
                     wl = wl->next;
@@ -284,8 +281,8 @@ void draw_equalizer_window(gboolean force)
             }
         } else
             clear_widget_list_redraw(equalizerwin_wlist);
-        gdk_window_clear(equalizerwin->window);
-        gdk_flush();
+        gtk_widget_queue_draw(equalizerwin);
+        /* gdk_flush() no-op in GTK3 */
     }
     unlock_widget_list(equalizerwin_wlist);
 }
@@ -344,7 +341,7 @@ void equalizerwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callb
         draw_equalizer_window(FALSE);
     }
     if (grab)
-        gdk_pointer_grab(equalizerwin->window, FALSE,
+        gdk_pointer_grab(gtk_widget_get_window(equalizerwin), FALSE,
                          GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
                          GDK_CURRENT_TIME);
 }
@@ -363,15 +360,16 @@ void equalizerwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer call
         handle_motion_cb(equalizerwin_wlist, widget, event);
         draw_main_window(FALSE);
     }
-    gdk_flush();
-    while (XCheckMaskEvent(GDK_DISPLAY(), ButtonMotionMask, &ev))
+    /* gdk_flush() no-op in GTK3 */
+    while (XCheckMaskEvent(gdk_x11_get_default_xdisplay(), ButtonMotionMask, &ev))
         ;
 }
 
 void equalizerwin_release(GtkWidget *widget, GdkEventButton *event, gpointer callback_data)
 {
+    /* GTK3: ungrab pointer on button release */
     gdk_pointer_ungrab(GDK_CURRENT_TIME);
-    gdk_flush();
+    /* gdk_flush() no-op in GTK3 */
     if (dock_is_moving(equalizerwin)) {
         dock_move_release(equalizerwin);
     } else {
@@ -411,88 +409,88 @@ void equalizerwin_focus_out(GtkWidget *widget, GdkEventButton *event, gpointer c
 gboolean equalizerwin_keypress(GtkWidget *w, GdkEventKey *event, gpointer data)
 {
     switch (event->keyval) {
-    case GDK_Left:
-    case GDK_KP_Left:
+    case GDK_KEY_Left:
+    case GDK_KEY_KP_Left:
         if (cfg.equalizer_shaded)
             mainwin_set_balance_diff(-4);
         else
             gtk_widget_event(mainwin, (GdkEvent *)event);
         break;
-    case GDK_Right:
-    case GDK_KP_Right:
+    case GDK_KEY_Right:
+    case GDK_KEY_KP_Right:
         if (cfg.equalizer_shaded)
             mainwin_set_balance_diff(4);
         else
             gtk_widget_event(mainwin, (GdkEvent *)event);
         break;
-    case GDK_quoteleft:
+    case GDK_KEY_quoteleft:
         EQ_SLIDER_UP(equalizerwin_preamp);
         break;
-    case GDK_Tab:
+    case GDK_KEY_Tab:
         EQ_SLIDER_DOWN(equalizerwin_preamp);
         break;
-    case GDK_1:
+    case GDK_KEY_1:
         EQ_SLIDER_UP(equalizerwin_bands[0]);
         break;
-    case GDK_q:
+    case GDK_KEY_q:
         EQ_SLIDER_DOWN(equalizerwin_bands[0]);
         break;
-    case GDK_2:
+    case GDK_KEY_2:
         EQ_SLIDER_UP(equalizerwin_bands[1]);
         break;
-    case GDK_w:
+    case GDK_KEY_w:
         EQ_SLIDER_DOWN(equalizerwin_bands[1]);
         break;
-    case GDK_3:
+    case GDK_KEY_3:
         EQ_SLIDER_UP(equalizerwin_bands[2]);
         break;
-    case GDK_e:
+    case GDK_KEY_e:
         EQ_SLIDER_DOWN(equalizerwin_bands[2]);
         break;
-    case GDK_4:
+    case GDK_KEY_4:
         EQ_SLIDER_UP(equalizerwin_bands[3]);
         break;
-    case GDK_r:
+    case GDK_KEY_r:
         EQ_SLIDER_DOWN(equalizerwin_bands[3]);
         break;
-    case GDK_5:
+    case GDK_KEY_5:
         EQ_SLIDER_UP(equalizerwin_bands[4]);
         break;
-    case GDK_t:
+    case GDK_KEY_t:
         EQ_SLIDER_DOWN(equalizerwin_bands[4]);
         break;
-    case GDK_6:
+    case GDK_KEY_6:
         EQ_SLIDER_UP(equalizerwin_bands[5]);
         break;
-    case GDK_y:
+    case GDK_KEY_y:
         EQ_SLIDER_DOWN(equalizerwin_bands[5]);
         break;
-    case GDK_7:
+    case GDK_KEY_7:
         EQ_SLIDER_UP(equalizerwin_bands[6]);
         break;
-    case GDK_u:
+    case GDK_KEY_u:
         EQ_SLIDER_DOWN(equalizerwin_bands[6]);
         break;
-    case GDK_8:
+    case GDK_KEY_8:
         EQ_SLIDER_UP(equalizerwin_bands[7]);
         break;
-    case GDK_i:
+    case GDK_KEY_i:
         EQ_SLIDER_DOWN(equalizerwin_bands[7]);
         break;
-    case GDK_9:
+    case GDK_KEY_9:
         EQ_SLIDER_UP(equalizerwin_bands[8]);
         break;
-    case GDK_o:
+    case GDK_KEY_o:
         EQ_SLIDER_DOWN(equalizerwin_bands[8]);
         break;
-    case GDK_0:
+    case GDK_KEY_0:
         EQ_SLIDER_UP(equalizerwin_bands[9]);
         break;
-    case GDK_p:
+    case GDK_KEY_p:
         EQ_SLIDER_DOWN(equalizerwin_bands[9]);
         break;
     default:
-        if (!gtk_accel_group_activate(equalizerwin_accel, event->keyval, event->state))
+        if (!gtk_accel_groups_activate(G_OBJECT(equalizerwin), event->keyval, event->state))
             gtk_widget_event(mainwin, (GdkEvent *)event);
         break;
     }
@@ -502,38 +500,31 @@ gboolean equalizerwin_keypress(GtkWidget *w, GdkEventKey *event, gpointer data)
 
 static gboolean equalizerwin_configure(GtkWidget *window, GdkEventConfigure *event, gpointer data)
 {
-    if (!GTK_WIDGET_VISIBLE(window))
+    if (!gtk_widget_is_visible(window))
         return FALSE;
 
     if (cfg.show_wm_decorations)
-        gdk_window_get_root_origin(window->window, &cfg.equalizer_x, &cfg.equalizer_y);
+        gdk_window_get_root_origin(gtk_widget_get_window(window), &cfg.equalizer_x,
+                                   &cfg.equalizer_y);
     else
-        gdk_window_get_deskrelative_origin(window->window, &cfg.equalizer_x, &cfg.equalizer_y);
+        gdk_window_get_root_origin(gtk_widget_get_window(window), &cfg.equalizer_x,
+                                   &cfg.equalizer_y);
     return FALSE;
 }
 
 void equalizerwin_set_back_pixmap(void)
 {
     if (cfg.doublesize && cfg.eq_doublesize_linked)
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg_dblsize, 0);
+        ;
     else
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg, 0);
-    gdk_window_clear(equalizerwin->window);
+        ;
+    gtk_widget_queue_draw(equalizerwin);
 }
 
-gint equalizerwin_client_event(GtkWidget *w, GdkEventClient *event, gpointer data)
+gint equalizerwin_client_event(GtkWidget *w, GdkEventAny *event, gpointer data)
 {
-    static GdkAtom atom_rcfiles = GDK_NONE;
-
-    if (!atom_rcfiles)
-        atom_rcfiles = gdk_atom_intern("_GTK_READ_RCFILES", FALSE);
-
-    if (event->message_type == atom_rcfiles) {
-        mainwin_set_back_pixmap();
-        equalizerwin_set_back_pixmap();
-        playlistwin_set_back_pixmap();
-        return TRUE;
-    }
+    /* TODO(#gtk3): GdkEventClient removed; stub */
+    (void)event;
     return FALSE;
 }
 
@@ -706,21 +697,35 @@ static void equalizerwin_create_widgets(void)
 }
 
 
+/* GTK3: blit backing surface to equalizer window on every redraw */
+static gboolean equalizerwin_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+    (void)widget;
+    (void)data;
+    if (equalizerwin_bg) {
+        cairo_set_source_surface(cr, equalizerwin_bg, 0, 0);
+        cairo_paint(cr);
+    }
+    return FALSE;
+}
+
 static void equalizerwin_create_gtk(void)
 {
-    equalizerwin = gtk_window_new(GTK_WINDOW_DIALOG);
+    equalizerwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     dock_add_window(dock_window_list, equalizerwin);
     gtk_widget_set_app_paintable(equalizerwin, TRUE);
-    gtk_window_set_policy(GTK_WINDOW(equalizerwin), FALSE, FALSE, TRUE);
+    gtk_window_set_resizable(GTK_WINDOW(equalizerwin), FALSE); /* TODO(#gtk3): was set_policy */
     gtk_window_set_title(GTK_WINDOW(equalizerwin), _("XMMS Equalizer"));
     gtk_window_set_wmclass(GTK_WINDOW(equalizerwin), "XMMS_Equalizer", "xmms");
-    gtk_window_set_transient_for(GTK_WINDOW(equalizerwin), GTK_WINDOW(mainwin));
+    /* GTK3: do not set transient_for for peer skin windows — causes WM to hide
+     * equalizerwin when mainwin loses focus. Dialogs (presets etc.) set their
+     * own transient_for individually. */
     if (cfg.equalizer_x != -1 && cfg.save_window_position)
         dock_set_uposition(equalizerwin, cfg.equalizer_x, cfg.equalizer_y);
     if (cfg.doublesize && cfg.eq_doublesize_linked)
-        gtk_widget_set_usize(equalizerwin, 550, (cfg.equalizer_shaded ? 28 : 232));
+        gtk_widget_set_size_request(equalizerwin, 550, (cfg.equalizer_shaded ? 28 : 232));
     else
-        gtk_widget_set_usize(equalizerwin, 275, (cfg.equalizer_shaded ? 14 : 116));
+        gtk_widget_set_size_request(equalizerwin, 275, (cfg.equalizer_shaded ? 14 : 116));
 
     gtk_widget_set_events(equalizerwin, GDK_FOCUS_CHANGE_MASK | GDK_BUTTON_MOTION_MASK |
                                             GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
@@ -728,50 +733,50 @@ static void equalizerwin_create_gtk(void)
     hint_set_skip_winlist(equalizerwin);
     util_set_cursor(equalizerwin);
     if (!cfg.show_wm_decorations)
-        gdk_window_set_decorations(equalizerwin->window, 0);
+        gdk_window_set_decorations(gtk_widget_get_window(equalizerwin), 0);
 
     gtk_window_add_accel_group(GTK_WINDOW(equalizerwin), equalizerwin_accel);
 
     equalizerwin_set_back_pixmap();
     if (cfg.doublesize && cfg.eq_doublesize_linked)
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg_dblsize, 0);
+        ;
     else
-        gdk_window_set_back_pixmap(equalizerwin->window, equalizerwin_bg, 0);
+        ;
 
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "delete_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_delete), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "button_press_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_press), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "button_release_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_release), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "motion_notify_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_motion), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "focus_in_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_focus_in), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "focus_out_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_focus_out), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "configure_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_configure), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "client_event",
-                       GTK_SIGNAL_FUNC(equalizerwin_client_event), NULL);
-    gtk_signal_connect(GTK_OBJECT(equalizerwin), "key-press-event",
-                       GTK_SIGNAL_FUNC(equalizerwin_keypress), NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "delete_event", G_CALLBACK(equalizerwin_delete), NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "button_press_event", G_CALLBACK(equalizerwin_press),
+                     NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "button_release_event",
+                     G_CALLBACK(equalizerwin_release), NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "motion_notify_event", G_CALLBACK(equalizerwin_motion),
+                     NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "focus_in_event", G_CALLBACK(equalizerwin_focus_in),
+                     NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "focus_out_event", G_CALLBACK(equalizerwin_focus_out),
+                     NULL);
+    g_signal_connect(G_OBJECT(equalizerwin), "configure_event", G_CALLBACK(equalizerwin_configure),
+                     NULL);
+    /* GTK3: client_event signal removed */
+    g_signal_connect(G_OBJECT(equalizerwin), "key-press-event", G_CALLBACK(equalizerwin_keypress),
+                     NULL);
+    /* GTK3: blit backing surface on every redraw */
+    g_signal_connect(G_OBJECT(equalizerwin), "draw", G_CALLBACK(equalizerwin_draw_cb), NULL);
 }
 
 void equalizerwin_create(void)
 {
     equalizerwin_accel = gtk_accel_group_new();
-    equalizerwin_presets_menu = gtk_item_factory_new(GTK_TYPE_MENU, "<Main>", equalizerwin_accel);
-    gtk_item_factory_set_translate_func(equalizerwin_presets_menu, util_menu_translate, NULL, NULL);
-    gtk_item_factory_create_items(equalizerwin_presets_menu, equalizerwin_presets_menu_entries_num,
-                                  equalizerwin_presets_menu_entries, NULL);
+    equalizerwin_presets_menu = gtk_menu_new();
+    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
+    /* TODO(#gtk3): gtk_item_factory_create_items removed */
     equalizer_presets = equalizerwin_read_presets("eq.preset");
     equalizer_auto_presets = equalizerwin_read_presets("eq.auto_preset");
 
-    equalizerwin_bg = gdk_pixmap_new(NULL, 275, 116, gdk_rgb_get_visual()->depth);
-    equalizerwin_bg_dblsize = gdk_pixmap_new(NULL, 550, 232, gdk_rgb_get_visual()->depth);
+    equalizerwin_bg = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 275, 116) /* TODO(#gtk3) */;
+    equalizerwin_bg_dblsize =
+        cairo_image_surface_create(CAIRO_FORMAT_RGB24, 275, 116) /* TODO(#gtk3) */;
     equalizerwin_create_gtk();
-    equalizerwin_gc = gdk_gc_new(equalizerwin->window);
+    equalizerwin_gc = cairo_create(equalizerwin_bg);
     equalizerwin_create_widgets();
 }
 
@@ -786,10 +791,10 @@ void equalizerwin_recreate(void)
 
 void equalizerwin_show(gboolean show)
 {
-    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(
-                                       gtk_item_factory_get_widget(mainwin_general_menu,
-                                                                   "/Graphical EQ")),
-                                   show);
+    if (show)
+        equalizerwin_real_show();
+    else
+        equalizerwin_real_hide();
 }
 
 void equalizerwin_real_show(void)
@@ -805,10 +810,10 @@ void equalizerwin_real_show(void)
     if (pposition_broken && cfg.equalizer_x != -1 && cfg.save_window_position)
         dock_set_uposition(equalizerwin, cfg.equalizer_x, cfg.equalizer_y);
     if (cfg.doublesize && cfg.eq_doublesize_linked)
-        gtk_widget_set_usize(equalizerwin, 550, (cfg.equalizer_shaded ? 28 : 232));
+        gtk_widget_set_size_request(equalizerwin, 550, (cfg.equalizer_shaded ? 28 : 232));
     else
-        gtk_widget_set_usize(equalizerwin, 275, (cfg.equalizer_shaded ? 14 : 116));
-    gdk_flush();
+        gtk_widget_set_size_request(equalizerwin, 275, (cfg.equalizer_shaded ? 14 : 116));
+    /* gdk_flush() no-op in GTK3 */
     draw_equalizer_window(TRUE);
     cfg.equalizer_visible = TRUE;
     tbutton_set_toggled(mainwin_eq, TRUE);
@@ -1000,12 +1005,12 @@ static void equalizerwin_save_ok(GtkWidget *widget, gpointer data)
     gtk_widget_destroy(equalizerwin_save_window);
 }
 
-static void equalizerwin_save_select(GtkCList *clist, gint row, gint column, GdkEventButton *event,
-                                     gpointer data)
+static void equalizerwin_save_select(GtkTreeView *clist, gint row, gint column,
+                                     GdkEventButton *event, gpointer data)
 {
     gchar *text;
 
-    gtk_clist_get_text(clist, row, 0, &text);
+    /* TODO(#gtk3): gtk_clist_get_text removed */
 
     gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_entry), text);
     if (event && event->type == GDK_2BUTTON_PRESS)
@@ -1015,17 +1020,17 @@ static void equalizerwin_save_select(GtkCList *clist, gint row, gint column, Gdk
 static void equalizerwin_load_ok(GtkWidget *widget, gpointer data)
 {
     gchar *text;
-    GtkCList *clist = GTK_CLIST(data);
+    GtkTreeView *clist = GTK_TREE_VIEW(data);
 
-    if (clist && clist->selection) {
-        gtk_clist_get_text(clist, GPOINTER_TO_INT(clist->selection->data), 0, &text);
+    if ((clist && FALSE) /* TODO(#gtk3): clist->selection */) {
+        /* TODO(#gtk3): gtk_clist_get_text removed */
         equalizerwin_load_preset(equalizer_presets, text);
     }
     gtk_widget_destroy(equalizerwin_load_window);
 }
 
-static void equalizerwin_load_select(GtkCList *widget, gint row, gint column, GdkEventButton *event,
-                                     gpointer data)
+static void equalizerwin_load_select(GtkTreeView *widget, gint row, gint column,
+                                     GdkEventButton *event, gpointer data)
 {
     if (event && event->type == GDK_2BUTTON_PRESS)
         equalizerwin_load_ok(NULL, widget);
@@ -1035,20 +1040,20 @@ static void equalizerwin_delete_delete(GtkWidget *widget, gpointer data)
 {
     gchar *text;
     GList *list, *next;
-    GtkCList *clist = GTK_CLIST(data);
+    GtkTreeView *clist = GTK_TREE_VIEW(data);
 
     g_return_if_fail(clist != NULL);
 
-    list = clist->selection;
-    gtk_clist_freeze(clist);
+    list = NULL; /* TODO(#gtk3): clist->selection removed */
+    /* TODO(#gtk3): gtk_clist_freeze removed */
     while (list) {
         next = g_list_next(list);
-        gtk_clist_get_text(clist, GPOINTER_TO_INT(list->data), 0, &text);
+        /* TODO(#gtk3): gtk_clist_get_text removed */
         equalizer_presets = equalizerwin_delete_preset(equalizer_presets, text, "eq.preset");
-        gtk_clist_remove(clist, GPOINTER_TO_INT(list->data));
+        /* TODO(#gtk3): gtk_clist_remove removed */
         list = next;
     }
-    gtk_clist_thaw(clist);
+    /* TODO(#gtk3): gtk_clist_thaw removed */
 }
 
 static void equalizerwin_save_auto_ok(GtkWidget *widget, gpointer data)
@@ -1062,12 +1067,12 @@ static void equalizerwin_save_auto_ok(GtkWidget *widget, gpointer data)
     gtk_widget_destroy(equalizerwin_save_auto_window);
 }
 
-static void equalizerwin_save_auto_select(GtkCList *clist, gint row, gint column,
+static void equalizerwin_save_auto_select(GtkTreeView *clist, gint row, gint column,
                                           GdkEventButton *event, gpointer data)
 {
     gchar *text;
 
-    gtk_clist_get_text(clist, row, 0, &text);
+    /* TODO(#gtk3): gtk_clist_get_text removed */
 
     gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_auto_entry), text);
     if (event && event->type == GDK_2BUTTON_PRESS)
@@ -1077,10 +1082,10 @@ static void equalizerwin_save_auto_select(GtkCList *clist, gint row, gint column
 static void equalizerwin_load_auto_ok(GtkWidget *widget, gpointer data)
 {
     gchar *text;
-    GtkCList *clist = GTK_CLIST(data);
+    GtkTreeView *clist = GTK_TREE_VIEW(data);
 
-    if (clist && clist->selection) {
-        gtk_clist_get_text(clist, GPOINTER_TO_INT(clist->selection->data), 0, &text);
+    if ((clist && FALSE) /* TODO(#gtk3): clist->selection */) {
+        /* TODO(#gtk3): gtk_clist_get_text removed */
         equalizerwin_load_preset(equalizer_auto_presets, text);
     }
     gtk_widget_destroy(equalizerwin_load_auto_window);
@@ -1097,24 +1102,24 @@ static void equalizerwin_delete_auto_delete(GtkWidget *widget, gpointer data)
 {
     gchar *text;
     GList *list, *next;
-    GtkCList *clist = GTK_CLIST(data);
+    GtkTreeView *clist = GTK_TREE_VIEW(data);
 
     g_return_if_fail(clist != NULL);
 
-    list = clist->selection;
-    gtk_clist_freeze(clist);
+    list = NULL; /* TODO(#gtk3): clist->selection removed */
+    /* TODO(#gtk3): gtk_clist_freeze removed */
     while (list) {
         next = g_list_next(list);
-        gtk_clist_get_text(clist, GPOINTER_TO_INT(list->data), 0, &text);
+        /* TODO(#gtk3): gtk_clist_get_text removed */
         equalizer_auto_presets =
             equalizerwin_delete_preset(equalizer_auto_presets, text, "eq.auto_preset");
-        gtk_clist_remove(clist, GPOINTER_TO_INT(list->data));
+        /* TODO(#gtk3): gtk_clist_remove removed */
         list = next;
     }
-    gtk_clist_thaw(clist);
+    /* TODO(#gtk3): gtk_clist_thaw removed */
 }
 
-static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkFileSelection *filesel)
+static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 {
     gchar *filename;
     ConfigFile *cfgfile;
@@ -1122,7 +1127,7 @@ static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkFileSelection *filesel
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_selection_get_filename(filesel);
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
 
     if ((cfgfile = xmms_cfg_open_file(filename)) != NULL) {
         equalizerwin_read_xmms_preset(cfgfile);
@@ -1131,7 +1136,7 @@ static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkFileSelection *filesel
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static void equalizerwin_import_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *filesel)
+static void equalizerwin_import_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 {
     gchar *filename;
     FILE *file;
@@ -1139,7 +1144,7 @@ static void equalizerwin_import_winamp_filesel_ok(GtkWidget *w, GtkFileSelection
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_selection_get_filename(filesel);
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
 
     if ((file = fopen(filename, "rb")) != NULL) {
         equalizer_presets = g_list_concat(equalizer_presets, equalizerwin_import_winamp_eqf(file));
@@ -1149,7 +1154,7 @@ static void equalizerwin_import_winamp_filesel_ok(GtkWidget *w, GtkFileSelection
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static void equalizerwin_load_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *filesel)
+static void equalizerwin_load_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 {
     gchar *filename;
     FILE *file;
@@ -1157,7 +1162,7 @@ static void equalizerwin_load_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_selection_get_filename(filesel);
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
 
     if ((file = fopen(filename, "rb")) != NULL)
         equalizerwin_read_winamp_eqf(file);
@@ -1165,7 +1170,7 @@ static void equalizerwin_load_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static void equalizerwin_save_filesel_ok(GtkWidget *w, GtkFileSelection *filesel)
+static void equalizerwin_save_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 {
     gchar *filename;
     ConfigFile *cfgfile;
@@ -1174,7 +1179,7 @@ static void equalizerwin_save_filesel_ok(GtkWidget *w, GtkFileSelection *filesel
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_selection_get_filename(filesel);
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
 
     cfgfile = xmms_cfg_new();
     xmms_cfg_write_float(cfgfile, "Equalizer preset", "Preamp",
@@ -1190,7 +1195,7 @@ static void equalizerwin_save_filesel_ok(GtkWidget *w, GtkFileSelection *filesel
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *filesel)
+static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 {
     gchar *filename, name[257];
     FILE *file;
@@ -1200,7 +1205,7 @@ static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_selection_get_filename(filesel);
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
 
     if ((file = fopen(filename, "wb")) != NULL) {
         fwrite("Winamp EQ library file v1.1\x1a!--", 1, 31, file);
@@ -1217,36 +1222,34 @@ static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkFileSelection *
     gtk_widget_destroy(GTK_WIDGET(filesel));
 }
 
-static gint equalizerwin_list_sort_func(GtkCList *clist, gconstpointer ptr1, gconstpointer ptr2)
+static gint equalizerwin_list_sort_func(GtkWidget *clist, gconstpointer ptr1, gconstpointer ptr2)
 {
-    GtkCListRow *row1 = (GtkCListRow *)ptr1;
-    GtkCListRow *row2 = (GtkCListRow *)ptr2;
-
-    return strcasecmp(GTK_CELL_TEXT(row1->cell[clist->sort_column])->text,
-                      GTK_CELL_TEXT(row2->cell[clist->sort_column])->text);
+    (void)clist;
+    (void)ptr1;
+    (void)ptr2; /* TODO(#gtk3): GtkCList sort removed */
+    return 0;
 }
 
 static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *title,
                                                   GtkWidget **window, GtkSelectionMode sel_mode,
                                                   GtkWidget **entry, gchar *btn1_caption,
-                                                  gchar *btn2_caption, GtkSignalFunc btn1_func,
-                                                  GtkSignalFunc select_row_func)
+                                                  gchar *btn2_caption, GCallback btn1_func,
+                                                  GCallback select_row_func)
 {
     GtkWidget *vbox, *scrolled_window, *bbox, *btn1, *btn2, *clist;
     char *preset_text[1];
     GList *node;
 
-    *window = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(*window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       window);
+    *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(*window), "destroy", G_CALLBACK(on_widget_destroyed), window);
     gtk_window_set_transient_for(GTK_WINDOW(*window), GTK_WINDOW(equalizerwin));
     gtk_window_set_position(GTK_WINDOW(*window), GTK_WIN_POS_MOUSE);
     gtk_window_set_title(GTK_WINDOW(*window), title);
 
-    gtk_widget_set_usize(*window, 350, 300);
+    gtk_widget_set_size_request(*window, 350, 300);
     gtk_container_set_border_width(GTK_CONTAINER(*window), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(*window), vbox);
 
     scrolled_window = gtk_scrolled_window_new(NULL, NULL);
@@ -1254,19 +1257,20 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
                                    GTK_POLICY_ALWAYS);
 
     preset_text[0] = _("Presets");
-    clist = gtk_clist_new_with_titles(1, preset_text);
+    clist = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
+    /* GTK3: select_row → row-activated */
     if (select_row_func)
-        gtk_signal_connect(GTK_OBJECT(clist), "select_row", GTK_SIGNAL_FUNC(select_row_func), NULL);
-    gtk_clist_column_titles_passive(GTK_CLIST(clist));
-    gtk_clist_set_selection_mode(GTK_CLIST(clist), sel_mode);
+        g_signal_connect(G_OBJECT(clist), "row-activated", G_CALLBACK(select_row_func), NULL);
+    /* TODO(#gtk3): gtk_clist_column_titles_passive removed */
+    /* TODO(#gtk3): gtk_clist_set_selection_mode removed */
 
     node = preset_list;
     while (node) {
-        gtk_clist_append(GTK_CLIST(clist), &((EqualizerPreset *)node->data)->name);
+        /* TODO(#gtk3): gtk_clist_append removed */
         node = node->next;
     }
-    gtk_clist_set_compare_func(GTK_CLIST(clist), equalizerwin_list_sort_func);
-    gtk_clist_sort(GTK_CLIST(clist));
+    /* TODO(#gtk3): gtk_clist_set_compare_func removed */
+    /* TODO(#gtk3): gtk_clist_sort removed */
 
     gtk_container_add(GTK_CONTAINER(scrolled_window), clist);
     gtk_widget_show(clist);
@@ -1276,25 +1280,25 @@ static GtkWidget *equalizerwin_create_list_window(GList *preset_list, gchar *tit
 
     if (entry) {
         *entry = gtk_entry_new();
-        gtk_signal_connect(GTK_OBJECT(*entry), "activate", GTK_SIGNAL_FUNC(btn1_func), NULL);
+        g_signal_connect(G_OBJECT(*entry), "activate", G_CALLBACK(btn1_func), NULL);
         gtk_box_pack_start(GTK_BOX(vbox), *entry, FALSE, FALSE, 0);
         gtk_widget_show(*entry);
     }
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
 
     btn1 = gtk_button_new_with_label(btn1_caption);
-    gtk_signal_connect(GTK_OBJECT(btn1), "clicked", GTK_SIGNAL_FUNC(btn1_func), clist);
-    GTK_WIDGET_SET_FLAGS(btn1, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(btn1), "clicked", G_CALLBACK(btn1_func), clist);
+    gtk_widget_set_can_default(btn1, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), btn1, TRUE, TRUE, 0);
     gtk_widget_show(btn1);
 
     btn2 = gtk_button_new_with_label(btn2_caption);
-    gtk_signal_connect_object(GTK_OBJECT(btn2), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(*window));
-    GTK_WIDGET_SET_FLAGS(btn2, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(btn2), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(*window));
+    gtk_widget_set_can_default(btn2, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), btn2, TRUE, TRUE, 0);
     gtk_widget_show(btn2);
 
@@ -1314,19 +1318,20 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (!equalizerwin_load_window)
             equalizerwin_create_list_window(equalizer_presets, _("Load preset"),
                                             &equalizerwin_load_window, GTK_SELECTION_SINGLE, NULL,
-                                            _("OK"), _("Cancel"), equalizerwin_load_ok,
-                                            equalizerwin_load_select);
+                                            _("OK"), _("Cancel"), G_CALLBACK(equalizerwin_load_ok),
+                                            G_CALLBACK(equalizerwin_load_select));
         else
-            gdk_window_raise(equalizerwin_load_window->window);
+            gdk_window_raise(gtk_widget_get_window(equalizerwin_load_window));
         break;
     case EQUALIZER_PRESETS_LOAD_AUTOPRESET:
         if (!equalizerwin_load_auto_window)
             equalizerwin_create_list_window(equalizer_auto_presets, _("Load auto-preset"),
                                             &equalizerwin_load_auto_window, GTK_SELECTION_SINGLE,
-                                            NULL, _("OK"), _("Cancel"), equalizerwin_load_auto_ok,
-                                            equalizerwin_load_auto_select);
+                                            NULL, _("OK"), _("Cancel"),
+                                            G_CALLBACK(equalizerwin_load_auto_ok),
+                                            G_CALLBACK(equalizerwin_load_auto_select));
         else
-            gdk_window_raise(equalizerwin_load_auto_window->window);
+            gdk_window_raise(gtk_widget_get_window(equalizerwin_load_auto_window));
         break;
     case EQUALIZER_PRESETS_LOAD_DEFAULT:
         equalizerwin_load_preset(equalizer_presets, "Default");
@@ -1345,14 +1350,19 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (load_filesel != NULL)
             break;
 
-        load_filesel = gtk_file_selection_new(_("Load equalizer preset"));
-        gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(load_filesel)->ok_button), "clicked",
-                           GTK_SIGNAL_FUNC(equalizerwin_load_filesel_ok), load_filesel);
-        gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(load_filesel)->cancel_button),
-                                  "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                                  GTK_OBJECT(load_filesel));
-        gtk_signal_connect(GTK_OBJECT(load_filesel), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &load_filesel);
+        load_filesel =
+            gtk_file_chooser_dialog_new(_("Load equalizer preset"), NULL,
+                                        GTK_FILE_CHOOSER_ACTION_OPEN, _("_Cancel"),
+                                        GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
+        g_signal_connect(G_OBJECT(gtk_dialog_get_widget_for_response(GTK_DIALOG(load_filesel),
+                                                                     GTK_RESPONSE_ACCEPT)),
+                         "clicked", G_CALLBACK(equalizerwin_load_filesel_ok), load_filesel);
+        g_signal_connect_swapped(G_OBJECT(
+                                     gtk_dialog_get_widget_for_response(GTK_DIALOG(load_filesel),
+                                                                        GTK_RESPONSE_CANCEL)),
+                                 "clicked", G_CALLBACK(gtk_widget_destroy), G_OBJECT(load_filesel));
+        g_signal_connect(G_OBJECT(load_filesel), "destroy", G_CALLBACK(on_widget_destroyed),
+                         &load_filesel);
         gtk_widget_show(load_filesel);
 
         break;
@@ -1363,16 +1373,23 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (load_winamp_filesel != NULL)
             break;
 
-        load_winamp_filesel = gtk_file_selection_new(_("Load equalizer preset"));
-        gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(load_winamp_filesel)->ok_button),
-                           "clicked", GTK_SIGNAL_FUNC(equalizerwin_load_winamp_filesel_ok),
-                           load_winamp_filesel);
-        gtk_signal_connect_object(GTK_OBJECT(
-                                      GTK_FILE_SELECTION(load_winamp_filesel)->cancel_button),
-                                  "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                                  GTK_OBJECT(load_winamp_filesel));
-        gtk_signal_connect(GTK_OBJECT(load_winamp_filesel), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &load_winamp_filesel);
+        load_winamp_filesel =
+            gtk_file_chooser_dialog_new(_("Load equalizer preset"), NULL,
+                                        GTK_FILE_CHOOSER_ACTION_OPEN, _("_Cancel"),
+                                        GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
+        g_signal_connect(G_OBJECT(
+                             gtk_dialog_get_widget_for_response(GTK_DIALOG(load_winamp_filesel),
+                                                                GTK_RESPONSE_ACCEPT)),
+                         "clicked", G_CALLBACK(equalizerwin_load_winamp_filesel_ok),
+                         load_winamp_filesel);
+        g_signal_connect_swapped(G_OBJECT(
+                                     gtk_dialog_get_widget_for_response(GTK_DIALOG(
+                                                                            load_winamp_filesel),
+                                                                        GTK_RESPONSE_CANCEL)),
+                                 "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 G_OBJECT(load_winamp_filesel));
+        g_signal_connect(G_OBJECT(load_winamp_filesel), "destroy", G_CALLBACK(on_widget_destroyed),
+                         &load_winamp_filesel);
         gtk_widget_show(load_winamp_filesel);
 
         break;
@@ -1383,16 +1400,23 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (import_winamp_filesel != NULL)
             break;
 
-        import_winamp_filesel = gtk_file_selection_new(_("Import equalizer presets"));
-        gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(import_winamp_filesel)->ok_button),
-                           "clicked", GTK_SIGNAL_FUNC(equalizerwin_import_winamp_filesel_ok),
-                           import_winamp_filesel);
-        gtk_signal_connect_object(GTK_OBJECT(
-                                      GTK_FILE_SELECTION(import_winamp_filesel)->cancel_button),
-                                  "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                                  GTK_OBJECT(import_winamp_filesel));
-        gtk_signal_connect(GTK_OBJECT(import_winamp_filesel), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &import_winamp_filesel);
+        import_winamp_filesel =
+            gtk_file_chooser_dialog_new(_("Import equalizer presets"), NULL,
+                                        GTK_FILE_CHOOSER_ACTION_OPEN, _("_Cancel"),
+                                        GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
+        g_signal_connect(G_OBJECT(
+                             gtk_dialog_get_widget_for_response(GTK_DIALOG(import_winamp_filesel),
+                                                                GTK_RESPONSE_ACCEPT)),
+                         "clicked", G_CALLBACK(equalizerwin_import_winamp_filesel_ok),
+                         import_winamp_filesel);
+        g_signal_connect_swapped(G_OBJECT(
+                                     gtk_dialog_get_widget_for_response(GTK_DIALOG(
+                                                                            import_winamp_filesel),
+                                                                        GTK_RESPONSE_CANCEL)),
+                                 "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 G_OBJECT(import_winamp_filesel));
+        g_signal_connect(G_OBJECT(import_winamp_filesel), "destroy",
+                         G_CALLBACK(on_widget_destroyed), &import_winamp_filesel);
         gtk_widget_show(import_winamp_filesel);
 
         break;
@@ -1403,9 +1427,10 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
             equalizerwin_create_list_window(equalizer_presets, _("Save preset"),
                                             &equalizerwin_save_window, GTK_SELECTION_SINGLE,
                                             &equalizerwin_save_entry, _("OK"), _("Cancel"),
-                                            equalizerwin_save_ok, equalizerwin_save_select);
+                                            G_CALLBACK(equalizerwin_save_ok),
+                                            G_CALLBACK(equalizerwin_save_select));
         else
-            gdk_window_raise(equalizerwin_save_window->window);
+            gdk_window_raise(gtk_widget_get_window(equalizerwin_save_window));
         break;
     case EQUALIZER_PRESETS_SAVE_AUTOPRESET: {
         gchar *name;
@@ -1414,10 +1439,10 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
             equalizerwin_create_list_window(equalizer_auto_presets, _("Save auto-preset"),
                                             &equalizerwin_save_auto_window, GTK_SELECTION_SINGLE,
                                             &equalizerwin_save_auto_entry, _("OK"), _("Cancel"),
-                                            equalizerwin_save_auto_ok,
-                                            equalizerwin_save_auto_select);
+                                            G_CALLBACK(equalizerwin_save_auto_ok),
+                                            G_CALLBACK(equalizerwin_save_auto_select));
         else
-            gdk_window_raise(equalizerwin_save_auto_window->window);
+            gdk_window_raise(gtk_widget_get_window(equalizerwin_save_auto_window));
         if ((name = playlist_get_filename(get_playlist_position())) != NULL) {
             gtk_entry_set_text(GTK_ENTRY(equalizerwin_save_auto_entry), g_basename(name));
             g_free(name);
@@ -1434,24 +1459,31 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (equalizerwin_save_filesel != NULL)
             break;
 
-        equalizerwin_save_filesel = gtk_file_selection_new(_("Save equalizer preset"));
+        equalizerwin_save_filesel =
+            gtk_file_chooser_dialog_new(_("Save equalizer preset"), NULL,
+                                        GTK_FILE_CHOOSER_ACTION_OPEN, _("_Cancel"),
+                                        GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
 
         if ((songname = playlist_get_filename(get_playlist_position())) != NULL) {
             gchar *eqname = g_strdup_printf("%s.%s", songname, cfg.eqpreset_extension);
             g_free(songname);
-            gtk_file_selection_set_filename(GTK_FILE_SELECTION(equalizerwin_save_filesel), eqname);
+            gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(equalizerwin_save_filesel), eqname);
             g_free(eqname);
         }
 
-        gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(equalizerwin_save_filesel)->ok_button),
-                           "clicked", GTK_SIGNAL_FUNC(equalizerwin_save_filesel_ok),
-                           equalizerwin_save_filesel);
-        gtk_signal_connect_object(GTK_OBJECT(
-                                      GTK_FILE_SELECTION(equalizerwin_save_filesel)->cancel_button),
-                                  "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                                  GTK_OBJECT(equalizerwin_save_filesel));
-        gtk_signal_connect(GTK_OBJECT(equalizerwin_save_filesel), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &equalizerwin_save_filesel);
+        g_signal_connect(G_OBJECT(gtk_dialog_get_widget_for_response(GTK_DIALOG(
+                                                                         equalizerwin_save_filesel),
+                                                                     GTK_RESPONSE_ACCEPT)),
+                         "clicked", G_CALLBACK(equalizerwin_save_filesel_ok),
+                         equalizerwin_save_filesel);
+        g_signal_connect_swapped(G_OBJECT(
+                                     gtk_dialog_get_widget_for_response(GTK_DIALOG(
+                                                                            equalizerwin_save_filesel),
+                                                                        GTK_RESPONSE_CANCEL)),
+                                 "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 G_OBJECT(equalizerwin_save_filesel));
+        g_signal_connect(G_OBJECT(equalizerwin_save_filesel), "destroy",
+                         G_CALLBACK(on_widget_destroyed), &equalizerwin_save_filesel);
         gtk_widget_show(equalizerwin_save_filesel);
 
         break;
@@ -1462,16 +1494,23 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
         if (save_winamp_filesel != NULL)
             break;
 
-        save_winamp_filesel = gtk_file_selection_new(_("Save equalizer preset"));
-        gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(save_winamp_filesel)->ok_button),
-                           "clicked", GTK_SIGNAL_FUNC(equalizerwin_save_winamp_filesel_ok),
-                           save_winamp_filesel);
-        gtk_signal_connect_object(GTK_OBJECT(
-                                      GTK_FILE_SELECTION(save_winamp_filesel)->cancel_button),
-                                  "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                                  GTK_OBJECT(save_winamp_filesel));
-        gtk_signal_connect(GTK_OBJECT(save_winamp_filesel), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &save_winamp_filesel);
+        save_winamp_filesel =
+            gtk_file_chooser_dialog_new(_("Save equalizer preset"), NULL,
+                                        GTK_FILE_CHOOSER_ACTION_OPEN, _("_Cancel"),
+                                        GTK_RESPONSE_CANCEL, _("_Open"), GTK_RESPONSE_ACCEPT, NULL);
+        g_signal_connect(G_OBJECT(
+                             gtk_dialog_get_widget_for_response(GTK_DIALOG(save_winamp_filesel),
+                                                                GTK_RESPONSE_ACCEPT)),
+                         "clicked", G_CALLBACK(equalizerwin_save_winamp_filesel_ok),
+                         save_winamp_filesel);
+        g_signal_connect_swapped(G_OBJECT(
+                                     gtk_dialog_get_widget_for_response(GTK_DIALOG(
+                                                                            save_winamp_filesel),
+                                                                        GTK_RESPONSE_CANCEL)),
+                                 "clicked", G_CALLBACK(gtk_widget_destroy),
+                                 G_OBJECT(save_winamp_filesel));
+        g_signal_connect(G_OBJECT(save_winamp_filesel), "destroy", G_CALLBACK(on_widget_destroyed),
+                         &save_winamp_filesel);
         gtk_widget_show(save_winamp_filesel);
 
         break;
@@ -1479,23 +1518,22 @@ void equalizerwin_presets_menu_cb(gpointer cb_data, guint action, GtkWidget *w)
     case EQUALIZER_PRESETS_DELETE_PRESET:
         if (!equalizerwin_delete_window)
             equalizerwin_create_list_window(equalizer_presets, _("Delete preset"),
-                                            &equalizerwin_delete_window, GTK_SELECTION_EXTENDED,
+                                            &equalizerwin_delete_window, GTK_SELECTION_MULTIPLE,
                                             NULL, _("Delete"), _("Close"),
-                                            equalizerwin_delete_delete, NULL);
+                                            G_CALLBACK(equalizerwin_delete_delete), NULL);
         break;
     case EQUALIZER_PRESETS_DELETE_AUTOPRESET:
         if (!equalizerwin_delete_auto_window)
             equalizerwin_create_list_window(equalizer_auto_presets, _("Delete auto-preset"),
                                             &equalizerwin_delete_auto_window,
-                                            GTK_SELECTION_EXTENDED, NULL, _("Delete"), _("Close"),
-                                            equalizerwin_delete_auto_delete, NULL);
+                                            GTK_SELECTION_MULTIPLE, NULL, _("Delete"), _("Close"),
+                                            G_CALLBACK(equalizerwin_delete_auto_delete), NULL);
         break;
     case EQUALIZER_PRESETS_CONFIGURE:
         if (!equalizerwin_configure_window) {
             equalizerwin_configure_window = equalizerwin_create_conf_window();
-            gtk_signal_connect(GTK_OBJECT(equalizerwin_configure_window), "destroy",
-                               GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                               &equalizerwin_configure_window);
+            g_signal_connect(G_OBJECT(equalizerwin_configure_window), "destroy",
+                             G_CALLBACK(on_widget_destroyed), &equalizerwin_configure_window);
         }
 
         break;
@@ -1620,40 +1658,42 @@ GtkWidget *equalizerwin_create_conf_window(void)
     GtkWidget *vbox, *hbox, *instructions;
     GtkWidget *ok, *cancel, *apply;
 
-    window = gtk_window_new(GTK_WINDOW_DIALOG);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), _("Configure Equalizer"));
-    gtk_window_set_policy(GTK_WINDOW(window), FALSE, FALSE, FALSE);
+    gtk_window_set_resizable(GTK_WINDOW(window), FALSE); /* TODO(#gtk3): was set_policy */
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(mainwin));
-    gtk_container_border_width(GTK_CONTAINER(window), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(window), vbox);
     notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-    options_vbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(options_vbox), 5);
+    options_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(options_vbox), 5);
     options_frame = gtk_frame_new(_("Options"));
     gtk_box_pack_start(GTK_BOX(options_vbox), options_frame, FALSE, FALSE, 0);
-    gtk_container_border_width(GTK_CONTAINER(options_frame), 0);
+    gtk_container_set_border_width(GTK_CONTAINER(options_frame), 0);
     options_table = gtk_table_new(1, 2, FALSE);
     gtk_table_set_col_spacings(GTK_TABLE(options_table), 10);
     gtk_container_add(GTK_CONTAINER(options_frame), options_table);
-    gtk_container_border_width(GTK_CONTAINER(options_table), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(options_table), 5);
 
-    options_eqdf_box = gtk_hbox_new(FALSE, 5);
+    options_eqdf_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     options_eqdf = gtk_label_new(_("Directory preset file:"));
     gtk_box_pack_start(GTK_BOX(options_eqdf_box), options_eqdf, FALSE, FALSE, 0);
-    eqconfwin_options_eqdf_entry = gtk_entry_new_with_max_length(40);
-    gtk_widget_set_usize(eqconfwin_options_eqdf_entry, 115, -1);
+    eqconfwin_options_eqdf_entry =
+        gtk_entry_new() /* TODO(#gtk3): was gtk_entry_new_with_max_length(40) */;
+    gtk_widget_set_size_request(eqconfwin_options_eqdf_entry, 115, -1);
     gtk_box_pack_start(GTK_BOX(options_eqdf_box), eqconfwin_options_eqdf_entry, FALSE, FALSE, 0);
     gtk_table_attach_defaults(GTK_TABLE(options_table), options_eqdf_box, 0, 1, 0, 1);
 
-    options_eqe_box = gtk_hbox_new(FALSE, 5);
+    options_eqe_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     options_eqe = gtk_label_new(_("File preset extension:"));
     gtk_box_pack_start(GTK_BOX(options_eqe_box), options_eqe, FALSE, FALSE, 0);
-    eqconfwin_options_eqef_entry = gtk_entry_new_with_max_length(20);
-    gtk_widget_set_usize(eqconfwin_options_eqef_entry, 55, -1);
+    eqconfwin_options_eqef_entry =
+        gtk_entry_new() /* TODO(#gtk3): was gtk_entry_new_with_max_length(20) */;
+    gtk_widget_set_size_request(eqconfwin_options_eqef_entry, 55, -1);
     gtk_box_pack_start(GTK_BOX(options_eqe_box), eqconfwin_options_eqef_entry, FALSE, FALSE, 0);
     gtk_table_attach_defaults(GTK_TABLE(options_table), options_eqe_box, 1, 2, 0, 1);
     instructions = gtk_label_new(_("If \"Auto\" is enabled on the equalizer, xmms "
@@ -1666,7 +1706,8 @@ GtkWidget *equalizerwin_create_conf_window(void)
                                    "\"auto-load\" feature\n"
                                    "4: Finally, try to load the \"default\" preset"));
     gtk_label_set_justify(GTK_LABEL(instructions), GTK_JUSTIFY_LEFT);
-    gtk_box_pack_start_defaults(GTK_BOX(options_vbox), instructions);
+    gtk_box_pack_start(GTK_BOX(options_vbox), instructions, FALSE, FALSE,
+                       0) /* TODO(#gtk3): was pack_start_defaults */;
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), options_vbox, gtk_label_new(_("Options")));
 
@@ -1674,25 +1715,24 @@ GtkWidget *equalizerwin_create_conf_window(void)
      * OK, Cancel & Apply
      */
 
-    hbox = gtk_hbutton_box_new();
+    hbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(hbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(hbox), 5);
+    gtk_box_set_spacing(GTK_BOX(hbox), 5);
 
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(equalizerwin_conf_ok_cb), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(equalizerwin_conf_ok_cb), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(hbox), ok, TRUE, TRUE, 0);
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(window));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(window));
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(hbox), cancel, TRUE, TRUE, 0);
     apply = gtk_button_new_with_label(_("Apply"));
-    gtk_signal_connect(GTK_OBJECT(apply), "clicked", GTK_SIGNAL_FUNC(equalizerwin_conf_apply_cb),
-                       NULL);
-    GTK_WIDGET_SET_FLAGS(apply, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(apply), "clicked", G_CALLBACK(equalizerwin_conf_apply_cb), NULL);
+    gtk_widget_set_can_default(apply, TRUE);
     gtk_box_pack_start(GTK_BOX(hbox), apply, TRUE, TRUE, 0);
 
     gtk_entry_set_text(GTK_ENTRY(eqconfwin_options_eqdf_entry), cfg.eqpreset_default_file);

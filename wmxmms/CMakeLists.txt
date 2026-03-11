@@ -19,6 +19,7 @@ target_include_directories(wmxmms PRIVATE
 target_link_libraries(wmxmms PRIVATE
     libxmms
     PkgConfig::GTK
+    ${X11_LIBRARIES}
 )
 
 install(TARGETS wmxmms
