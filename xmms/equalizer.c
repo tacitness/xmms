@@ -220,10 +220,17 @@ void equalizerwin_on_pushed(gboolean toggled)
 
 void equalizerwin_presets_pushed(void)
 {
-    gint x, y;
+    gint wx, wy;
 
-    util_get_root_pointer(&x, &y);
-    util_item_factory_popup(equalizerwin_presets_menu, x, y, 1, GDK_CURRENT_TIME);
+    /*
+     * fix(#13): util_get_root_pointer() returns (0,0) under Wayland/composited
+     * sessions, placing the menu at the top-left of the monitor.  Use the EQ
+     * window position plus the known presets button offset (217, 18, h=12)
+     * so the menu pops up directly below the button regardless of display type.
+     */
+    gtk_window_get_position(GTK_WINDOW(equalizerwin), &wx, &wy);
+    util_item_factory_popup(equalizerwin_presets_menu,
+                            wx + 217, wy + 18 + 12, 1, GDK_CURRENT_TIME);
 }
 
 void equalizerwin_auto_pushed(gboolean toggled)
@@ -358,7 +365,7 @@ void equalizerwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer call
         dock_move_motion(equalizerwin, event);
     } else {
         handle_motion_cb(equalizerwin_wlist, widget, event);
-        draw_main_window(FALSE);
+        draw_equalizer_window(FALSE); /* fix(#11): was draw_main_window(FALSE) */
     }
     /* gdk_flush() no-op in GTK3 */
     while (XCheckMaskEvent(gdk_x11_get_default_xdisplay(), ButtonMotionMask, &ev))
@@ -782,7 +789,8 @@ void equalizerwin_create(void)
         menu_sep_new(load_sub);
         menu_item_new(load_sub, N_("From file"), G_CALLBACK(equalizerwin_presets_menu_cb),
                       EQUALIZER_PRESETS_LOAD_FROM_FILE);
-        menu_item_new(load_sub, N_("From WinAMP EQF file"), G_CALLBACK(equalizerwin_presets_menu_cb),
+        menu_item_new(load_sub, N_("From WinAMP EQF file"),
+                      G_CALLBACK(equalizerwin_presets_menu_cb),
                       EQUALIZER_PRESETS_LOAD_FROM_WINAMPFILE);
 
         GtkWidget *import_sub = menu_sub_new(equalizerwin_presets_menu, N_("Import"));

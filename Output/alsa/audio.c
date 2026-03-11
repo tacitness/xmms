@@ -382,6 +382,24 @@ static int alsa_setup_mixer(void)
 
     pcm_element = alsa_get_mixer_elem(mixer, name, index);
 
+    /* fix(#12): fall back through common mixer element names if the configured
+     * one is absent (e.g. old default "PCM" doesn't exist on PulseAudio /
+     * PipeWire systems; "Master" is the standard element there). */
+    if (!pcm_element) {
+        const char *fallbacks[] = {"Master", "PCM", "Front", "Speaker", NULL};
+        int fi;
+        for (fi = 0; fallbacks[fi] != NULL; fi++) {
+            if (g_ascii_strcasecmp(name, fallbacks[fi]) != 0) {
+                pcm_element = alsa_get_mixer_elem(mixer, (char *)fallbacks[fi], 0);
+                if (pcm_element) {
+                    g_message("alsa_setup_mixer(): '%s' not found, falling back to '%s'",
+                              name, fallbacks[fi]);
+                    break;
+                }
+            }
+        }
+    }
+
     g_free(name);
 
     if (!pcm_element) {
@@ -472,6 +490,13 @@ void alsa_set_volume(int l, int r)
         alsa_cfg.vol.left = l;
         alsa_cfg.vol.right = r;
         return;
+    }
+
+    /* fix(#12): initialise mixer on demand if alsa_get_volume() hasn't been
+     * called first (e.g. user drags slider before the first idle-func read). */
+    if (mixer_start) {
+        alsa_setup_mixer();
+        mixer_start = FALSE;
     }
 
     if (!pcm_element)

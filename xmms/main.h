@@ -122,7 +122,7 @@ GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean active, GCal
                           guint action);
 GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, gboolean active,
                           GCallback cb, guint action);
-void       menu_sep_new(GtkWidget *m);
+void menu_sep_new(GtkWidget *m);
 GtkWidget *menu_sub_new(GtkWidget *m, const char *label);
 
 #define PLAYER_HEIGHT ((cfg.player_shaded ? 14 : 116) * (cfg.doublesize + 1))

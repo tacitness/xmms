@@ -18,11 +18,11 @@
  */
 /* widget.h + GTK3: include only what this file actually uses to avoid circular
  * xmms.h include chains that break compilation when Widget type isn't in scope yet */
-#include <pthread.h>
+#include "widget.h"
 
 #include <gtk/gtk.h>
 
-#include "widget.h"
+#include <pthread.h>
 
 int inside_widget(gint x, gint y, void *p)
 {

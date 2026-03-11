@@ -45,12 +45,12 @@
 #include "dnd.h"
 #include "dock.h"
 #include "effect.h"
-/* GTK3: skin.h, widget.h, and vis.h included early — all widget constructors depend on
- * SkinIndex (skin.h), Widget (widget.h), and VisType/Vis (vis.h) being defined before use */
-#include "plugin.h"    /* defines InputPlugin, AFormat, InputVisType — must precede input.h */
-#include "skin.h"      /* defines SkinIndex — must precede hslider.h, menurow.h, monostereo.h */
-#include "widget.h"    /* defines Widget — must precede eq_graph.h, eq_slider.h, menurow.h etc. */
-#include "vis.h"       /* defines VisType — must precede main.h */
+/* skin.h, vis.h, widget.h, and plugin.h must come before any header that uses
+ * SkinIndex, Widget, VisType, or InputPlugin/AFormat respectively. */
+#include "plugin.h" /* defines InputPlugin, AFormat — must precede input.h */
+#include "skin.h"   /* defines SkinIndex — must precede hslider.h, menurow.h, monostereo.h */
+#include "widget.h" /* defines Widget — must precede vis.h, eq_graph.h, eq_slider.h, menurow.h etc. */
+#include "vis.h"    /* defines VisType — must precede main.h; uses Widget so widget.h first */
 #include "eq_graph.h"
 #include "eq_slider.h"
 #include "equalizer.h"
@@ -72,7 +72,6 @@
 #include "playlist_slider.h"
 #include "playlistwin.h"
 #include "playstatus.h"
-/* plugin.h already included above */
 #include "pluginenum.h"
 #include "prefswin.h"
 #include "sbutton.h"

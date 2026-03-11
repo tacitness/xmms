@@ -19,6 +19,11 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+/* GTK3: widget.h is included standalone by widget.c (own-header-first rule);
+ * pull in the GTK/Cairo/pthread types it needs so the header is self-contained. */
+#include <gtk/gtk.h>
+#include <pthread.h>
+
 typedef struct _Widget {
     cairo_surface_t *parent; /* GTK3: was GdkPixmap */
     cairo_t *cr;             /* GTK3: was GdkGC */
