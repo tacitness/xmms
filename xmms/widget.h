@@ -43,6 +43,7 @@ void handle_release_cb(GList *wlist, GtkWidget *widget, GdkEventButton *event);
 void handle_motion_cb(GList *wlist, GtkWidget *widget, GdkEventMotion *event);
 void draw_widget_list(GList *wlist, gboolean *redraw, gboolean force);
 void widget_list_change_surface(GList *wlist, cairo_surface_t *surface); /* GTK3: was GdkPixmap */
+void widget_list_change_cr(GList *wlist, cairo_t *cr); /* GTK3: refresh cairo_t after resize */
 void clear_widget_list_redraw(GList *wlist);
 void lock_widget(void *w);
 void unlock_widget(void *w);

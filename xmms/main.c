@@ -668,7 +668,7 @@ void save_config(void)
     xmms_cfg_write_boolean(cfgfile, "xmms", "smooth_title_scroll", cfg.smooth_title_scroll);
     xmms_cfg_write_boolean(cfgfile, "xmms", "use_backslash_as_dir_delimiter",
                            cfg.use_backslash_as_dir_delimiter);
-    /*  dock_get_widget_pos(mainwin, &cfg.player_x, &cfg.player_y); */
+    dock_get_widget_pos(mainwin, &cfg.player_x, &cfg.player_y);
     xmms_cfg_write_int(cfgfile, "xmms", "player_x", cfg.player_x);
     xmms_cfg_write_int(cfgfile, "xmms", "player_y", cfg.player_y);
     xmms_cfg_write_boolean(cfgfile, "xmms", "player_shaded", cfg.player_shaded);
@@ -688,7 +688,7 @@ void save_config(void)
     xmms_cfg_write_int(cfgfile, "xmms", "vis_refresh_rate", cfg.vis_refresh);
     xmms_cfg_write_int(cfgfile, "xmms", "analyzer_falloff", cfg.analyzer_falloff);
     xmms_cfg_write_int(cfgfile, "xmms", "peaks_falloff", cfg.peaks_falloff);
-    /*  dock_get_widget_pos(playlistwin, &cfg.playlist_x, &cfg.playlist_y); */
+    dock_get_widget_pos(playlistwin, &cfg.playlist_x, &cfg.playlist_y);
     xmms_cfg_write_int(cfgfile, "xmms", "playlist_x", cfg.playlist_x);
     xmms_cfg_write_int(cfgfile, "xmms", "playlist_y", cfg.playlist_y);
     xmms_cfg_write_int(cfgfile, "xmms", "playlist_width", cfg.playlist_width);
@@ -701,7 +701,7 @@ void save_config(void)
     xmms_cfg_write_boolean(cfgfile, "xmms", "mainwin_use_xfont", cfg.mainwin_use_xfont);
     xmms_cfg_write_string(cfgfile, "xmms", "mainwin_font", cfg.mainwin_font);
     xmms_cfg_write_int(cfgfile, "xmms", "playlist_position", get_playlist_position());
-    /*  dock_get_widget_pos(equalizerwin, &cfg.equalizer_x, &cfg.equalizer_y); */
+    dock_get_widget_pos(equalizerwin, &cfg.equalizer_x, &cfg.equalizer_y);
     xmms_cfg_write_int(cfgfile, "xmms", "equalizer_x", cfg.equalizer_x);
     xmms_cfg_write_int(cfgfile, "xmms", "equalizer_y", cfg.equalizer_y);
     xmms_cfg_write_int(cfgfile, "xmms", "snap_distance", cfg.snap_distance);
@@ -3161,14 +3161,14 @@ typedef struct {
     guint action;
 } MenuCbData;
 
-static void menu_activate_cb(GtkMenuItem *item, gpointer data)
+void menu_activate_cb(GtkMenuItem *item, gpointer data)
 {
     MenuCbData *cbd = data;
     if (cbd->cb)
         ((void (*)(gpointer, guint, GtkWidget *))cbd->cb)(NULL, cbd->action, GTK_WIDGET(item));
 }
 
-static GtkWidget *menu_item_new(GtkWidget *m, const char *label, GCallback cb, guint action)
+GtkWidget *menu_item_new(GtkWidget *m, const char *label, GCallback cb, guint action)
 {
     MenuCbData *cbd = g_new0(MenuCbData, 1);
     cbd->cb = cb;
@@ -3180,8 +3180,8 @@ static GtkWidget *menu_item_new(GtkWidget *m, const char *label, GCallback cb, g
     return item;
 }
 
-static GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean active, GCallback cb,
-                                 guint action)
+GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean active, GCallback cb,
+                          guint action)
 {
     MenuCbData *cbd = g_new0(MenuCbData, 1);
     cbd->cb = cb;
@@ -3194,8 +3194,8 @@ static GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean activ
     return item;
 }
 
-static GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, gboolean active,
-                                 GCallback cb, guint action)
+GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, gboolean active,
+                          GCallback cb, guint action)
 {
     MenuCbData *cbd = g_new0(MenuCbData, 1);
     cbd->cb = cb;
@@ -3209,14 +3209,14 @@ static GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, 
     return item;
 }
 
-static void menu_sep_new(GtkWidget *m)
+void menu_sep_new(GtkWidget *m)
 {
     GtkWidget *sep = gtk_separator_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(m), sep);
     gtk_widget_show(sep);
 }
 
-static GtkWidget *menu_sub_new(GtkWidget *m, const char *label)
+GtkWidget *menu_sub_new(GtkWidget *m, const char *label)
 {
     GtkWidget *sub = gtk_menu_new();
     GtkWidget *item = gtk_menu_item_new_with_label(_(label));

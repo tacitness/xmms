@@ -116,6 +116,15 @@ void mainwin_set_shade(gboolean shaded);
 void mainwin_shade_toggle(void);
 void mainwin_queue_manager(void);
 
+/* GTK3 menu builder helpers — usable from other translation units (e.g. equalizer.c) */
+GtkWidget *menu_item_new(GtkWidget *m, const char *label, GCallback cb, guint action);
+GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean active, GCallback cb,
+                          guint action);
+GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, gboolean active,
+                          GCallback cb, guint action);
+void       menu_sep_new(GtkWidget *m);
+GtkWidget *menu_sub_new(GtkWidget *m, const char *label);
+
 #define PLAYER_HEIGHT ((cfg.player_shaded ? 14 : 116) * (cfg.doublesize + 1))
 #define PLAYER_WIDTH (275 * (cfg.doublesize + 1))
 

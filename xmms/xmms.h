@@ -47,6 +47,10 @@
 #include "effect.h"
 /* GTK3: skin.h, widget.h, and vis.h included early — all widget constructors depend on
  * SkinIndex (skin.h), Widget (widget.h), and VisType/Vis (vis.h) being defined before use */
+#include "plugin.h"    /* defines InputPlugin, AFormat, InputVisType — must precede input.h */
+#include "skin.h"      /* defines SkinIndex — must precede hslider.h, menurow.h, monostereo.h */
+#include "widget.h"    /* defines Widget — must precede eq_graph.h, eq_slider.h, menurow.h etc. */
+#include "vis.h"       /* defines VisType — must precede main.h */
 #include "eq_graph.h"
 #include "eq_slider.h"
 #include "equalizer.h"
@@ -68,11 +72,11 @@
 #include "playlist_slider.h"
 #include "playlistwin.h"
 #include "playstatus.h"
-#include "plugin.h"
+/* plugin.h already included above */
 #include "pluginenum.h"
 #include "prefswin.h"
 #include "sbutton.h"
-#include "skin.h"
+/* skin.h already included above */
 #include "skinwin.h"
 #include "sm.h"
 #include "svis.h"
@@ -80,8 +84,7 @@
 #include "textbox.h"
 #include "urldecode.h"
 #include "util.h"
-#include "vis.h"
 #include "visualization.h"
-#include "widget.h"
+/* widget.h and vis.h already included above */
 
 #endif

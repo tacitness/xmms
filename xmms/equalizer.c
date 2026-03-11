@@ -767,8 +767,51 @@ void equalizerwin_create(void)
 {
     equalizerwin_accel = gtk_accel_group_new();
     equalizerwin_presets_menu = gtk_menu_new();
-    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
-    /* TODO(#gtk3): gtk_item_factory_create_items removed */
+    /* GTK3: rebuild presets menu with native GTK3 menu helpers (GtkItemFactory removed) */
+    {
+        GtkWidget *load_sub = menu_sub_new(equalizerwin_presets_menu, N_("Load"));
+        menu_item_new(load_sub, N_("Preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_PRESET);
+        menu_item_new(load_sub, N_("Auto-load preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_AUTOPRESET);
+        menu_item_new(load_sub, N_("Default"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_DEFAULT);
+        menu_sep_new(load_sub);
+        menu_item_new(load_sub, N_("Zero"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_ZERO);
+        menu_sep_new(load_sub);
+        menu_item_new(load_sub, N_("From file"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_FROM_FILE);
+        menu_item_new(load_sub, N_("From WinAMP EQF file"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_LOAD_FROM_WINAMPFILE);
+
+        GtkWidget *import_sub = menu_sub_new(equalizerwin_presets_menu, N_("Import"));
+        menu_item_new(import_sub, N_("WinAMP Presets"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_IMPORT_WINAMPFILE);
+
+        GtkWidget *save_sub = menu_sub_new(equalizerwin_presets_menu, N_("Save"));
+        menu_item_new(save_sub, N_("Preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_SAVE_PRESET);
+        menu_item_new(save_sub, N_("Auto-load preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_SAVE_AUTOPRESET);
+        menu_item_new(save_sub, N_("Default"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_SAVE_DEFAULT);
+        menu_sep_new(save_sub);
+        menu_item_new(save_sub, N_("To file"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_SAVE_TO_FILE);
+        menu_item_new(save_sub, N_("To WinAMP EQF file"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_SAVE_TO_WINAMPFILE);
+
+        GtkWidget *delete_sub = menu_sub_new(equalizerwin_presets_menu, N_("Delete"));
+        menu_item_new(delete_sub, N_("Preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_DELETE_PRESET);
+        menu_item_new(delete_sub, N_("Auto-load preset"), G_CALLBACK(equalizerwin_presets_menu_cb),
+                      EQUALIZER_PRESETS_DELETE_AUTOPRESET);
+
+        menu_sep_new(equalizerwin_presets_menu);
+        menu_item_new(equalizerwin_presets_menu, N_("Configure Equalizer"),
+                      G_CALLBACK(equalizerwin_presets_menu_cb), EQUALIZER_PRESETS_CONFIGURE);
+    }
     equalizer_presets = equalizerwin_read_presets("eq.preset");
     equalizer_auto_presets = equalizerwin_read_presets("eq.auto_preset");
 
@@ -803,12 +846,16 @@ void equalizerwin_real_show(void)
      * This function should only be called from the
      * main menu signal handler
      */
-    if (!pposition_broken && cfg.equalizer_x != -1 && cfg.save_window_position &&
-        cfg.show_wm_decorations)
+    /* GTK3 fix: single unified position logic — saved position wins, otherwise snap
+     * below mainwin so they appear adjacent on first run */
+    if (cfg.save_window_position && cfg.equalizer_x != -1) {
         dock_set_uposition(equalizerwin, cfg.equalizer_x, cfg.equalizer_y);
+    } else {
+        gint mx = 0, my = 0;
+        gtk_window_get_position(GTK_WINDOW(mainwin), &mx, &my);
+        dock_set_uposition(equalizerwin, mx, my + 116);
+    }
     gtk_widget_show(equalizerwin);
-    if (pposition_broken && cfg.equalizer_x != -1 && cfg.save_window_position)
-        dock_set_uposition(equalizerwin, cfg.equalizer_x, cfg.equalizer_y);
     if (cfg.doublesize && cfg.eq_doublesize_linked)
         gtk_widget_set_size_request(equalizerwin, 550, (cfg.equalizer_shaded ? 28 : 232));
     else
@@ -820,6 +867,8 @@ void equalizerwin_real_show(void)
     hint_set_always(cfg.always_on_top);
     hint_set_sticky(cfg.sticky);
     hint_set_skip_winlist(equalizerwin);
+    /* GTK3 fix: bring window to front — bare gtk_widget_show() doesn't raise */
+    gtk_window_present(GTK_WINDOW(equalizerwin));
 }
 
 void equalizerwin_real_hide(void)

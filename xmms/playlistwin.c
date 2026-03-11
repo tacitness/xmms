@@ -515,7 +515,12 @@ static void playlistwin_resize(int width, int height)
     oldbg = playlistwin_bg;
     playlistwin_bg =
         cairo_image_surface_create(CAIRO_FORMAT_RGB24, cfg.playlist_width, cfg.playlist_height);
+    /* GTK3 fix: recreate cairo context for new surface; old context still pointed to oldbg
+     * causing all subsequent draws to go to the old (about-to-be-destroyed) surface → black */
+    cairo_destroy(playlistwin_gc);
+    playlistwin_gc = cairo_create(playlistwin_bg);
     widget_list_change_surface(playlistwin_wlist, playlistwin_bg);
+    widget_list_change_cr(playlistwin_wlist, playlistwin_gc);
     playlistwin_create_mask();
 
     playlistwin_draw_frame();
@@ -1890,12 +1895,16 @@ void playlistwin_show(gboolean show)
 
 void playlistwin_real_show(void)
 {
-    if (!pposition_broken && cfg.playlist_x != -1 && cfg.save_window_position &&
-        cfg.show_wm_decorations)
+    /* GTK3 fix: single unified position logic — saved position wins, otherwise snap
+     * to the right edge of mainwin so they appear adjacent on first run */
+    if (cfg.save_window_position && cfg.playlist_x != -1) {
         dock_set_uposition(playlistwin, cfg.playlist_x, cfg.playlist_y);
+    } else {
+        gint mx = 0, my = 0;
+        gtk_window_get_position(GTK_WINDOW(mainwin), &mx, &my);
+        dock_set_uposition(playlistwin, mx + 275, my);
+    }
     gtk_widget_show(playlistwin);
-    if (pposition_broken && cfg.playlist_x != -1 && cfg.save_window_position)
-        dock_set_uposition(playlistwin, cfg.playlist_x, cfg.playlist_y);
     gtk_widget_set_size_request(playlistwin, cfg.playlist_width, PLAYLIST_HEIGHT);
     /* gdk_flush() no-op in GTK3 */
     draw_playlist_window(TRUE);
@@ -1906,6 +1915,8 @@ void playlistwin_real_show(void)
     hint_set_always(cfg.always_on_top);
     hint_set_sticky(cfg.sticky);
     hint_set_skip_winlist(playlistwin);
+    /* GTK3 fix: bring window to front — bare gtk_widget_show() doesn't raise */
+    gtk_window_present(GTK_WINDOW(playlistwin));
 }
 
 void playlistwin_real_hide(void)

@@ -71,6 +71,10 @@ target_link_libraries(xmms PRIVATE
     ${CMAKE_DL_LIBS}
 )
 
+# GTK3: export all symbols so dlopen'd plugins can resolve symbols defined in
+# the main binary (e.g. get_current_effect_plugin, xmms_get_gentitle_format)
+target_link_options(xmms PRIVATE -Wl,--export-dynamic)
+
 # Install
 install(TARGETS xmms
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
