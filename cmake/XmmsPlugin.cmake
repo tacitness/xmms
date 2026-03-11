@@ -69,11 +69,13 @@ macro(xmms_plugin)
         ${GTK_LIBRARIES}
     )
 
-    # Plugins must be position-independent, no SONAME, no lib prefix in install
+    # Plugins must be position-independent, no SONAME, no lib prefix in install.
+    # Do NOT set C_VISIBILITY_PRESET to hidden: pluginenum.c uses dlsym() to
+    # find get_iplugin_info/get_oplugin_info/etc., so those entry points must
+    # appear in the dynamic symbol table with default visibility.
     set_target_properties(${XPLUGIN_TARGET} PROPERTIES
         PREFIX        ""
         NO_SONAME     TRUE
-        C_VISIBILITY_PRESET hidden
     )
 
     install(TARGETS ${XPLUGIN_TARGET}
