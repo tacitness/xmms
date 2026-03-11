@@ -17,7 +17,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include "libxmms/dirbrowser.h"
 #include "libxmms/util.h"
 #include "xmms.h"
 
@@ -623,17 +622,33 @@ static void playlistwin_add_dir_handler(char *dir)
 
 static void playlistwin_show_dirbrowser(void)
 {
-    static GtkWidget *dir_browser;
+    GtkWidget *dialog;
+    gint result;
 
-    if (dir_browser)
-        return;
+    /* GTK3: replaced bare libxmms dirbrowser with GtkFileChooserDialog so the
+     * standard GTK folder picker appears with bookmarks/favourites sidebar
+     * (fixes issue #20). */
+    dialog = gtk_file_chooser_dialog_new(_("Select directory to add"),
+                                         GTK_WINDOW(playlistwin),
+                                         GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                         _("_Cancel"), GTK_RESPONSE_CANCEL,
+                                         _("_Add"), GTK_RESPONSE_ACCEPT,
+                                         NULL);
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(dialog), TRUE);
+    if (cfg.filesel_path)
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), cfg.filesel_path);
 
-    dir_browser = xmms_create_dir_browser(_("Select directory to add:"), cfg.filesel_path,
-                                          GTK_SELECTION_MULTIPLE, playlistwin_add_dir_handler);
-    g_signal_connect(G_OBJECT(dir_browser), "destroy", G_CALLBACK(on_widget_destroyed),
-                     &dir_browser);
-    gtk_window_set_transient_for(GTK_WINDOW(dir_browser), GTK_WINDOW(playlistwin));
-    gtk_widget_show(dir_browser);
+    result = gtk_dialog_run(GTK_DIALOG(dialog));
+    if (result == GTK_RESPONSE_ACCEPT) {
+        GSList *folders = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(dialog));
+        GSList *it;
+        for (it = folders; it != NULL; it = g_slist_next(it)) {
+            playlistwin_add_dir_handler((char *)it->data);
+            g_free(it->data);
+        }
+        g_slist_free(folders);
+    }
+    gtk_widget_destroy(dialog);
 }
 
 static void playlistwin_fileinfo(void)
@@ -1536,7 +1551,7 @@ static void playlistwin_draw_frame(void)
         for (i = 0; i < c; i++)
             skin_draw_pixmap(playlistwin_gc, src, 179, 0, (i * 25) + 125, h - 38, 25, 38);
         /* Bottom right corner (playbuttons etc) */
-        skin_draw_pixmap(playlistwin_gc, src, 126, 72, w - 150, h - 38, 150, 38);
+        skin_draw_pixmap(playlistwin_gc, src, 125, 72, w - 150, h - 38, 150, 38);
     }
 }
 
@@ -1783,6 +1798,20 @@ static gboolean playlistwin_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer dat
     (void)widget;
     (void)data;
     if (playlistwin_bg) {
+        /* GTK3 fix (issue #21): first fill the entire clip region with the skin
+         * background colour.  When the WM or GTK3 allocates the GdkWindow slightly
+         * larger than our backing surface (e.g. resize-handle areas, CSD shadow
+         * padding), any pixel beyond the surface boundary is outside the source
+         * pattern's extent and defaults to transparent → black.  Pre-filling with
+         * the skin's playlist-area background colour prevents that black overflow. */
+        GdkColor *bg = get_skin_color(SKIN_PLEDIT_NORMALBG);
+        if (bg)
+            cairo_set_source_rgb(cr, bg->red / 65535.0, bg->green / 65535.0,
+                                 bg->blue / 65535.0);
+        else
+            cairo_set_source_rgb(cr, 0.0, 0.039, 0.118); /* xmms dark blue fallback */
+        cairo_paint(cr);
+
         cairo_set_source_surface(cr, playlistwin_bg, 0, 0);
         cairo_paint(cr);
     }
@@ -1796,9 +1825,15 @@ static void playlistwin_create_gtk(void)
     gtk_widget_set_app_paintable(playlistwin, TRUE);
     if (cfg.show_wm_decorations)
         gtk_window_set_resizable(GTK_WINDOW(playlistwin), TRUE); /* TODO(#gtk3): was set_policy */
-    else
-        /* TODO(#gtk3): gtk_window_set_policy removed (non-resizable) */
+    else {
+        /* GTK3: gtk_window_set_policy(non-resizable) → set_resizable(FALSE).
+         * This suppresses GTK3's built-in resize grip, which is a child GdkWindow
+         * painted opaque black when app_paintable=TRUE, causing a visible black
+         * block in the bottom-right corner of the playlist skin area (issue #21).
+         * Custom corner-drag resize via gdk_window_resize() is unaffected. */
+        gtk_window_set_resizable(GTK_WINDOW(playlistwin), FALSE);
         gtk_window_set_title(GTK_WINDOW(playlistwin), _("XMMS Playlist"));
+    }
     gtk_window_set_wmclass(GTK_WINDOW(playlistwin), "XMMS_Playlist", "xmms");
     /* GTK3: do not set transient_for for peer skin windows — causes WM to hide
      * playlistwin when mainwin loses focus. Dialogs set their own transient_for. */
@@ -1906,6 +1941,11 @@ void playlistwin_real_show(void)
     }
     gtk_widget_show(playlistwin);
     gtk_widget_set_size_request(playlistwin, cfg.playlist_width, PLAYLIST_HEIGHT);
+    /* GTK3 fix: explicitly resize the GdkWindow to the exact skin dimensions.
+     * set_size_request only sets the minimum; the WM may honour a larger size
+     * (e.g. adding CSD padding/resize-handle area) leaving unpainted overflow.
+     * This matches the gdk_window_resize call already used in playlistwin_motion. */
+    gdk_window_resize(gtk_widget_get_window(playlistwin), cfg.playlist_width, PLAYLIST_HEIGHT);
     /* gdk_flush() no-op in GTK3 */
     draw_playlist_window(TRUE);
     tbutton_set_toggled(mainwin_pl, TRUE);
