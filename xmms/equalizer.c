@@ -1844,28 +1844,29 @@ GtkWidget *equalizerwin_create_conf_window(void)
     options_frame = gtk_frame_new(_("Options"));
     gtk_box_pack_start(GTK_BOX(options_vbox), options_frame, FALSE, FALSE, 0);
     gtk_container_set_border_width(GTK_CONTAINER(options_frame), 0);
-    options_table = gtk_table_new(1, 2, FALSE);
-    gtk_table_set_col_spacings(GTK_TABLE(options_table), 10);
+    /* GTK3: GtkTable removed; use GtkGrid */
+    options_table = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(options_table), 10);
     gtk_container_add(GTK_CONTAINER(options_frame), options_table);
     gtk_container_set_border_width(GTK_CONTAINER(options_table), 5);
 
     options_eqdf_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     options_eqdf = gtk_label_new(_("Directory preset file:"));
     gtk_box_pack_start(GTK_BOX(options_eqdf_box), options_eqdf, FALSE, FALSE, 0);
-    eqconfwin_options_eqdf_entry =
-        gtk_entry_new() /* TODO(#gtk3): was gtk_entry_new_with_max_length(40) */;
+    eqconfwin_options_eqdf_entry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(eqconfwin_options_eqdf_entry), 40);
     gtk_widget_set_size_request(eqconfwin_options_eqdf_entry, 115, -1);
     gtk_box_pack_start(GTK_BOX(options_eqdf_box), eqconfwin_options_eqdf_entry, FALSE, FALSE, 0);
-    gtk_table_attach_defaults(GTK_TABLE(options_table), options_eqdf_box, 0, 1, 0, 1);
+    gtk_grid_attach(GTK_GRID(options_table), options_eqdf_box, 0, 0, 1, 1);
 
     options_eqe_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     options_eqe = gtk_label_new(_("File preset extension:"));
     gtk_box_pack_start(GTK_BOX(options_eqe_box), options_eqe, FALSE, FALSE, 0);
-    eqconfwin_options_eqef_entry =
-        gtk_entry_new() /* TODO(#gtk3): was gtk_entry_new_with_max_length(20) */;
+    eqconfwin_options_eqef_entry = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(eqconfwin_options_eqef_entry), 20);
     gtk_widget_set_size_request(eqconfwin_options_eqef_entry, 55, -1);
     gtk_box_pack_start(GTK_BOX(options_eqe_box), eqconfwin_options_eqef_entry, FALSE, FALSE, 0);
-    gtk_table_attach_defaults(GTK_TABLE(options_table), options_eqe_box, 1, 2, 0, 1);
+    gtk_grid_attach(GTK_GRID(options_table), options_eqe_box, 1, 0, 1, 1);
     instructions = gtk_label_new(_("If \"Auto\" is enabled on the equalizer, xmms "
                                    "will try to load equalizer presets like this:\n"
                                    "1: Look for a preset file in the directory of the "
@@ -1876,8 +1877,7 @@ GtkWidget *equalizerwin_create_conf_window(void)
                                    "\"auto-load\" feature\n"
                                    "4: Finally, try to load the \"default\" preset"));
     gtk_label_set_justify(GTK_LABEL(instructions), GTK_JUSTIFY_LEFT);
-    gtk_box_pack_start(GTK_BOX(options_vbox), instructions, FALSE, FALSE,
-                       0) /* TODO(#gtk3): was pack_start_defaults */;
+    gtk_box_pack_start(GTK_BOX(options_vbox), instructions, FALSE, FALSE, 0);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), options_vbox, gtk_label_new(_("Options")));
 
