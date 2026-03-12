@@ -33,7 +33,6 @@ static GtkWidget *playlistwin_popup_menu, *playlistwin_save_menu;
 static GtkAccelGroup *playlistwin_accel;
 
 static cairo_surface_t *playlistwin_bg;
-static cairo_surface_t *playlistwin_mask;
 static cairo_t *playlistwin_gc;
 static int playlistwin_resizing, playlistwin_resize_x, playlistwin_resize_y;
 static int playlistwin_save_type;
@@ -330,25 +329,16 @@ void playlistwin_update_list(void)
 
 static void playlistwin_create_mask(void)
 {
-    cairo_surface_t *tmp;
-    cairo_t *gc;
-    GdkColor pattern;
+    /* GTK3: shape mask via cairo_region_t + gtk_widget_shape_combine_region */
+    cairo_region_t *region;
 
     if (cfg.show_wm_decorations)
         return;
 
-    tmp = playlistwin_mask;
-    playlistwin_mask = cairo_image_surface_create(CAIRO_FORMAT_RGB24, cfg.playlist_width,
-                                                  PLAYLIST_HEIGHT) /* TODO(#gtk3) */;
-    gc = NULL /* TODO(#gtk3): gdk_gc_new removed */;
-    pattern.pixel = 1;
-    /* TODO(#gtk3): gdk_gc_set_foreground removed */
-    /* TODO(#gtk3): gdk_draw_rectangle removed */
-    /* TODO(#gtk3): gdk_gc_destroy removed */
-    /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
-
-    if (tmp)
-        ;
+    region = cairo_region_create_rectangle(
+        &(cairo_rectangle_int_t){0, 0, cfg.playlist_width, PLAYLIST_HEIGHT});
+    gtk_widget_shape_combine_region(playlistwin, region);
+    cairo_region_destroy(region);
 }
 
 void playlistwin_set_shade_menu_cb(gboolean shaded)
@@ -525,7 +515,6 @@ static void playlistwin_resize(int width, int height)
     playlistwin_draw_frame();
     draw_widget_list(playlistwin_wlist, &dummy, TRUE);
     clear_widget_list_redraw(playlistwin_wlist);
-    /* TODO(#gtk3): gdk_window_set_back_pixmap removed */
     gtk_widget_queue_draw(playlistwin);
     cairo_surface_destroy(oldbg);
 }
@@ -557,7 +546,7 @@ static void playlistwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointe
 
     if (playlistwin_resizing) {
         playlistwin_resize(event->x + playlistwin_resize_x, event->y + playlistwin_resize_y);
-        /* TODO(#gtk3): gdk_window_set_hints removed */
+        /* GTK3: gdk_window_set_hints removed; resize enforced directly below */
         gdk_window_resize(gtk_widget_get_window(playlistwin), cfg.playlist_width, PLAYLIST_HEIGHT);
         gtk_widget_set_size_request(playlistwin, cfg.playlist_width, PLAYLIST_HEIGHT);
     } else if (dock_is_moving(playlistwin)) {
@@ -1240,7 +1229,7 @@ static gboolean playlistwin_configure(GtkWidget *window, GdkEventConfigure *even
 
 void playlistwin_set_back_pixmap()
 {
-    /* TODO(#gtk3): gdk_window_set_back_pixmap removed */
+    /* GTK3: gdk_window_set_back_pixmap removed; drawing handled by cairo + queue_draw */
     gtk_widget_queue_draw(playlistwin);
 }
 
@@ -1886,7 +1875,6 @@ static void playlistwin_create_gtk(void)
     if (!cfg.show_wm_decorations)
         gdk_window_set_decorations(gtk_widget_get_window(playlistwin), 0);
 
-    /* TODO(#gtk3): gdk_window_set_back_pixmap removed */
     playlistwin_create_mask();
 }
 
