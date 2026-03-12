@@ -77,6 +77,41 @@ static gboolean on_bar_press(GtkWidget *widget, GdkEventButton *ev, gpointer dat
 }
 
 /* ---------------------------------------------------------------------------
+ * Content-area double-click — toggle fullscreen.
+ *
+ * On enter: hide the chrome bar so the visualisation fills the screen.
+ * On exit:  restore the chrome bar.
+ *
+ * GDK fires events in order: BUTTON_PRESS → 2BUTTON_PRESS, so the single-
+ * press handling (e.g. GL picking, waveform interaction) sees the first
+ * event as normal; we only intercept the second one here.
+ * --------------------------------------------------------------------------- */
+static gboolean on_content_double_click(GtkWidget *widget, GdkEventButton *ev, gpointer data)
+{
+    GtkWindow *window = GTK_WINDOW(data);
+    GtkWidget *bar;
+    GdkWindowState state;
+    (void)widget;
+
+    if (ev->button != 1 || ev->type != GDK_2BUTTON_PRESS)
+        return FALSE;
+
+    bar = g_object_get_data(G_OBJECT(window), "vis-chrome-bar");
+    state = gdk_window_get_state(gtk_widget_get_window(GTK_WIDGET(window)));
+
+    if (state & GDK_WINDOW_STATE_FULLSCREEN) {
+        gtk_window_unfullscreen(window);
+        if (bar)
+            gtk_widget_show(bar);
+    } else {
+        if (bar)
+            gtk_widget_hide(bar);
+        gtk_window_fullscreen(window);
+    }
+    return TRUE;
+}
+
+/* ---------------------------------------------------------------------------
  * Public API
  * --------------------------------------------------------------------------- */
 void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
@@ -117,6 +152,9 @@ void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
     gtk_widget_add_events(bar, GDK_BUTTON_PRESS_MASK);
     g_signal_connect(bar, "button-press-event", G_CALLBACK(on_bar_press), window);
 
+    /* Store bar so the fullscreen-toggle callback can hide/show it */
+    g_object_set_data(G_OBJECT(window), "vis-chrome-bar", bar);
+
     bar_inner = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_style_context_add_class(gtk_widget_get_style_context(bar_inner), "vis-chrome-inner");
     gtk_container_add(GTK_CONTAINER(bar), bar_inner);
@@ -139,6 +177,10 @@ void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
     /* Assemble vbox */
     gtk_box_pack_start(GTK_BOX(vbox), bar, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), content, TRUE, TRUE, 0);
+
+    /* Double-click on the content area toggles fullscreen */
+    gtk_widget_add_events(content, GDK_BUTTON_PRESS_MASK);
+    g_signal_connect(content, "button-press-event", G_CALLBACK(on_content_double_click), window);
 
     gtk_container_add(GTK_CONTAINER(window), vbox);
 

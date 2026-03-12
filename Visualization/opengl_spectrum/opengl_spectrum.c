@@ -494,6 +494,24 @@ static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
     return TRUE;
 }
 
+/* Double-click on the GL area in tdfx (starts-fullscreen) mode — toggle.
+ * When using vis_chrome_apply (non-tdfx path) this is handled inside
+ * vis_chrome.c automatically; this handler covers the bare fullscreen path. */
+static gboolean on_gl_double_click(GtkWidget *widget, GdkEventButton *ev, gpointer data)
+{
+    GtkWindow *window = GTK_WINDOW(data);
+    GdkWindowState state;
+    (void)widget;
+    if (ev->button != 1 || ev->type != GDK_2BUTTON_PRESS)
+        return FALSE;
+    state = gdk_window_get_state(gtk_widget_get_window(GTK_WIDGET(window)));
+    if (state & GDK_WINDOW_STATE_FULLSCREEN)
+        gtk_window_unfullscreen(window);
+    else
+        gtk_window_fullscreen(window);
+    return TRUE;
+}
+
 /* Called whenever the window is destroyed by ANY means: WM close button,
  * vis-chrome × button, or Escape key idle-disabling the plugin.  Removes
  * the animation timer and nulls the stale pointers so anim_tick() cannot
@@ -552,10 +570,14 @@ static void start_display(void)
 
     if (oglspectrum_cfg.tdfx_mode) {
         /* Fullscreen mode: strip WM decorations and fill the whole screen.
-         * Skip vis_chrome chrome bar — it makes no sense in full-screen. */
+         * Skip vis_chrome chrome bar — it makes no sense in full-screen.
+         * Double-click on the GL canvas toggles back to windowed mode. */
         gtk_window_set_decorated(GTK_WINDOW(win), FALSE);
         gtk_container_add(GTK_CONTAINER(win), gl_area);
         gtk_window_fullscreen(GTK_WINDOW(win));
+        gtk_widget_add_events(gl_area, GDK_BUTTON_PRESS_MASK);
+        g_signal_connect(G_OBJECT(gl_area), "button-press-event", G_CALLBACK(on_gl_double_click),
+                         win);
     } else {
         /* parity: WM titlebar replaced with XMMS-skin chrome */
         vis_chrome_apply(GTK_WINDOW(win), gl_area, _("OpenGL Spectrum Analyzer"));
