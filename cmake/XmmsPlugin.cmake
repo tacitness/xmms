@@ -60,6 +60,7 @@ macro(xmms_plugin)
     target_include_directories(${XPLUGIN_TARGET} PRIVATE
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/libxmms
+        ${CMAKE_SOURCE_DIR}/Visualization/common
         ${GTK_INCLUDE_DIRS}
         ${GLIB_INCLUDE_DIRS}
     )

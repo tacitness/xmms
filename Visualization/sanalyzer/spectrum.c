@@ -16,12 +16,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include <gtk/gtk.h>
 #include <cairo/cairo.h>
+#include <gtk/gtk.h>
 #include <math.h>
 
 #include "config.h"
 #include "libxmms/util.h"
+#include "vis_chrome.h"
 #include "xmms/i18n.h"
 #include "xmms/plugin.h"
 
@@ -94,18 +95,17 @@ static void sanalyzer_init(void)
 
     /* Pre-compute gradient: bottom half red->yellow, top half yellow->green */
     for (i = 0; i < HEIGHT / 2; i++) {
-        guint32 g = (guint32)(((gdouble)i / (HEIGHT / 2)) * 255);
+        guint32 g = (guint32)(((gdouble)i / ((gdouble)HEIGHT / 2.0)) * 255);
         bar_colors[i] = 0xFF000000u | (0xFFu << 16) | (g << 8);
     }
     for (i = 0; i < HEIGHT / 2; i++) {
-        guint32 r = (guint32)((1.0 - (gdouble)i / (HEIGHT / 2)) * 255);
+        guint32 r = (guint32)((1.0 - (gdouble)i / ((gdouble)HEIGHT / 2.0)) * 255);
         bar_colors[HEIGHT / 2 + i] = 0xFF000000u | (r << 16) | (0xFFu << 8);
     }
     scale = HEIGHT / log(256);
 
-    /* GTK3: GTK_WINDOW_DIALOG -> GTK_WINDOW_TOPLEVEL; gdk_pixmap/gc removed */
+    /* parity: WM titlebar replaced with XMMS-skin chrome (vis_chrome_apply) */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), _("Spectrum analyzer"));
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(sanalyzer_destroy_cb), NULL);
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
@@ -115,10 +115,9 @@ static void sanalyzer_init(void)
 
     area = gtk_drawing_area_new();
     gtk_widget_set_size_request(area, WIDTH, HEIGHT);
-    gtk_container_add(GTK_CONTAINER(window), area);
     g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(sanalyzer_draw_cb), NULL);
+    vis_chrome_apply(GTK_WINDOW(window), area, _("Spectrum Analyzer"));
 
-    gtk_widget_show(area);
     gtk_widget_show(window);
 }
 

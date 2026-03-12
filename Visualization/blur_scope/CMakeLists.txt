@@ -8,4 +8,5 @@ xmms_plugin(
     SOURCES
         blur_scope.c blur_scope.h
         config.c
+        ${CMAKE_SOURCE_DIR}/Visualization/common/vis_chrome.c
 )

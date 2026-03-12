@@ -8,6 +8,7 @@ xmms_plugin(
     SOURCES
         opengl_spectrum.c opengl_spectrum.h
         configure.c
+        ${CMAKE_SOURCE_DIR}/Visualization/common/vis_chrome.c
     LINK_LIBS
         OpenGL::GL
         PkgConfig::Epoxy

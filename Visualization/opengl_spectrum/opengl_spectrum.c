@@ -16,44 +16,46 @@
 #include <string.h>
 
 /* epoxy must be included before gtk/gtk.h to intercept GL function pointers */
-#include <epoxy/gl.h>
 #include <gtk/gtk.h>
+
+#include <epoxy/gl.h>
 
 #include "config.h"
 #include "libxmms/configfile.h"
 #include "libxmms/util.h"
 #include "opengl_spectrum.h"
+#include "vis_chrome.h"
 #include "xmms/i18n.h"
 #include "xmms/plugin.h"
 
-#define NUM_BANDS  16
-#define ANIM_MS    16       /* ~60 fps */
-#define VERTS_PER_BAR 36    /* 6 faces × 2 triangles × 3 vertices */
-#define MAX_VERTS  (16 * 16 * VERTS_PER_BAR)  /* 9216 */
+#define NUM_BANDS 16
+#define ANIM_MS 16                          /* ~60 fps */
+#define VERTS_PER_BAR 36                    /* 6 faces × 2 triangles × 3 vertices */
+#define MAX_VERTS (16 * 16 * VERTS_PER_BAR) /* 9216 */
 
 OGLSpectrumConfig oglspectrum_cfg;
 
 static GLfloat y_angle = 45.0f, y_speed = 0.5f;
 static GLfloat x_angle = 20.0f, x_speed = 0.0f;
-static GLfloat z_angle =  0.0f, z_speed = 0.0f;
+static GLfloat z_angle = 0.0f, z_speed = 0.0f;
 
 static GLfloat heights[16][16];
 static GLfloat scale;
 
-static GtkWidget *win     = NULL;
+static GtkWidget *win = NULL;
 static GtkWidget *gl_area = NULL;
-static guint      anim_id = 0;
-static gboolean   gl_ready = FALSE;
+static guint anim_id = 0;
+static gboolean gl_ready = FALSE;
 
 /* GL objects */
-static GLuint  gl_program = 0;
-static GLuint  gl_vao     = 0;
-static GLuint  gl_vbo     = 0;
-static GLint   u_mvp      = -1;
+static GLuint gl_program = 0;
+static GLuint gl_vao = 0;
+static GLuint gl_vbo = 0;
+static GLint u_mvp = -1;
 
 /* CPU-side vertex buffer: interleaved [x,y,z, r,g,b] per vertex */
 static GLfloat vbuf[MAX_VERTS * 6];
-static int     vbuf_count = 0;
+static int vbuf_count = 0;
 
 static void oglspectrum_init(void);
 static void oglspectrum_cleanup(void);
@@ -62,9 +64,12 @@ static void oglspectrum_playback_stop(void);
 static void oglspectrum_render_freq(gint16 data[2][256]);
 
 VisPlugin oglspectrum_vp = {
-    NULL, NULL, 0,
+    NULL,
+    NULL,
+    0,
     NULL, /* description -- set in get_vplugin_info */
-    0, 1,
+    0,
+    1,
     oglspectrum_init,
     oglspectrum_cleanup,
     NULL,
@@ -100,12 +105,11 @@ static void mat4_mul(Mat4 out, const Mat4 a, const Mat4 b)
     for (c = 0; c < 4; c++)
         for (r = 0; r < 4; r++)
             out[c * 4 + r] = a[0 * 4 + r] * b[c * 4 + 0] + a[1 * 4 + r] * b[c * 4 + 1] +
-                              a[2 * 4 + r] * b[c * 4 + 2] + a[3 * 4 + r] * b[c * 4 + 3];
+                             a[2 * 4 + r] * b[c * 4 + 2] + a[3 * 4 + r] * b[c * 4 + 3];
 }
 
 /* Replicates glFrustum(l,r,b,t,n,f) */
-static void mat4_frustum(Mat4 m, GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n,
-                         GLfloat f)
+static void mat4_frustum(Mat4 m, GLfloat l, GLfloat r, GLfloat b, GLfloat t, GLfloat n, GLfloat f)
 {
     mat4_identity(m);
     m[0] = 2.0f * n / (r - l);
@@ -131,8 +135,10 @@ static void mat4_rotate_x(Mat4 m, GLfloat deg)
     GLfloat rad = deg * (GLfloat)M_PI / 180.0f;
     GLfloat c = cosf(rad), s = sinf(rad);
     mat4_identity(m);
-    m[5] = c;  m[6] = s;
-    m[9] = -s; m[10] = c;
+    m[5] = c;
+    m[6] = s;
+    m[9] = -s;
+    m[10] = c;
 }
 
 static void mat4_rotate_y(Mat4 m, GLfloat deg)
@@ -140,8 +146,10 @@ static void mat4_rotate_y(Mat4 m, GLfloat deg)
     GLfloat rad = deg * (GLfloat)M_PI / 180.0f;
     GLfloat c = cosf(rad), s = sinf(rad);
     mat4_identity(m);
-    m[0] = c;  m[2] = -s;
-    m[8] = s;  m[10] = c;
+    m[0] = c;
+    m[2] = -s;
+    m[8] = s;
+    m[10] = c;
 }
 
 static void mat4_rotate_z(Mat4 m, GLfloat deg)
@@ -149,31 +157,31 @@ static void mat4_rotate_z(Mat4 m, GLfloat deg)
     GLfloat rad = deg * (GLfloat)M_PI / 180.0f;
     GLfloat c = cosf(rad), s = sinf(rad);
     mat4_identity(m);
-    m[0] = c;  m[1] = s;
-    m[4] = -s; m[5] = c;
+    m[0] = c;
+    m[1] = s;
+    m[4] = -s;
+    m[5] = c;
 }
 
 /* --------------------------------------------------------------------------
  * GLSL 330 shaders
  * -------------------------------------------------------------------------- */
-static const char *vert_src =
-    "#version 330 core\n"
-    "layout(location = 0) in vec3 aPos;\n"
-    "layout(location = 1) in vec3 aColor;\n"
-    "uniform mat4 uMVP;\n"
-    "out vec3 vColor;\n"
-    "void main() {\n"
-    "    gl_Position = uMVP * vec4(aPos, 1.0);\n"
-    "    vColor = aColor;\n"
-    "}\n";
+static const char *vert_src = "#version 330 core\n"
+                              "layout(location = 0) in vec3 aPos;\n"
+                              "layout(location = 1) in vec3 aColor;\n"
+                              "uniform mat4 uMVP;\n"
+                              "out vec3 vColor;\n"
+                              "void main() {\n"
+                              "    gl_Position = uMVP * vec4(aPos, 1.0);\n"
+                              "    vColor = aColor;\n"
+                              "}\n";
 
-static const char *frag_src =
-    "#version 330 core\n"
-    "in vec3 vColor;\n"
-    "out vec4 FragColor;\n"
-    "void main() {\n"
-    "    FragColor = vec4(vColor, 1.0);\n"
-    "}\n";
+static const char *frag_src = "#version 330 core\n"
+                              "in vec3 vColor;\n"
+                              "out vec4 FragColor;\n"
+                              "void main() {\n"
+                              "    FragColor = vec4(vColor, 1.0);\n"
+                              "}\n";
 
 static GLuint compile_shader(GLenum type, const char *src)
 {
@@ -197,8 +205,10 @@ static GLuint build_program(void)
     GLuint vs = compile_shader(GL_VERTEX_SHADER, vert_src);
     GLuint fs = compile_shader(GL_FRAGMENT_SHADER, frag_src);
     if (!vs || !fs) {
-        if (vs) glDeleteShader(vs);
-        if (fs) glDeleteShader(fs);
+        if (vs)
+            glDeleteShader(vs);
+        if (fs)
+            glDeleteShader(fs);
         return 0;
     }
     GLuint prog = glCreateProgram();
@@ -224,14 +234,30 @@ static GLuint build_program(void)
  * -------------------------------------------------------------------------- */
 
 /* Push one triangle (pos + colour for each vertex) */
-static inline void push_tri(GLfloat x0, GLfloat y0, GLfloat z0, GLfloat x1, GLfloat y1,
-                             GLfloat z1, GLfloat x2, GLfloat y2, GLfloat z2,
-                             GLfloat r, GLfloat g, GLfloat b)
+static inline void push_tri(GLfloat x0, GLfloat y0, GLfloat z0, GLfloat x1, GLfloat y1, GLfloat z1,
+                            GLfloat x2, GLfloat y2, GLfloat z2, GLfloat r, GLfloat g, GLfloat b)
 {
     GLfloat *v = &vbuf[vbuf_count * 6];
-    v[0]=x0; v[1]=y0; v[2]=z0; v[3]=r; v[4]=g; v[5]=b; v+=6;
-    v[0]=x1; v[1]=y1; v[2]=z1; v[3]=r; v[4]=g; v[5]=b; v+=6;
-    v[0]=x2; v[1]=y2; v[2]=z2; v[3]=r; v[4]=g; v[5]=b;
+    v[0] = x0;
+    v[1] = y0;
+    v[2] = z0;
+    v[3] = r;
+    v[4] = g;
+    v[5] = b;
+    v += 6;
+    v[0] = x1;
+    v[1] = y1;
+    v[2] = z1;
+    v[3] = r;
+    v[4] = g;
+    v[5] = b;
+    v += 6;
+    v[0] = x2;
+    v[1] = y2;
+    v[2] = z2;
+    v[3] = r;
+    v[4] = g;
+    v[5] = b;
     vbuf_count += 3;
 }
 
@@ -249,19 +275,18 @@ static void push_rect(GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLfloat y2
 }
 
 /* Mirrors original draw_bar */
-static void push_bar(GLfloat x_off, GLfloat z_off, GLfloat h,
-                     GLfloat r, GLfloat g, GLfloat b)
+static void push_bar(GLfloat x_off, GLfloat z_off, GLfloat h, GLfloat r, GLfloat g, GLfloat b)
 {
     const GLfloat w = 0.1f;
     /* top + bottom (full brightness) */
     push_rect(x_off, h, z_off, x_off + w, h, z_off + 0.1f, r, g, b);
     push_rect(x_off, 0.0f, z_off, x_off + w, 0.0f, z_off + 0.1f, r, g, b);
     /* front + back (half brightness) */
-    push_rect(x_off, 0.0f, z_off + 0.1f, x_off + w, h, z_off + 0.1f, 0.5f*r, 0.5f*g, 0.5f*b);
-    push_rect(x_off, 0.0f, z_off, x_off + w, h, z_off, 0.5f*r, 0.5f*g, 0.5f*b);
+    push_rect(x_off, 0.0f, z_off + 0.1f, x_off + w, h, z_off + 0.1f, 0.5f * r, 0.5f * g, 0.5f * b);
+    push_rect(x_off, 0.0f, z_off, x_off + w, h, z_off, 0.5f * r, 0.5f * g, 0.5f * b);
     /* left + right (quarter brightness) */
-    push_rect(x_off, 0.0f, z_off, x_off, h, z_off + 0.1f, 0.25f*r, 0.25f*g, 0.25f*b);
-    push_rect(x_off + w, 0.0f, z_off, x_off + w, h, z_off + 0.1f, 0.25f*r, 0.25f*g, 0.25f*b);
+    push_rect(x_off, 0.0f, z_off, x_off, h, z_off + 0.1f, 0.25f * r, 0.25f * g, 0.25f * b);
+    push_rect(x_off + w, 0.0f, z_off, x_off + w, h, z_off + 0.1f, 0.25f * r, 0.25f * g, 0.25f * b);
 }
 
 /* Build full vertex buffer for the current heights[][] and upload */
@@ -270,16 +295,14 @@ static void build_and_upload_bars(void)
     int x, y;
     vbuf_count = 0;
     for (y = 0; y < 16; y++) {
-        GLfloat z_off   = -1.6f + ((15 - y) * 0.2f);
-        GLfloat b_base  = y * (1.0f / 15.0f);
-        GLfloat r_base  = 1.0f - b_base;
+        GLfloat z_off = -1.6f + ((15 - y) * 0.2f);
+        GLfloat b_base = y * (1.0f / 15.0f);
+        GLfloat r_base = 1.0f - b_base;
         for (x = 0; x < 16; x++) {
             GLfloat x_off = -1.6f + (x * 0.2f);
             if (heights[y][x] > 0.0f)
-                push_bar(x_off, z_off, heights[y][x],
-                         r_base - (x * (r_base / 15.0f)),
-                         x * (1.0f / 15.0f),
-                         b_base);
+                push_bar(x_off, z_off, heights[y][x], r_base - (x * (r_base / 15.0f)),
+                         x * (1.0f / 15.0f), b_base);
         }
     }
     glBindBuffer(GL_ARRAY_BUFFER, gl_vbo);
@@ -330,14 +353,24 @@ static void on_unrealize(GtkGLArea *area, gpointer data)
     (void)data;
     gtk_gl_area_make_current(area);
     gl_ready = FALSE;
-    if (gl_vao) { glDeleteVertexArrays(1, &gl_vao); gl_vao = 0; }
-    if (gl_vbo) { glDeleteBuffers(1, &gl_vbo); gl_vbo = 0; }
-    if (gl_program) { glDeleteProgram(gl_program); gl_program = 0; }
+    if (gl_vao) {
+        glDeleteVertexArrays(1, &gl_vao);
+        gl_vao = 0;
+    }
+    if (gl_vbo) {
+        glDeleteBuffers(1, &gl_vbo);
+        gl_vbo = 0;
+    }
+    if (gl_program) {
+        glDeleteProgram(gl_program);
+        gl_program = 0;
+    }
 }
 
 static gboolean on_render(GtkGLArea *area, GdkGLContext *ctx, gpointer data)
 {
-    (void)ctx; (void)data;
+    (void)ctx;
+    (void)data;
     if (!gl_ready || gtk_gl_area_get_error(area))
         return FALSE;
 
@@ -389,10 +422,17 @@ static gboolean anim_tick(gpointer data)
     if (!win || !gtk_widget_get_visible(win))
         return G_SOURCE_CONTINUE;
 
-#define WRAP360(a) do { if ((a) >= 360.0f) (a) -= 360.0f; } while (0)
-    x_angle += x_speed; WRAP360(x_angle);
-    y_angle += y_speed; WRAP360(y_angle);
-    z_angle += z_speed; WRAP360(z_angle);
+#define WRAP360(a)         \
+    do {                   \
+        if ((a) >= 360.0f) \
+            (a) -= 360.0f; \
+    } while (0)
+    x_angle += x_speed;
+    WRAP360(x_angle);
+    y_angle += y_speed;
+    WRAP360(y_angle);
+    z_angle += z_speed;
+    WRAP360(z_angle);
 #undef WRAP360
 
     gtk_widget_queue_draw(gl_area);
@@ -405,27 +445,39 @@ static gboolean anim_tick(gpointer data)
 
 static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
-    (void)widget; (void)data;
+    (void)widget;
+    (void)data;
     switch (event->keyval) {
     case GDK_KEY_Escape:
         if (oglspectrum_vp.disable_plugin)
             g_idle_add((GSourceFunc)oglspectrum_vp.disable_plugin, &oglspectrum_vp);
         return TRUE;
     case GDK_KEY_Up:
-        x_speed = CLAMP(x_speed - 0.1f, -3.0f, 3.0f); return TRUE;
+        x_speed = CLAMP(x_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
     case GDK_KEY_Down:
-        x_speed = CLAMP(x_speed + 0.1f, -3.0f, 3.0f); return TRUE;
+        x_speed = CLAMP(x_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
     case GDK_KEY_Left:
-        y_speed = CLAMP(y_speed - 0.1f, -3.0f, 3.0f); return TRUE;
+        y_speed = CLAMP(y_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
     case GDK_KEY_Right:
-        y_speed = CLAMP(y_speed + 0.1f, -3.0f, 3.0f); return TRUE;
+        y_speed = CLAMP(y_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
     case GDK_KEY_w:
-        z_speed = CLAMP(z_speed - 0.1f, -3.0f, 3.0f); return TRUE;
+        z_speed = CLAMP(z_speed - 0.1f, -3.0f, 3.0f);
+        return TRUE;
     case GDK_KEY_q:
-        z_speed = CLAMP(z_speed + 0.1f, -3.0f, 3.0f); return TRUE;
-    case GDK_KEY_Return: case GDK_KEY_KP_Enter:
-        x_speed = 0.0f; y_speed = 0.5f; z_speed = 0.0f;
-        x_angle = 20.0f; y_angle = 45.0f; z_angle = 0.0f;
+        z_speed = CLAMP(z_speed + 0.1f, -3.0f, 3.0f);
+        return TRUE;
+    case GDK_KEY_Return:
+    case GDK_KEY_KP_Enter:
+        x_speed = 0.0f;
+        y_speed = 0.5f;
+        z_speed = 0.0f;
+        x_angle = 20.0f;
+        y_angle = 45.0f;
+        z_angle = 0.0f;
         return TRUE;
     default:
         return FALSE;
@@ -434,7 +486,9 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer dat
 
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-    (void)widget; (void)event; (void)data;
+    (void)widget;
+    (void)event;
+    (void)data;
     if (oglspectrum_vp.disable_plugin)
         g_idle_add((GSourceFunc)oglspectrum_vp.disable_plugin, &oglspectrum_vp);
     return TRUE;
@@ -452,11 +506,14 @@ static void start_display(void)
             heights[y][x] = 0.0f;
     scale = 1.0f / logf(256.0f);
 
-    x_speed = 0.0f; y_speed = 0.5f; z_speed = 0.0f;
-    x_angle = 20.0f; y_angle = 45.0f; z_angle = 0.0f;
+    x_speed = 0.0f;
+    y_speed = 0.5f;
+    z_speed = 0.0f;
+    x_angle = 20.0f;
+    y_angle = 45.0f;
+    z_angle = 0.0f;
 
     win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(win), _("OpenGL Spectrum Analyzer"));
     gtk_window_set_default_size(GTK_WINDOW(win), 640, 480);
     gtk_widget_add_events(win, GDK_KEY_PRESS_MASK);
 
@@ -464,14 +521,15 @@ static void start_display(void)
     /* GL 3.3 core profile — GtkGLArea minimum is 3.2; 1.x fixed-function unavailable */
     gtk_gl_area_set_required_version(GTK_GL_AREA(gl_area), 3, 3);
     gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(gl_area), TRUE);
-    gtk_container_add(GTK_CONTAINER(win), gl_area);
+    /* parity: WM titlebar replaced with XMMS-skin chrome */
+    vis_chrome_apply(GTK_WINDOW(win), gl_area, _("OpenGL Spectrum Analyzer"));
 
-    g_signal_connect(G_OBJECT(gl_area), "realize",         G_CALLBACK(on_realize),   NULL);
-    g_signal_connect(G_OBJECT(gl_area), "unrealize",       G_CALLBACK(on_unrealize), NULL);
-    g_signal_connect(G_OBJECT(gl_area), "render",          G_CALLBACK(on_render),    NULL);
-    g_signal_connect(G_OBJECT(gl_area), "resize",          G_CALLBACK(on_resize),    NULL);
-    g_signal_connect(G_OBJECT(win),     "key-press-event", G_CALLBACK(on_key_press), NULL);
-    g_signal_connect(G_OBJECT(win),     "delete-event",    G_CALLBACK(on_delete),    NULL);
+    g_signal_connect(G_OBJECT(gl_area), "realize", G_CALLBACK(on_realize), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "unrealize", G_CALLBACK(on_unrealize), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "render", G_CALLBACK(on_render), NULL);
+    g_signal_connect(G_OBJECT(gl_area), "resize", G_CALLBACK(on_resize), NULL);
+    g_signal_connect(G_OBJECT(win), "key-press-event", G_CALLBACK(on_key_press), NULL);
+    g_signal_connect(G_OBJECT(win), "delete-event", G_CALLBACK(on_delete), NULL);
 
     gtk_widget_show_all(win);
     anim_id = g_timeout_add(ANIM_MS, anim_tick, NULL);
@@ -479,14 +537,22 @@ static void start_display(void)
 
 static void stop_display(void)
 {
-    if (anim_id) { g_source_remove(anim_id); anim_id = 0; }
+    if (anim_id) {
+        g_source_remove(anim_id);
+        anim_id = 0;
+    }
     gl_ready = FALSE;
-    if (win) { gtk_widget_destroy(win); win = NULL; gl_area = NULL; }
+    if (win) {
+        gtk_widget_destroy(win);
+        win = NULL;
+        gl_area = NULL;
+    }
 }
 
 static void oglspectrum_init(void)
 {
-    if (win) return;
+    if (win)
+        return;
     oglspectrum_read_config();
     start_display();
 }
@@ -496,8 +562,12 @@ static void oglspectrum_cleanup(void)
     stop_display();
 }
 
-static void oglspectrum_playback_start(void) {}
-static void oglspectrum_playback_stop(void)  {}
+static void oglspectrum_playback_start(void)
+{
+}
+static void oglspectrum_playback_stop(void)
+{
+}
 
 void oglspectrum_read_config(void)
 {
@@ -519,9 +589,7 @@ void oglspectrum_read_config(void)
 
 static void oglspectrum_render_freq(gint16 data[2][256])
 {
-    static const gint xscale[] = {
-        0, 1, 2, 3, 5, 7, 10, 14, 20, 28, 40, 54, 74, 101, 137, 187, 255
-    };
+    static const gint xscale[] = {0, 1, 2, 3, 5, 7, 10, 14, 20, 28, 40, 54, 74, 101, 137, 187, 255};
     gint i, c, y;
 
     /* Cascade rows down */
@@ -532,7 +600,8 @@ static void oglspectrum_render_freq(gint16 data[2][256])
     /* Fill top row */
     for (i = 0; i < NUM_BANDS; i++) {
         for (c = xscale[i], y = 0; c < xscale[i + 1]; c++)
-            if (data[0][c] > y) y = data[0][c];
+            if (data[0][c] > y)
+                y = data[0][c];
         y >>= 7;
         heights[0][i] = (y > 0) ? (logf(y) * scale) : 0.0f;
     }

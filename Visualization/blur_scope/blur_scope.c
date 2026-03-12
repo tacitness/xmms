@@ -26,6 +26,7 @@
 #include "config.h"
 #include "libxmms/configfile.h"
 #include "libxmms/util.h"
+#include "vis_chrome.h"
 #include "xmms/i18n.h"
 #include "xmms/plugin.h"
 #include "xmms_logo.xpm"
@@ -124,14 +125,12 @@ void generate_cmap(void)
 {
     guint32 i, red, green, blue;
 
-    red   = bscope_cfg.color >> 16;
+    red = bscope_cfg.color >> 16;
     green = (bscope_cfg.color >> 8) & 0xFF;
-    blue  = bscope_cfg.color & 0xFF;
+    blue = bscope_cfg.color & 0xFF;
     for (i = 255; i > 0; i--) {
-        colors[i] = 0xFF000000u |
-                    ((i * red   / 256) << 16) |
-                    ((i * green / 256) <<  8) |
-                     (i * blue  / 256);
+        colors[i] =
+            0xFF000000u | ((i * red / 256) << 16) | ((i * green / 256) << 8) | (i * blue / 256);
     }
     colors[0] = 0xFF000000u; /* fully opaque black */
 }
@@ -156,9 +155,8 @@ static void bscope_init(void)
         return;
     bscope_read_config();
 
-    /* GTK3: GTK_WINDOW_DIALOG -> GTK_WINDOW_TOPLEVEL; gdk_pixmap removed */
+    /* parity: WM titlebar replaced with XMMS-skin chrome (vis_chrome_apply) */
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), _("Blur scope"));
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(bscope_destroy_cb), NULL);
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
@@ -166,8 +164,8 @@ static void bscope_init(void)
 
     area = gtk_drawing_area_new();
     gtk_widget_set_size_request(area, WIDTH, HEIGHT);
-    gtk_container_add(GTK_CONTAINER(window), area);
     g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(bscope_draw_cb), NULL);
+    vis_chrome_apply(GTK_WINDOW(window), area, _("Blur Scope"));
 
     surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, WIDTH, HEIGHT);
     generate_cmap();

@@ -6,6 +6,7 @@ xmms_plugin(
     TYPE      visualization
     SOURCES
         spectrum.c
+        ${CMAKE_SOURCE_DIR}/Visualization/common/vis_chrome.c
     LINK_LIBS
         m
 )
