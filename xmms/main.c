@@ -450,7 +450,7 @@ static void read_config(void)
     cfg.get_info_on_load = FALSE;
     cfg.get_info_on_demand = TRUE;
     cfg.eq_doublesize_linked = TRUE;
-    cfg.eq_auto_level = TRUE; /* TODO(#14): reduce preamp to prevent clipping */
+    cfg.eq_auto_level = TRUE; /* default on: auto-reduce preamp to prevent clipping (#14) */
     cfg.player_visible = TRUE;
     cfg.no_playlist_advance = FALSE;
     cfg.smooth_title_scroll = TRUE;

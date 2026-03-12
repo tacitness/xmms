@@ -313,8 +313,8 @@ void input_set_eq(int on, float preamp, float *bands)
 {
     float adjusted_preamp = preamp;
 
-    /* TODO(#14): eq clipping compensation — when enabled, reduce preamp so
-     * that (preamp + max_band) never exceeds 0 dB, preventing int16 overflow
+    /* #14 fixed: when cfg.eq_auto_level is set, reduce preamp so that
+     * (preamp + max_band) never exceeds 0 dB, preventing int16 overflow
      * in the subband synthesis output stage. */
     if (cfg.eq_auto_level && on) {
         float max_band = bands[0];
