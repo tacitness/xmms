@@ -34,19 +34,26 @@
 
 #include "prefswin.h"
 
-#include <string.h>
-
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <string.h>
 
-#include "libxmms/titlestring.h"
-#include "libxmms/util.h"
+/* clang-format off */
+/* xmms.h must precede all other project headers: it establishes the ordered
+ * chain plugin.h -> widget.h -> skin.h -> vis.h that defines InputPlugin,
+ * Widget, VisType and related types required by input.h, main.h, menurow.h,
+ * output.h, etc.  Excluded from include-sort so clang-format cannot move it
+ * below the headers that depend on the types it transitively provides. */
 #include "xmms.h"
+/* clang-format on */
+
 #include "effect.h"
 #include "equalizer.h"
 #include "general.h"
 #include "hints.h"
 #include "input.h"
+#include "libxmms/titlestring.h"
+#include "libxmms/util.h"
 #include "main.h"
 #include "menurow.h"
 #include "output.h"
@@ -157,8 +164,8 @@ static GtkWidget *make_plugin_listview(GtkWidget **view_out)
     GtkWidget *view, *sw;
 
     sw = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw),
-                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sw), GTK_POLICY_AUTOMATIC,
+                                   GTK_POLICY_ALWAYS);
     gtk_widget_set_size_request(sw, -1, 80);
 
     store = gtk_list_store_new(1, G_TYPE_STRING);
@@ -168,8 +175,9 @@ static GtkWidget *make_plugin_listview(GtkWidget **view_out)
     gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(view)),
                                 GTK_SELECTION_SINGLE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(view),
-        gtk_tree_view_column_new_with_attributes(
-            "", gtk_cell_renderer_text_new(), "text", 0, NULL));
+                                gtk_tree_view_column_new_with_attributes("",
+                                                                         gtk_cell_renderer_text_new(),
+                                                                         "text", 0, NULL));
     gtk_container_add(GTK_CONTAINER(sw), view);
     gtk_widget_show(view);
     gtk_widget_show(sw);
@@ -241,8 +249,7 @@ static void prefswin_options_write_data(void)
 
 /* ---- populate plugin lists ---- */
 
-static void prefswin_plugins_set_buttons_insensitive(GtkWidget *config,
-                                                     GtkWidget *about,
+static void prefswin_plugins_set_buttons_insensitive(GtkWidget *config, GtkWidget *about,
                                                      GtkWidget *use_cbox)
 {
     if (config)
@@ -273,8 +280,7 @@ static void add_input_plugins(GtkTreeView *view)
         g_free(desc);
         ilist = ilist->next;
     }
-    prefswin_plugins_set_buttons_insensitive(prefswin_audio_iconfig,
-                                             prefswin_audio_iabout,
+    prefswin_plugins_set_buttons_insensitive(prefswin_audio_iconfig, prefswin_audio_iabout,
                                              prefswin_audio_ie_cbox);
 }
 
@@ -300,8 +306,7 @@ static void add_effect_plugins(GtkTreeView *view)
         glist = glist->next;
         i++;
     }
-    prefswin_plugins_set_buttons_insensitive(prefswin_eplugins_config,
-                                             prefswin_eplugins_about,
+    prefswin_plugins_set_buttons_insensitive(prefswin_eplugins_config, prefswin_eplugins_about,
                                              prefswin_eplugins_use_cbox);
 }
 
@@ -327,8 +332,7 @@ static void add_general_plugins(GtkTreeView *view)
         glist = glist->next;
         i++;
     }
-    prefswin_plugins_set_buttons_insensitive(prefswin_gplugins_config,
-                                             prefswin_gplugins_about,
+    prefswin_plugins_set_buttons_insensitive(prefswin_gplugins_config, prefswin_gplugins_about,
                                              prefswin_gplugins_use_cbox);
 }
 
@@ -354,8 +358,7 @@ static void add_vis_plugins(GtkTreeView *view)
         glist = glist->next;
         i++;
     }
-    prefswin_plugins_set_buttons_insensitive(prefswin_vplugins_config,
-                                             prefswin_vplugins_about,
+    prefswin_plugins_set_buttons_insensitive(prefswin_vplugins_config, prefswin_vplugins_about,
                                              prefswin_vplugins_use_cbox);
 }
 
@@ -385,11 +388,9 @@ static void add_output_plugins(GtkComboBoxText *combo)
         i++;
     }
 
-    g_signal_handlers_block_matched(G_OBJECT(combo), G_SIGNAL_MATCH_FUNC,
-                                    0, 0, NULL, NULL, NULL);
+    g_signal_handlers_block_matched(G_OBJECT(combo), G_SIGNAL_MATCH_FUNC, 0, 0, NULL, NULL, NULL);
     gtk_combo_box_set_active(GTK_COMBO_BOX(combo), selected_oplugin);
-    g_signal_handlers_unblock_matched(G_OBJECT(combo), G_SIGNAL_MATCH_FUNC,
-                                      0, 0, NULL, NULL, NULL);
+    g_signal_handlers_unblock_matched(G_OBJECT(combo), G_SIGNAL_MATCH_FUNC, 0, 0, NULL, NULL, NULL);
 
     if (cp) {
         gtk_widget_set_sensitive(prefswin_audio_oconfig, cp->configure != NULL);
@@ -418,8 +419,7 @@ static void prefswin_output_changed_cb(GtkComboBox *combo, gpointer data)
 
 static void prefswin_ilist_changed(GtkTreeSelection *sel, gpointer data)
 {
-    GtkTreeView *view = GTK_TREE_VIEW(
-        gtk_tree_selection_get_tree_view(sel));
+    GtkTreeView *view = GTK_TREE_VIEW(gtk_tree_selection_get_tree_view(sel));
     gint idx = prefswin_get_selected_row(view);
     GList *iplist;
     InputPlugin *ip;
@@ -517,8 +517,7 @@ static void prefswin_vlist_changed(GtkTreeSelection *sel, gpointer data)
 
     gtk_widget_set_sensitive(prefswin_vplugins_use_cbox, TRUE);
     updating_vlist = TRUE;
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(prefswin_vplugins_use_cbox),
-                                 vis_enabled(idx));
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(prefswin_vplugins_use_cbox), vis_enabled(idx));
     updating_vlist = FALSE;
 
     gtk_widget_set_sensitive(prefswin_vplugins_config, vp && vp->configure != NULL);
@@ -715,8 +714,7 @@ static void prefswin_rt_callback(GtkToggleButton *w, gpointer data)
 
 static void prefswin_font_browse_cb(GtkWidget *w, gpointer data)
 {
-    GtkWidget *dlg = gtk_font_chooser_dialog_new(_("Select playlist font:"),
-                                                  GTK_WINDOW(prefswin));
+    GtkWidget *dlg = gtk_font_chooser_dialog_new(_("Select playlist font:"), GTK_WINDOW(prefswin));
     if (prefswin_options_font_entry) {
         const gchar *current = gtk_entry_get_text(GTK_ENTRY(prefswin_options_font_entry));
         if (current && *current)
@@ -733,8 +731,8 @@ static void prefswin_font_browse_cb(GtkWidget *w, gpointer data)
 
 static void prefswin_mainwin_font_browse_cb(GtkWidget *w, gpointer data)
 {
-    GtkWidget *dlg = gtk_font_chooser_dialog_new(_("Select main window font:"),
-                                                  GTK_WINDOW(prefswin));
+    GtkWidget *dlg =
+        gtk_font_chooser_dialog_new(_("Select main window font:"), GTK_WINDOW(prefswin));
     if (prefswin_mainwin_font_entry) {
         const gchar *current = gtk_entry_get_text(GTK_ENTRY(prefswin_mainwin_font_entry));
         if (current && *current)
@@ -788,16 +786,13 @@ static void prefswin_apply_changes(void)
 
     prefswin_options_write_data();
 
-    cfg.snap_distance = (guint)CLAMP(
-        atoi(gtk_entry_get_text(GTK_ENTRY(prefswin_options_sd_entry))), 0, 1000);
-    cfg.playlist_font =
-        g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_options_font_entry)));
-    cfg.mainwin_font =
-        g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_mainwin_font_entry)));
-    cfg.gentitle_format =
-        g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_title_entry)));
-    cfg.pause_between_songs_time = (guint)CLAMP(
-        atoi(gtk_entry_get_text(GTK_ENTRY(prefswin_options_pbs_entry))), 0, 1000);
+    cfg.snap_distance =
+        (guint)CLAMP(atoi(gtk_entry_get_text(GTK_ENTRY(prefswin_options_sd_entry))), 0, 1000);
+    cfg.playlist_font = g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_options_font_entry)));
+    cfg.mainwin_font = g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_mainwin_font_entry)));
+    cfg.gentitle_format = g_strdup(gtk_entry_get_text(GTK_ENTRY(prefswin_title_entry)));
+    cfg.pause_between_songs_time =
+        (guint)CLAMP(atoi(gtk_entry_get_text(GTK_ENTRY(prefswin_options_pbs_entry))), 0, 1000);
     cfg.mouse_change =
         gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(prefswin_options_mouse_spin));
 
@@ -869,15 +864,10 @@ static gboolean prefswin_delete_event(GtkWidget *widget, GdkEvent *event, gpoint
 
 /* ---- Helper: one plugin page with frame + scrolled list + buttons ---- */
 
-static GtkWidget *make_plugin_page(const gchar *frame_label,
-                                   GtkWidget **view_out,
-                                   GtkWidget **config_out,
-                                   GtkWidget **about_out,
-                                   GtkWidget **use_cbox_out,
-                                   GCallback changed_cb,
-                                   GCallback config_cb,
-                                   GCallback about_cb,
-                                   GCallback use_cb)
+static GtkWidget *make_plugin_page(const gchar *frame_label, GtkWidget **view_out,
+                                   GtkWidget **config_out, GtkWidget **about_out,
+                                   GtkWidget **use_cbox_out, GCallback changed_cb,
+                                   GCallback config_cb, GCallback about_cb, GCallback use_cb)
 {
     GtkWidget *frame, *vbox, *sw, *view, *hbox, *hbbox;
     GtkWidget *config_btn, *about_btn, *use_cbox;
@@ -915,8 +905,8 @@ static GtkWidget *make_plugin_page(const gchar *frame_label,
     g_signal_connect(G_OBJECT(use_cbox), "toggled", G_CALLBACK(use_cb), view);
     gtk_box_pack_start(GTK_BOX(hbox), use_cbox, FALSE, FALSE, 10);
 
-    g_signal_connect(G_OBJECT(gtk_tree_view_get_selection(GTK_TREE_VIEW(view))),
-                     "changed", G_CALLBACK(changed_cb), NULL);
+    g_signal_connect(G_OBJECT(gtk_tree_view_get_selection(GTK_TREE_VIEW(view))), "changed",
+                     G_CALLBACK(changed_cb), NULL);
 
     gtk_widget_show_all(frame);
 
@@ -949,8 +939,7 @@ void create_prefs_window(void)
     gtk_window_set_resizable(GTK_WINDOW(prefswin), FALSE);
     gtk_window_set_transient_for(GTK_WINDOW(prefswin), GTK_WINDOW(mainwin));
     gtk_container_set_border_width(GTK_CONTAINER(prefswin), 10);
-    g_signal_connect(G_OBJECT(prefswin), "delete_event",
-                     G_CALLBACK(prefswin_delete_event), NULL);
+    g_signal_connect(G_OBJECT(prefswin), "delete_event", G_CALLBACK(prefswin_delete_event), NULL);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(prefswin), vbox);
@@ -992,8 +981,8 @@ void create_prefs_window(void)
 
         prefswin_audio_iabout = gtk_button_new_with_label(_("About"));
         gtk_widget_set_sensitive(prefswin_audio_iabout, FALSE);
-        g_signal_connect(G_OBJECT(prefswin_audio_iabout), "clicked",
-                         G_CALLBACK(prefswin_iabout), prefswin_audio_ilist_view);
+        g_signal_connect(G_OBJECT(prefswin_audio_iabout), "clicked", G_CALLBACK(prefswin_iabout),
+                         prefswin_audio_ilist_view);
         gtk_box_pack_start(GTK_BOX(ihbbox), prefswin_audio_iabout, FALSE, FALSE, 0);
 
         prefswin_audio_ie_cbox = gtk_check_button_new_with_label(_("Enable plugin"));
@@ -1002,8 +991,8 @@ void create_prefs_window(void)
                          G_CALLBACK(prefswin_ip_toggled), prefswin_audio_ilist_view);
         gtk_box_pack_start(GTK_BOX(ihbox), prefswin_audio_ie_cbox, FALSE, FALSE, 10);
 
-        g_signal_connect(G_OBJECT(gtk_tree_view_get_selection(
-                             GTK_TREE_VIEW(prefswin_audio_ilist_view))),
+        g_signal_connect(G_OBJECT(
+                             gtk_tree_view_get_selection(GTK_TREE_VIEW(prefswin_audio_ilist_view))),
                          "changed", G_CALLBACK(prefswin_ilist_changed), NULL);
 
         /* Output plugin */
@@ -1033,8 +1022,8 @@ void create_prefs_window(void)
 
         prefswin_audio_oabout = gtk_button_new_with_label(_("About"));
         gtk_widget_set_sensitive(prefswin_audio_oabout, FALSE);
-        g_signal_connect(G_OBJECT(prefswin_audio_oabout), "clicked",
-                         G_CALLBACK(prefswin_oabout), NULL);
+        g_signal_connect(G_OBJECT(prefswin_audio_oabout), "clicked", G_CALLBACK(prefswin_oabout),
+                         NULL);
         gtk_box_pack_start(GTK_BOX(ohbbox), prefswin_audio_oabout, FALSE, FALSE, 0);
 
         gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), audio_vbox,
@@ -1045,14 +1034,12 @@ void create_prefs_window(void)
      * Tab 1: Effect Plugins
      * ============================================================ */
     {
-        GtkWidget *ef_page = make_plugin_page(
-            _("Effect Plugins"),
-            &prefswin_eplugins_list, &prefswin_eplugins_config,
-            &prefswin_eplugins_about, &prefswin_eplugins_use_cbox,
-            G_CALLBACK(prefswin_elist_changed),
-            G_CALLBACK(prefswin_econfigure),
-            G_CALLBACK(prefswin_eabout),
-            G_CALLBACK(prefswin_eplugins_use_cb));
+        GtkWidget *ef_page =
+            make_plugin_page(_("Effect Plugins"), &prefswin_eplugins_list,
+                             &prefswin_eplugins_config, &prefswin_eplugins_about,
+                             &prefswin_eplugins_use_cbox, G_CALLBACK(prefswin_elist_changed),
+                             G_CALLBACK(prefswin_econfigure), G_CALLBACK(prefswin_eabout),
+                             G_CALLBACK(prefswin_eplugins_use_cb));
         gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), ef_page,
                                  gtk_label_new(_("Effect Plugins")));
     }
@@ -1061,14 +1048,12 @@ void create_prefs_window(void)
      * Tab 2: General Plugins
      * ============================================================ */
     {
-        GtkWidget *gp_page = make_plugin_page(
-            _("General Plugins"),
-            &prefswin_gplugins_list, &prefswin_gplugins_config,
-            &prefswin_gplugins_about, &prefswin_gplugins_use_cbox,
-            G_CALLBACK(prefswin_glist_changed),
-            G_CALLBACK(prefswin_gconfigure),
-            G_CALLBACK(prefswin_gabout),
-            G_CALLBACK(prefswin_gplugins_use_cb));
+        GtkWidget *gp_page =
+            make_plugin_page(_("General Plugins"), &prefswin_gplugins_list,
+                             &prefswin_gplugins_config, &prefswin_gplugins_about,
+                             &prefswin_gplugins_use_cbox, G_CALLBACK(prefswin_glist_changed),
+                             G_CALLBACK(prefswin_gconfigure), G_CALLBACK(prefswin_gabout),
+                             G_CALLBACK(prefswin_gplugins_use_cb));
         gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), gp_page,
                                  gtk_label_new(_("General Plugins")));
     }
@@ -1077,14 +1062,12 @@ void create_prefs_window(void)
      * Tab 3: Visualization Plugins
      * ============================================================ */
     {
-        GtkWidget *vp_page = make_plugin_page(
-            _("Visualization Plugins"),
-            &prefswin_vplugins_list, &prefswin_vplugins_config,
-            &prefswin_vplugins_about, &prefswin_vplugins_use_cbox,
-            G_CALLBACK(prefswin_vlist_changed),
-            G_CALLBACK(prefswin_vconfigure),
-            G_CALLBACK(prefswin_vabout),
-            G_CALLBACK(prefswin_vplugins_use_cb));
+        GtkWidget *vp_page =
+            make_plugin_page(_("Visualization Plugins"), &prefswin_vplugins_list,
+                             &prefswin_vplugins_config, &prefswin_vplugins_about,
+                             &prefswin_vplugins_use_cbox, G_CALLBACK(prefswin_vlist_changed),
+                             G_CALLBACK(prefswin_vconfigure), G_CALLBACK(prefswin_vabout),
+                             G_CALLBACK(prefswin_vplugins_use_cb));
         prefswin_vis_page_idx = gtk_notebook_get_n_pages(GTK_NOTEBOOK(prefswin_notebook));
         gtk_notebook_append_page(GTK_NOTEBOOK(prefswin_notebook), vp_page,
                                  gtk_label_new(_("Visualization Plugins")));
@@ -1107,24 +1090,22 @@ void create_prefs_window(void)
 
         /* Row 0: Read info on ... | Allow multiple instances */
         GtkWidget *gi_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 3);
-        gtk_box_pack_start(GTK_BOX(gi_box), gtk_label_new(_("Read info on")),
-                           FALSE, FALSE, 0);
-        GtkWidget *options_giop =
-            prefswin_radio_new_with_label(NULL, NULL, _("play"));
+        gtk_box_pack_start(GTK_BOX(gi_box), gtk_label_new(_("Read info on")), FALSE, FALSE, 0);
+        GtkWidget *options_giop = prefswin_radio_new_with_label(NULL, NULL, _("play"));
         gtk_widget_set_tooltip_text(options_giop,
-            _("Read song title and length only when starting to play"));
+                                    _("Read song title and length only when starting to play"));
         gtk_box_pack_start(GTK_BOX(gi_box), options_giop, FALSE, FALSE, 0);
         GtkWidget *options_giod =
-            prefswin_radio_new_with_label(&cfg.get_info_on_demand,
-                                          GTK_RADIO_BUTTON(options_giop), _("demand"));
-        gtk_widget_set_tooltip_text(options_giod,
-            _("Read song title and length when the song is visible in the playlist"));
+            prefswin_radio_new_with_label(&cfg.get_info_on_demand, GTK_RADIO_BUTTON(options_giop),
+                                          _("demand"));
+        gtk_widget_set_tooltip_text(options_giod, _("Read song title and length when the song is "
+                                                    "visible in the playlist"));
         gtk_box_pack_start(GTK_BOX(gi_box), options_giod, FALSE, FALSE, 0);
         GtkWidget *options_giol =
-            prefswin_radio_new_with_label(&cfg.get_info_on_load,
-                                          GTK_RADIO_BUTTON(options_giop), _("load"));
-        gtk_widget_set_tooltip_text(options_giol,
-            _("Read song title and length as soon as the song is loaded to the playlist"));
+            prefswin_radio_new_with_label(&cfg.get_info_on_load, GTK_RADIO_BUTTON(options_giop),
+                                          _("load"));
+        gtk_widget_set_tooltip_text(options_giol, _("Read song title and length as soon as the "
+                                                    "song is loaded to the playlist"));
         gtk_box_pack_start(GTK_BOX(gi_box), options_giol, FALSE, FALSE, 0);
         gtk_grid_attach(GTK_GRID(grid), gi_box, 0, 0, 1, 1);
 
@@ -1133,29 +1114,26 @@ void create_prefs_window(void)
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 0, 1, 1);
 
         /* Row 1 */
-        widget = prefswin_option_new_with_label(&cfg.convert_twenty,
-                                                _("Convert %20 to space"));
+        widget = prefswin_option_new_with_label(&cfg.convert_twenty, _("Convert %20 to space"));
         gtk_grid_attach(GTK_GRID(grid), widget, 0, 1, 1, 1);
-        widget = prefswin_option_new_with_label(&cfg.always_show_cb,
-                                                _("Always show clutterbar"));
-        gtk_widget_set_tooltip_text(widget,
-            _("The \"clutterbar\" is the row of buttons at the left side of the main window"));
+        widget = prefswin_option_new_with_label(&cfg.always_show_cb, _("Always show clutterbar"));
+        gtk_widget_set_tooltip_text(widget, _("The \"clutterbar\" is the row of buttons at the "
+                                              "left side of the main window"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 1, 1, 1);
 
         /* Row 2 */
         widget = prefswin_option_new_with_label(&cfg.convert_underscore,
                                                 _("Convert underscore to space"));
         gtk_grid_attach(GTK_GRID(grid), widget, 0, 2, 1, 1);
-        widget = prefswin_option_new_with_label(&cfg.save_window_position,
-                                                _("Save window positions"));
+        widget =
+            prefswin_option_new_with_label(&cfg.save_window_position, _("Save window positions"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 2, 1, 1);
 
         /* Row 3 */
-        widget = prefswin_option_new_with_label(&cfg.dim_titlebar,
-                                                _("Dim titlebar when inactive"));
+        widget = prefswin_option_new_with_label(&cfg.dim_titlebar, _("Dim titlebar when inactive"));
         gtk_grid_attach(GTK_GRID(grid), widget, 0, 3, 1, 1);
-        widget = prefswin_option_new_with_label(&cfg.show_numbers_in_pl,
-                                                _("Show numbers in playlist"));
+        widget =
+            prefswin_option_new_with_label(&cfg.show_numbers_in_pl, _("Show numbers in playlist"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 3, 1, 1);
 
         /* Row 4 */
@@ -1172,11 +1150,9 @@ void create_prefs_window(void)
                                            _("Use realtime priority when available"));
         gtk_widget_set_tooltip_text(options_rt,
                                     _("Run XMMS with higher priority (not recommended)"));
-        g_signal_connect(G_OBJECT(options_rt), "toggled",
-                         G_CALLBACK(prefswin_rt_callback), NULL);
+        g_signal_connect(G_OBJECT(options_rt), "toggled", G_CALLBACK(prefswin_rt_callback), NULL);
         gtk_grid_attach(GTK_GRID(grid), options_rt, 0, 5, 1, 1);
-        widget = prefswin_option_new_with_label(&cfg.smooth_title_scroll,
-                                                _("Smooth title scroll"));
+        widget = prefswin_option_new_with_label(&cfg.smooth_title_scroll, _("Smooth title scroll"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 5, 1, 1);
 
         /* Row 6: pause between songs | snap distance */
@@ -1187,16 +1163,13 @@ void create_prefs_window(void)
             oi->button = chk;
             oi->cfg = &cfg.pause_between_songs;
             option_list = g_list_prepend(option_list, oi);
-            gtk_box_pack_start(GTK_BOX(pbs_box),
-                               gtk_label_new(_("Pause between songs for")),
-                               FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(pbs_box), gtk_label_new(_("Pause between songs for")), FALSE,
+                               FALSE, 0);
             prefswin_options_pbs_entry = gtk_entry_new();
             gtk_entry_set_max_length(GTK_ENTRY(prefswin_options_pbs_entry), 3);
             gtk_widget_set_size_request(prefswin_options_pbs_entry, 30, -1);
-            gtk_box_pack_start(GTK_BOX(pbs_box), prefswin_options_pbs_entry,
-                               FALSE, FALSE, 0);
-            gtk_box_pack_start(GTK_BOX(pbs_box), gtk_label_new(_("seconds")),
-                               FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(pbs_box), prefswin_options_pbs_entry, FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(pbs_box), gtk_label_new(_("seconds")), FALSE, FALSE, 0);
             gtk_container_add(GTK_CONTAINER(chk), pbs_box);
             gtk_grid_attach(GTK_GRID(grid), chk, 0, 6, 1, 1);
         }
@@ -1207,18 +1180,15 @@ void create_prefs_window(void)
             oi->button = chk;
             oi->cfg = &cfg.snap_windows;
             option_list = g_list_prepend(option_list, oi);
-            gtk_widget_set_tooltip_text(chk,
-                _("When moving windows around, snap them together, "
-                  "and towards screen edges at this distance"));
-            gtk_box_pack_start(GTK_BOX(sw_box),
-                               gtk_label_new(_("Snap windows at")), FALSE, FALSE, 0);
+            gtk_widget_set_tooltip_text(chk, _("When moving windows around, snap them together, "
+                                               "and towards screen edges at this distance"));
+            gtk_box_pack_start(GTK_BOX(sw_box), gtk_label_new(_("Snap windows at")), FALSE, FALSE,
+                               0);
             prefswin_options_sd_entry = gtk_entry_new();
             gtk_entry_set_max_length(GTK_ENTRY(prefswin_options_sd_entry), 3);
             gtk_widget_set_size_request(prefswin_options_sd_entry, 30, -1);
-            gtk_box_pack_start(GTK_BOX(sw_box), prefswin_options_sd_entry,
-                               FALSE, FALSE, 0);
-            gtk_box_pack_start(GTK_BOX(sw_box), gtk_label_new(_("pixels")),
-                               FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(sw_box), prefswin_options_sd_entry, FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(sw_box), gtk_label_new(_("pixels")), FALSE, FALSE, 0);
             gtk_container_add(GTK_CONTAINER(chk), sw_box);
             gtk_grid_attach(GTK_GRID(grid), chk, 1, 6, 1, 1);
         }
@@ -1229,8 +1199,8 @@ void create_prefs_window(void)
         gtk_grid_attach(GTK_GRID(grid), widget, 0, 7, 1, 1);
         widget = prefswin_option_new_with_label(&cfg.use_backslash_as_dir_delimiter,
                                                 _("Use '\\' as a directory delimiter"));
-        gtk_widget_set_tooltip_text(widget,
-            _("Recommended if you want to load playlists that were created in MS Windows"));
+        gtk_widget_set_tooltip_text(widget, _("Recommended if you want to load playlists that were "
+                                              "created in MS Windows"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 7, 1, 1);
 
         /* Row 8: mouse wheel percentage | use pl metadata */
@@ -1241,22 +1211,21 @@ void create_prefs_window(void)
             adj = gtk_adjustment_new((gdouble)cfg.mouse_change, 1, 100, 1, 1, 1);
             prefswin_options_mouse_spin = gtk_spin_button_new(adj, 1, 0);
             gtk_widget_set_size_request(prefswin_options_mouse_spin, 45, -1);
-            gtk_box_pack_start(GTK_BOX(mouse_box), prefswin_options_mouse_spin,
-                               FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(mouse_box), prefswin_options_mouse_spin, FALSE, FALSE, 0);
             gtk_grid_attach(GTK_GRID(grid), mouse_box, 0, 8, 1, 1);
         }
-        widget = prefswin_option_new_with_label(&cfg.use_pl_metadata,
-                                                _("Use meta-data in playlists"));
-        gtk_widget_set_tooltip_text(widget,
-            _("Store information such as song title and length to playlists"));
+        widget =
+            prefswin_option_new_with_label(&cfg.use_pl_metadata, _("Use meta-data in playlists"));
+        gtk_widget_set_tooltip_text(widget, _("Store information such as song title and length to "
+                                              "playlists"));
         gtk_grid_attach(GTK_GRID(grid), widget, 1, 8, 1, 1);
 
         /* Row 9: EQ auto-level */
         widget = prefswin_option_new_with_label(&cfg.eq_auto_level,
                                                 _("Auto-level EQ (prevent preamp clipping)"));
-        gtk_widget_set_tooltip_text(widget,
-            _("Automatically reduce EQ preamp when band boosts would cause clipping.\n"
-              "Keeps the combined gain at or below 0 dB."));
+        gtk_widget_set_tooltip_text(widget, _("Automatically reduce EQ preamp when band boosts "
+                                              "would cause clipping.\n"
+                                              "Keeps the combined gain at or below 0 dB."));
         gtk_grid_attach(GTK_GRID(grid), widget, 0, 9, 2, 1);
 
         gtk_widget_show_all(opt_vbox);
@@ -1275,9 +1244,9 @@ void create_prefs_window(void)
         gtk_box_pack_start(GTK_BOX(fonts_vbox), frame, FALSE, FALSE, 0);
         GtkWidget *fo_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
         gtk_container_add(GTK_CONTAINER(frame), fo_vbox);
-        widget = prefswin_option_new_with_label(
-            &cfg.use_fontsets,
-            _("Use fontsets (Enable for multi-byte charset support)"));
+        widget =
+            prefswin_option_new_with_label(&cfg.use_fontsets, _("Use fontsets (Enable for "
+                                                                "multi-byte charset support)"));
         gtk_box_pack_start(GTK_BOX(fo_vbox), widget, TRUE, TRUE, 0);
 
         frame = gtk_frame_new(_("Playlist"));
@@ -1289,12 +1258,10 @@ void create_prefs_window(void)
         GtkWidget *pf_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(pf_vbox), pf_hbox, TRUE, TRUE, 0);
         prefswin_options_font_entry = gtk_entry_new();
-        gtk_box_pack_start(GTK_BOX(pf_hbox), prefswin_options_font_entry,
-                           TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(pf_hbox), prefswin_options_font_entry, TRUE, TRUE, 0);
         btn = gtk_button_new_with_label(_("Browse"));
         gtk_widget_set_size_request(btn, 85, -1);
-        g_signal_connect(G_OBJECT(btn), "clicked",
-                         G_CALLBACK(prefswin_font_browse_cb), NULL);
+        g_signal_connect(G_OBJECT(btn), "clicked", G_CALLBACK(prefswin_font_browse_cb), NULL);
         gtk_box_pack_start(GTK_BOX(pf_hbox), btn, FALSE, TRUE, 0);
 
         frame = gtk_frame_new(_("Main Window"));
@@ -1308,12 +1275,11 @@ void create_prefs_window(void)
         GtkWidget *mf_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(mf_vbox), mf_hbox, TRUE, TRUE, 0);
         prefswin_mainwin_font_entry = gtk_entry_new();
-        gtk_box_pack_start(GTK_BOX(mf_hbox), prefswin_mainwin_font_entry,
-                           TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(mf_hbox), prefswin_mainwin_font_entry, TRUE, TRUE, 0);
         btn = gtk_button_new_with_label(_("Browse"));
         gtk_widget_set_size_request(btn, 85, -1);
-        g_signal_connect(G_OBJECT(btn), "clicked",
-                         G_CALLBACK(prefswin_mainwin_font_browse_cb), NULL);
+        g_signal_connect(G_OBJECT(btn), "clicked", G_CALLBACK(prefswin_mainwin_font_browse_cb),
+                         NULL);
         gtk_box_pack_start(GTK_BOX(mf_hbox), btn, FALSE, TRUE, 0);
 
         gtk_widget_show_all(fonts_vbox);
@@ -1335,8 +1301,7 @@ void create_prefs_window(void)
         gtk_container_add(GTK_CONTAINER(frame), tv2);
         GtkWidget *th = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(tv2), th, FALSE, FALSE, 0);
-        gtk_box_pack_start(GTK_BOX(th), gtk_label_new(_("Title format:")),
-                           FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(th), gtk_label_new(_("Title format:")), FALSE, FALSE, 0);
         prefswin_title_entry = gtk_entry_new();
         gtk_box_pack_start(GTK_BOX(th), prefswin_title_entry, TRUE, TRUE, 0);
         GtkWidget *desc_widget = xmms_titlestring_descriptions("pagfFetndyc", 2);
@@ -1392,6 +1357,23 @@ void create_prefs_window(void)
     add_effect_plugins(GTK_TREE_VIEW(prefswin_eplugins_list));
     add_general_plugins(GTK_TREE_VIEW(prefswin_gplugins_list));
     add_vis_plugins(GTK_TREE_VIEW(prefswin_vplugins_list));
+
+    /* Preselect the first row in each plugin list so that Configure/About
+     * and the Enable checkbox are active immediately when a tab is opened,
+     * without requiring the user to click a row manually first. */
+    {
+        GtkTreePath *p0 = gtk_tree_path_new_from_indices(0, -1);
+        gtk_tree_selection_select_path(gtk_tree_view_get_selection(
+                                           GTK_TREE_VIEW(prefswin_eplugins_list)),
+                                       p0);
+        gtk_tree_selection_select_path(gtk_tree_view_get_selection(
+                                           GTK_TREE_VIEW(prefswin_gplugins_list)),
+                                       p0);
+        gtk_tree_selection_select_path(gtk_tree_view_get_selection(
+                                           GTK_TREE_VIEW(prefswin_vplugins_list)),
+                                       p0);
+        gtk_tree_path_free(p0);
+    }
 
     /* suppress unused-variable warnings */
     (void)entry;
@@ -1468,6 +1450,5 @@ void prefswin_show_vis_plugins_page(void)
 {
     show_prefs_window();
     if (prefswin_notebook)
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(prefswin_notebook),
-                                      prefswin_vis_page_idx);
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(prefswin_notebook), prefswin_vis_page_idx);
 }

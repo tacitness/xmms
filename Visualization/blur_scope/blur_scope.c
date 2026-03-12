@@ -146,7 +146,14 @@ static gboolean bscope_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data)
 
 static void bscope_destroy_cb(GtkWidget *w, gpointer data)
 {
-    bscope_vp.disable_plugin(&bscope_vp);
+    (void)w;
+    (void)data;
+    /* Defer disable_plugin so we are not inside the destroy-signal emission
+     * when cleanup() calls gtk_widget_destroy(window) again.  Using g_idle_add
+     * mirrors the pattern used in opengl_spectrum to avoid GTK_IS_WIDGET
+     * CRITICAL assertions and double-free of the cairo surface. */
+    if (bscope_vp.disable_plugin)
+        g_idle_add((GSourceFunc)bscope_vp.disable_plugin, &bscope_vp);
 }
 
 static void bscope_init(void)
@@ -164,6 +171,7 @@ static void bscope_init(void)
 
     area = gtk_drawing_area_new();
     gtk_widget_set_size_request(area, WIDTH, HEIGHT);
+    g_signal_connect(G_OBJECT(area), "destroy", G_CALLBACK(gtk_widget_destroyed), &area);
     g_signal_connect(G_OBJECT(area), "draw", G_CALLBACK(bscope_draw_cb), NULL);
     vis_chrome_apply(GTK_WINDOW(window), area, _("Blur Scope"));
 

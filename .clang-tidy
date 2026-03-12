@@ -20,6 +20,7 @@ Checks: >
   cppcoreguidelines-init-variables,
   misc-*,
   -misc-unused-parameters,
+  -misc-header-include-cycle,  # GTK3 gtkshortcutsshortcut.h has a system-level cycle we cannot fix
   modernize-macro-to-enum,
   performance-*,
   portability-*,
