@@ -982,6 +982,12 @@ void mainwin_shade_toggle(void)
 
 void mainwin_quit_cb(void)
 {
+    /* Destroy vis-plugin windows NOW, before input_stop() which can block for
+     * several seconds draining the audio ring buffer.  Without this, the vis
+     * windows stay visible and appear orphaned to the user while the process
+     * is actually busy draining audio. */
+    vis_disable_all();
+
     input_stop();
     gtk_widget_hide(equalizerwin);
     gtk_widget_hide(playlistwin);
@@ -4211,10 +4217,14 @@ void handle_cmd_line_options(struct cmdlineopt *opt, gboolean remote)
 
 void segfault_handler(int sig)
 {
+    /* TODO(#signal-safety): replace with async-signal-safe write() when refactoring signal handlers
+     */
+    /* NOLINTBEGIN(bugprone-signal-handler,cert-msc54-cpp,cert-sig30-c) */
     printf(_("\nSegmentation fault\n\n"
              "You've probably found a bug in XMMS, please visit\n"
              "http://bugs.xmms.org and fill out a bug report.\n\n"));
     exit(1);
+    /* NOLINTEND(bugprone-signal-handler,cert-msc54-cpp,cert-sig30-c) */
 }
 
 static gboolean pposition_configure(GtkWidget *w, GdkEventConfigure *event, gpointer data)

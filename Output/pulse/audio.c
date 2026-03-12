@@ -264,23 +264,35 @@ static void *audio_thread_func(void *arg)
     }
 
     /* ---- Final drain: empty whatever remains in the ring ----------------- */
-    for (;;) {
-        pthread_mutex_lock(&rbuf_lock);
-        int left = ring_filled_locked();
-        if (left == 0) {
+    {
+        int drain_errors = 0;
+        for (;;) {
+            pthread_mutex_lock(&rbuf_lock);
+            int left = ring_filled_locked();
+            if (left == 0) {
+                pthread_mutex_unlock(&rbuf_lock);
+                break;
+            }
+            int chunk = MIN(left, PA_WRITE_CHUNK);
+            ring_read_locked(tmp, chunk);
             pthread_mutex_unlock(&rbuf_lock);
-            break;
+
+            int err;
+            if (pa_simple_write(pa_s, tmp, chunk, &err) < 0) {
+                g_warning("PulseAudio: write error during drain: %s", pa_strerror(err));
+                /* PA connection is broken — discard remaining ring data and stop
+                 * spinning; without this, a dead PA daemon causes an infinite
+                 * busy loop at 100%% CPU that prevents XMMS from exiting. */
+                if (++drain_errors >= 3)
+                    break;
+            } else {
+                drain_errors = 0;
+            }
+
+            pthread_mutex_lock(&rbuf_lock);
+            hw_written += chunk;
+            pthread_mutex_unlock(&rbuf_lock);
         }
-        int chunk = MIN(left, PA_WRITE_CHUNK);
-        ring_read_locked(tmp, chunk);
-        pthread_mutex_unlock(&rbuf_lock);
-
-        int err;
-        pa_simple_write(pa_s, tmp, chunk, &err);
-
-        pthread_mutex_lock(&rbuf_lock);
-        hw_written += chunk;
-        pthread_mutex_unlock(&rbuf_lock);
     }
 
     return NULL;
@@ -490,9 +502,18 @@ void pulse_flush(int time)
     pthread_cond_broadcast(&rbuf_cond);
     pthread_mutex_unlock(&rbuf_lock);
 
-    /* Spin until the audio thread has processed the flush */
-    while (flush_req >= 0)
+    /* Wait until the audio thread acknowledges the flush.  Read flush_req
+     * under the lock to avoid a data race; bail out if going was cleared
+     * (audio thread exited) to prevent spinning forever. */
+    for (;;) {
+        int pending;
+        pthread_mutex_lock(&rbuf_lock);
+        pending = (flush_req >= 0);
+        pthread_mutex_unlock(&rbuf_lock);
+        if (!pending || !going)
+            break;
         g_usleep(1000);
+    }
 }
 
 void pulse_pause(short p)
