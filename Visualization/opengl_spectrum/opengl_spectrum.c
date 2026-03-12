@@ -494,6 +494,34 @@ static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
     return TRUE;
 }
 
+/* Called whenever the window is destroyed by ANY means: WM close button,
+ * vis-chrome × button, or Escape key idle-disabling the plugin.  Removes
+ * the animation timer and nulls the stale pointers so anim_tick() cannot
+ * dereference a finalized GtkWidget and crash.
+ *
+ * We distinguish two cases:
+ *   was_live == TRUE  → window closed externally (× / WM / Escape); schedule
+ *                        disable_plugin so XMMS tracks the state change.
+ *   was_live == FALSE → stop_display() already removed the timer before
+ *                        calling gtk_widget_destroy(); disable_plugin is
+ *                        already in progress, no idle needed. */
+static void on_window_destroy(GtkWidget *widget, gpointer data)
+{
+    gboolean was_live;
+    (void)widget;
+    (void)data;
+    was_live = (anim_id != 0);
+    if (anim_id) {
+        g_source_remove(anim_id);
+        anim_id = 0;
+    }
+    gl_ready = FALSE;
+    /* win and gl_area are NULLed by the gtk_widget_destroyed() handlers
+     * that are connected alongside this one in start_display(). */
+    if (was_live && oglspectrum_vp.disable_plugin)
+        g_idle_add((GSourceFunc)oglspectrum_vp.disable_plugin, &oglspectrum_vp);
+}
+
 /* --------------------------------------------------------------------------
  * Plugin lifecycle
  * -------------------------------------------------------------------------- */
@@ -521,8 +549,24 @@ static void start_display(void)
     /* GL 3.3 core profile — GtkGLArea minimum is 3.2; 1.x fixed-function unavailable */
     gtk_gl_area_set_required_version(GTK_GL_AREA(gl_area), 3, 3);
     gtk_gl_area_set_has_depth_buffer(GTK_GL_AREA(gl_area), TRUE);
-    /* parity: WM titlebar replaced with XMMS-skin chrome */
-    vis_chrome_apply(GTK_WINDOW(win), gl_area, _("OpenGL Spectrum Analyzer"));
+
+    if (oglspectrum_cfg.tdfx_mode) {
+        /* Fullscreen mode: strip WM decorations and fill the whole screen.
+         * Skip vis_chrome chrome bar — it makes no sense in full-screen. */
+        gtk_window_set_decorated(GTK_WINDOW(win), FALSE);
+        gtk_container_add(GTK_CONTAINER(win), gl_area);
+        gtk_window_fullscreen(GTK_WINDOW(win));
+    } else {
+        /* parity: WM titlebar replaced with XMMS-skin chrome */
+        vis_chrome_apply(GTK_WINDOW(win), gl_area, _("OpenGL Spectrum Analyzer"));
+    }
+
+    /* Safety: null win/gl_area and kill the timer when the window is destroyed
+     * by ANY means (vis-chrome × button, WM close, Escape key, stop_display).
+     * Without these, anim_tick() races on a finalized GtkWidget and segfaults. */
+    g_signal_connect(G_OBJECT(win), "destroy", G_CALLBACK(on_window_destroy), NULL);
+    g_signal_connect(G_OBJECT(win), "destroy", G_CALLBACK(gtk_widget_destroyed), &win);
+    g_signal_connect(G_OBJECT(gl_area), "destroy", G_CALLBACK(gtk_widget_destroyed), &gl_area);
 
     g_signal_connect(G_OBJECT(gl_area), "realize", G_CALLBACK(on_realize), NULL);
     g_signal_connect(G_OBJECT(gl_area), "unrealize", G_CALLBACK(on_unrealize), NULL);
@@ -537,6 +581,8 @@ static void start_display(void)
 
 static void stop_display(void)
 {
+    /* Remove the timer first so anim_tick() cannot fire on a half-destroyed
+     * window between here and gtk_widget_destroy() completing. */
     if (anim_id) {
         g_source_remove(anim_id);
         anim_id = 0;
@@ -544,8 +590,8 @@ static void stop_display(void)
     gl_ready = FALSE;
     if (win) {
         gtk_widget_destroy(win);
-        win = NULL;
-        gl_area = NULL;
+        /* win and gl_area are NULLed synchronously inside on_window_destroy
+         * / gtk_widget_destroyed() which fires during gtk_widget_destroy(). */
     }
 }
 
