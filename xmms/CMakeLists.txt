@@ -40,6 +40,7 @@ set(XMMS_SOURCES
     hints.c         hints.h
     about.c         about.h
     sm.c            sm.h
+    mpris2.c        mpris2.h
     plugin.h
     xmms.h
     getopt.c        getopt1.c  getopt.h

@@ -13,3 +13,7 @@ xmms_plugin(
         PkgConfig::ALSA
         Threads::Threads
 )
+
+# Work around a GCC internal compiler error (vectorizable_simd_clone_call)
+# triggered by the alsa_loop function on some GCC versions.
+target_compile_options(ALSA PRIVATE -fno-tree-vectorize)
