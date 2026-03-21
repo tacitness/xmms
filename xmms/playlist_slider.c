@@ -31,6 +31,9 @@ void playlistslider_draw(Widget *w)
     else
         y = 0;
 
+    /* Save computed thumb position so button_press_cb hit-test is accurate — Fixes #35 */
+    ps->ps_prev_y = y;
+
     obj = ps->ps_widget.parent;
     if (ps->ps_is_draging)
         skinx = 61;

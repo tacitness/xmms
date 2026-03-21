@@ -1188,7 +1188,7 @@ static void playlistwin_press(GtkWidget *widget, GdkEventButton *event, gpointer
     }
     if (grab)
         gdk_pointer_grab(gtk_widget_get_window(playlistwin), FALSE,
-                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
+                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, NULL, NULL,
                          GDK_CURRENT_TIME);
 }
 
@@ -1197,6 +1197,10 @@ static void playlistwin_focus_in(GtkWidget *widget, GdkEvent *event, gpointer ca
     playlistwin_close->pb_allow_draw = TRUE;
     playlistwin_shade->pb_allow_draw = TRUE;
     playlistwin_focus = TRUE;
+    /* Raise peer skin windows — Refs #25 */
+    if (cfg.player_visible)
+        gdk_window_raise(gtk_widget_get_window(mainwin));
+    equalizerwin_raise();
     draw_playlist_window(TRUE);
 }
 

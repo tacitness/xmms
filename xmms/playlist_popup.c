@@ -151,7 +151,7 @@ void playlist_popup(gint x, gint y, gint num_items, gint *nx, gint *ny, gint *sx
     gdk_flush();
     playlist_popup_draw(popup);
     gdk_pointer_grab(gtk_widget_get_window(popup->window), FALSE,
-                     GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
+                     GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, NULL, NULL,
                      GDK_CURRENT_TIME);
     gdk_flush();
 }

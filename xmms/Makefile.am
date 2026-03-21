@@ -6,10 +6,10 @@ bin_PROGRAMS = xmms
 
 xmms_LDFLAGS = -export-dynamic
 xmms_LDADD = @GTK_LIBS@ @PTHREAD_LIBS@ @SM_LIBS@ @VM_LIBS@ \
-@POSIX_LIBS@ $(top_builddir)/libxmms/libxmms.la @LTLIBINTL@
+@POSIX_LIBS@ $(top_builddir)/libxmms/libxmms.la @LTLIBINTL@ -lm -lX11
 
 INCLUDES = @GTK_CFLAGS@ @XMMS_DEFINES@ @ARCH_DEFINES@ \
--I$(top_builddir)/intl -I$(top_srcdir)
+-I$(top_builddir)/intl -I$(top_srcdir) -D_DEFAULT_SOURCE
 
 
 xmms_SOURCES =  bmp.c bmp.h \

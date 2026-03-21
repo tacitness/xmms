@@ -142,7 +142,7 @@ libxmms_la_OBJECTS = $(am_libxmms_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libxmms_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libxmms_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -153,11 +153,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
@@ -176,7 +176,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -184,7 +184,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(libxmms_la_SOURCES)
 DIST_SOURCES = $(libxmms_la_SOURCES)
 am__can_run_installinfo = \
@@ -377,7 +377,7 @@ xmmsincludedir = $(includedir)/xmms
 lib_LTLIBRARIES = libxmms.la
 libxmms_la_LDFLAGS = -export-dynamic -version-info $(LIBXMMS_MAJOR_VERSION):$(LIBXMMS_MINOR_VERSION):$(LIBXMMS_MICRO_VERSION)
 libxmms_la_LIBADD = @GTK_LIBS@ @POSIX_LIBS@
-INCLUDES = @GTK_CFLAGS@ -I../intl -I..
+INCLUDES = @GTK_CFLAGS@ -I../intl -I.. -D_DEFAULT_SOURCE
 libxmms_la_SOURCES = \
 configfile.c configfile.h \
 xmmsctrl.c xmmsctrl.h \
@@ -436,7 +436,7 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	$(AM_V_at)rm -f stamp-h1
 	$(AM_V_GEN)cd $(top_builddir) && $(SHELL) ./config.status config.h
-$(srcdir)/config.h.in:  $(am__configure_deps) 
+$(srcdir)/config.h.in:  $(am__configure_deps)
 	$(AM_V_GEN)($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	$(AM_V_at)rm -f stamp-h1
 	$(AM_V_at)touch $@
@@ -477,7 +477,7 @@ clean-libLTLIBRARIES:
 	echo rm -f $${locs}; \
 	$(am__rm_f) $${locs}
 
-libxmms.la: $(libxmms_la_OBJECTS) $(libxmms_la_DEPENDENCIES) $(EXTRA_libxmms_la_DEPENDENCIES) 
+libxmms.la: $(libxmms_la_OBJECTS) $(libxmms_la_DEPENDENCIES) $(EXTRA_libxmms_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libxmms_la_LINK) -rpath $(libdir) $(libxmms_la_OBJECTS) $(libxmms_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:

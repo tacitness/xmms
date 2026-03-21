@@ -385,7 +385,7 @@ void equalizerwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callb
     }
     if (grab)
         gdk_pointer_grab(gtk_widget_get_window(equalizerwin), FALSE,
-                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
+                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, NULL, NULL,
                          GDK_CURRENT_TIME);
 }
 
@@ -425,6 +425,10 @@ void equalizerwin_focus_in(GtkWidget *widget, GdkEvent *event, gpointer callback
     equalizerwin_close->pb_allow_draw = TRUE;
     equalizerwin_shade->pb_allow_draw = TRUE;
     equalizerwin_focus = TRUE;
+    /* Raise peer skin windows — Refs #25 */
+    if (cfg.player_visible)
+        gdk_window_raise(gtk_widget_get_window(mainwin));
+    playlistwin_raise();
     draw_equalizer_window(TRUE);
 }
 
@@ -1289,7 +1293,7 @@ static void equalizerwin_load_filesel_ok(GtkWidget *w, GtkWidget *filesel)
     gchar *filename;
     ConfigFile *cfgfile;
 
-    if (util_filebrowser_is_dir(filesel))
+    if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
     filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
@@ -1306,7 +1310,7 @@ static void equalizerwin_import_winamp_filesel_ok(GtkWidget *w, GtkWidget *files
     gchar *filename;
     FILE *file;
 
-    if (util_filebrowser_is_dir(filesel))
+    if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
     filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
@@ -1324,7 +1328,7 @@ static void equalizerwin_load_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel
     gchar *filename;
     FILE *file;
 
-    if (util_filebrowser_is_dir(filesel))
+    if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
     filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
@@ -1341,7 +1345,7 @@ static void equalizerwin_save_filesel_ok(GtkWidget *w, GtkWidget *filesel)
     ConfigFile *cfgfile;
     gint i;
 
-    if (util_filebrowser_is_dir(filesel))
+    if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
     filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
@@ -1367,7 +1371,7 @@ static void equalizerwin_save_winamp_filesel_ok(GtkWidget *w, GtkWidget *filesel
     gint i;
     guchar bands[11];
 
-    if (util_filebrowser_is_dir(filesel))
+    if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
     filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;

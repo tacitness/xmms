@@ -16,7 +16,7 @@ skip = ./po,./intl,./aclocal.m4,./configure,./ltmain.sh,./config.guess,./config.
 # WORS    — ID3v2 tag code (Official internet radio station homepage)
 # Alle    — German word in example string "Alle Gegen Alle" (Laibach)
 # This'd  — informal contraction in an old code comment
-ignore-words-list = datas,lod,thru,colour,colours,initialise,initialised,fullscreen,parm,bu,fo,noe,WORS,Alle,This'd
+ignore-words-list = datas,lod,thru,colour,colours,initialise,initialised,fullscreen,parm,bu,fo,noe,WORS,Alle,This'd,HDA
 
 # Count occurrences for easier threshold decisions
 count = true

@@ -1386,19 +1386,16 @@ void mainwin_press(GtkWidget *widget, GdkEventButton *event, gpointer callback_d
     }
     if (grab)
         gdk_pointer_grab(gtk_widget_get_window(mainwin), FALSE,
-                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, GDK_NONE, GDK_NONE,
+                         GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK, NULL, NULL,
                          GDK_CURRENT_TIME);
 }
 
 void mainwin_focus_in(GtkWidget *widget, GdkEvent *event, gpointer callback_data)
 {
     mainwin_focus = 1;
-    if (!cfg.player_visible) {
-        if (cfg.playlist_visible)
-            playlistwin_raise();
-        else if (cfg.equalizer_visible)
-            equalizerwin_raise();
-    }
+    /* Raise all visible sibling skin windows together — Refs #25 */
+    playlistwin_raise();
+    equalizerwin_raise();
     mainwin_menubtn->pb_allow_draw = TRUE;
     mainwin_minimize->pb_allow_draw = TRUE;
     mainwin_shade->pb_allow_draw = TRUE;
