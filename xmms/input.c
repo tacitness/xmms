@@ -21,6 +21,7 @@
 #include "libxmms/titlestring.h"
 #include "libxmms/util.h"
 #include "libxmms/xentry.h"
+#include "mpris2.h"
 #include "xmms.h"
 
 static pthread_mutex_t vis_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -295,6 +296,8 @@ void input_pause(void)
         else
             playstatus_set_status(mainwin_playstatus, STATUS_PLAY);
         get_current_input_plugin()->pause(ip_data->paused);
+        /* Refs #37: notify MPRIS2 clients of pause/resume state change */
+        mpris2_update_state();
     }
 }
 

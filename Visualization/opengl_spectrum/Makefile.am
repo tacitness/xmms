@@ -20,4 +20,4 @@ libogl_spectrum_la_LDFLAGS = @PLUGIN_LDFLAGS@
 libogl_spectrum_la_LIBADD = @GTK_LIBS@ @OPENGL_LIBS@
 
 libogl_spectrum_la_SOURCES = $(oglspectrumsources)
-INCLUDES = @GTK_CFLAGS@ @XMMS_DEFINES@ -I$(top_builddir)/intl -I$(top_srcdir)
+INCLUDES = @GTK_CFLAGS@ @XMMS_DEFINES@ -I$(top_builddir)/intl -I$(top_srcdir) -I$(top_srcdir)/Visualization/common

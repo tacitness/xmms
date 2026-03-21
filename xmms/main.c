@@ -27,6 +27,7 @@
 
 #include <getopt.h>
 
+#include "mpris2.h"
 #include "xmms.h"
 
 /* GTK3: wrapper to silence incompatible-pointer-types warning */
@@ -1110,6 +1111,8 @@ void mainwin_set_song_info(int rate, int freq, int nch)
     frequency = freq;
     numchannels = nch;
     mainwin_set_info_text();
+    /* Refs #37: notify MPRIS2 clients of track/state change */
+    mpris2_update_state();
 }
 
 void mainwin_get_song_info(int *rate, int *freq, int *nch)
@@ -1156,6 +1159,12 @@ static void mainwin_update_song_info(void)
         hide_widget(mainwin_sposition);
         mainwin_force_redraw = TRUE;
     }
+}
+
+/* Refs #37: notify MPRIS2 clients that playback stopped */
+static void _mpris2_on_stop(void)
+{
+    mpris2_update_state();
 }
 
 void mainwin_clear_song_info(void)
@@ -1414,7 +1423,30 @@ void mainwin_focus_out(GtkWidget *widget, GdkEventButton *event, gpointer callba
 gboolean mainwin_keypress(GtkWidget *w, GdkEventKey *event, gpointer data)
 {
 
+    /* Ignore keypresses with modifiers to avoid stealing Ctrl+Z etc. */
+    if (event->state & (GDK_CONTROL_MASK | GDK_MOD1_MASK))
+        return FALSE;
+
     switch (event->keyval) {
+    /* Classic Winamp keyboard shortcuts — Refs #37 */
+    case GDK_KEY_z:
+        playlist_prev();
+        break;
+    case GDK_KEY_x:
+        if (get_input_paused())
+            input_pause(); /* unpause */
+        else if (get_playlist_length())
+            playlist_play();
+        break;
+    case GDK_KEY_c:
+        input_pause();
+        break;
+    case GDK_KEY_v:
+        mainwin_stop_pushed();
+        break;
+    case GDK_KEY_b:
+        playlist_next();
+        break;
     case GDK_KEY_Up:
     case GDK_KEY_KP_Up:
         mainwin_set_volume_diff(2);
@@ -2504,6 +2536,7 @@ void mainwin_stop_pushed(void)
 {
     mainwin_clear_song_info();
     input_stop();
+    _mpris2_on_stop();
 }
 
 void mainwin_shuffle_pushed(gboolean toggled)
@@ -4521,6 +4554,7 @@ int main(int argc, char **argv)
         gtk_widget_add_tick_callback(mainwin, (GtkTickCallback)mainwin_frame_tick, NULL, NULL);
     playlist_start_get_info_thread();
 
+    mpris2_init(); /* Refs #37: register MPRIS2 D-Bus service */
     enable_x11r5_session_management(argc, argv);
     gtk_main();
     GDK_THREADS_LEAVE();
