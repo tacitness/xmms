@@ -49,8 +49,8 @@ typedef struct {
 
 void vis_draw(Widget *w);
 
-Vis *create_vis(GList **wlist, GdkPixmap *parent, GdkWindow *window, GdkGC *gc, gint x, gint y,
-                gint width, gboolean doublesize);
+Vis *create_vis(GList **wlist, cairo_surface_t *parent, GdkWindow *window, cairo_t *cr, gint x,
+                gint y, gint width, gboolean doublesize);
 void vis_timeout_func(Vis *vis, guchar *data);
 void vis_clear_data(Vis *vis);
 void vis_clear(Vis *vis);

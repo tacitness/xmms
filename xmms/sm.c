@@ -53,9 +53,10 @@ static void sm_die(SmcConn c, SmPointer arg)
     GDK_THREADS_LEAVE();
 }
 
-static void ice_handler(gpointer data, gint source, GdkInputCondition condition)
+static gboolean ice_handler(GIOChannel *channel, GIOCondition condition, gpointer data)
 {
     IceProcessMessages(data, NULL, NULL);
+    return TRUE;
 }
 
 const char *sm_init(int argc, char **argv, const char *previous_session_id)
@@ -124,7 +125,9 @@ const char *sm_init(int argc, char **argv, const char *previous_session_id)
 
         SmcSetProperties(smc_conn, sizeof(props) / sizeof(props[0]), (SmProp **)&props);
         ice_conn = SmcGetIceConnection(smc_conn);
-        gdk_input_add(IceConnectionNumber(ice_conn), GDK_INPUT_READ, ice_handler, ice_conn);
+        GIOChannel *ice_channel = g_io_channel_unix_new(IceConnectionNumber(ice_conn));
+        g_io_add_watch(ice_channel, G_IO_IN, ice_handler, ice_conn);
+        g_io_channel_unref(ice_channel);
 
         g_free(userid_val.value);
     }

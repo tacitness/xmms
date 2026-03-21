@@ -328,8 +328,8 @@ static void path_browse_cb(GtkWidget *w, gpointer data)
             xmms_create_dir_browser(_("Select the directory where you want to store the output "
                                       "files:"),
                                     file_path, GTK_SELECTION_SINGLE, path_dirbrowser_cb);
-        gtk_signal_connect(GTK_OBJECT(path_dirbrowser), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &path_dirbrowser);
+        g_signal_connect(G_OBJECT(path_dirbrowser), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                         &path_dirbrowser);
         gtk_window_set_transient_for(GTK_WINDOW(path_dirbrowser), GTK_WINDOW(configure_win));
         gtk_widget_show(path_dirbrowser);
     }
@@ -367,24 +367,22 @@ static void configure_destroy(void)
 
 static void disk_configure(void)
 {
-    GtkTooltips *use_suffix_tooltips;
 
     if (!configure_win) {
-        configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
+        configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 
-        gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(configure_destroy),
-                           NULL);
-        gtk_signal_connect(GTK_OBJECT(configure_win), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &configure_win);
+        g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(configure_destroy), NULL);
+        g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                         &configure_win);
         gtk_window_set_title(GTK_WINDOW(configure_win), _("Disk Writer Configuration"));
         gtk_window_set_position(GTK_WINDOW(configure_win), GTK_WIN_POS_MOUSE);
 
         gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 
-        configure_vbox = gtk_vbox_new(FALSE, 10);
+        configure_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_container_add(GTK_CONTAINER(configure_win), configure_vbox);
 
-        path_hbox = gtk_hbox_new(FALSE, 5);
+        path_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
         gtk_box_pack_start(GTK_BOX(configure_vbox), path_hbox, FALSE, FALSE, 0);
 
         path_label = gtk_label_new(_("Path:"));
@@ -394,13 +392,12 @@ static void disk_configure(void)
         path_entry = gtk_entry_new();
         if (file_path)
             gtk_entry_set_text(GTK_ENTRY(path_entry), file_path);
-        gtk_widget_set_usize(path_entry, 200, -1);
+        gtk_widget_set_size_request(path_entry, 200, -1);
         gtk_box_pack_start(GTK_BOX(path_hbox), path_entry, TRUE, TRUE, 0);
         gtk_widget_show(path_entry);
 
         path_browse = gtk_button_new_with_label(_("Browse"));
-        gtk_signal_connect(GTK_OBJECT(path_browse), "clicked", GTK_SIGNAL_FUNC(path_browse_cb),
-                           NULL);
+        g_signal_connect(G_OBJECT(path_browse), "clicked", G_CALLBACK(path_browse_cb), NULL);
         gtk_box_pack_start(GTK_BOX(path_hbox), path_browse, FALSE, FALSE, 0);
         gtk_widget_show(path_browse);
 
@@ -409,35 +406,32 @@ static void disk_configure(void)
         use_suffix_toggle = gtk_check_button_new_with_label(_("Don't strip file name extension"));
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(use_suffix_toggle), use_suffix);
         gtk_box_pack_start(GTK_BOX(configure_vbox), use_suffix_toggle, FALSE, FALSE, 0);
-        use_suffix_tooltips = gtk_tooltips_new();
-        gtk_tooltips_set_tip(use_suffix_tooltips, use_suffix_toggle,
-                             "If enabled, the extension from the original filename will not be "
-                             "stripped before adding the .wav extension to the end.",
-                             NULL);
-        gtk_tooltips_enable(use_suffix_tooltips);
+        gtk_widget_set_tooltip_text(use_suffix_toggle,
+                                    "If enabled, the extension from the original filename will not "
+                                    "be "
+                                    "stripped before adding the .wav extension to the end.");
         gtk_widget_show(use_suffix_toggle);
 
         configure_separator = gtk_hseparator_new();
         gtk_box_pack_start(GTK_BOX(configure_vbox), configure_separator, FALSE, FALSE, 0);
         gtk_widget_show(configure_separator);
 
-        configure_bbox = gtk_hbutton_box_new();
+        configure_bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_button_box_set_layout(GTK_BUTTON_BOX(configure_bbox), GTK_BUTTONBOX_END);
-        gtk_button_box_set_spacing(GTK_BUTTON_BOX(configure_bbox), 5);
+        gtk_box_set_spacing(GTK_BOX(configure_bbox), 5);
         gtk_box_pack_start(GTK_BOX(configure_vbox), configure_bbox, FALSE, FALSE, 0);
 
         configure_ok = gtk_button_new_with_label(_("OK"));
-        gtk_signal_connect(GTK_OBJECT(configure_ok), "clicked", GTK_SIGNAL_FUNC(configure_ok_cb),
-                           NULL);
-        GTK_WIDGET_SET_FLAGS(configure_ok, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(configure_ok), "clicked", G_CALLBACK(configure_ok_cb), NULL);
+        gtk_widget_set_can_default(configure_ok, TRUE);
         gtk_box_pack_start(GTK_BOX(configure_bbox), configure_ok, TRUE, TRUE, 0);
         gtk_widget_show(configure_ok);
         gtk_widget_grab_default(configure_ok);
 
         configure_cancel = gtk_button_new_with_label(_("Cancel"));
-        gtk_signal_connect_object(GTK_OBJECT(configure_cancel), "clicked",
-                                  GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(configure_win));
-        GTK_WIDGET_SET_FLAGS(configure_cancel, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(configure_cancel), "clicked",
+                                 G_CALLBACK(gtk_widget_destroy), configure_win);
+        gtk_widget_set_can_default(configure_cancel, TRUE);
         gtk_box_pack_start(GTK_BOX(configure_bbox), configure_cancel, TRUE, TRUE, 0);
         gtk_widget_show(configure_cancel);
         gtk_widget_show(configure_bbox);

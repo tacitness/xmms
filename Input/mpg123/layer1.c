@@ -13,7 +13,7 @@
 #include "mpg123.h"
 
 /* Used by the getbits macros */
-static unsigned long rval;
+static unsigned int rval;
 
 void I_step_one(unsigned int balloc[], unsigned int scale_index[2][SBLIMIT], struct frame *fr)
 {

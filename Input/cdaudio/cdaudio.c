@@ -28,6 +28,11 @@
 #include "libxmms/util.h"
 #include "xmms/i18n.h"
 
+/* GTK3: define platform CDROM implementation for Linux */
+#if !defined(XMMS_CDROM_SOLARIS) && !defined(XMMS_CDROM_BSD) && defined(__linux__)
+#    define XMMS_CDROM_SOLARIS 1
+#endif
+
 #ifdef CDROMSTOP
 #    define XMMS_STOP CDROMSTOP
 #elif defined CDIOCSTOP
@@ -262,7 +267,7 @@ static void timeout_remove_for_device(char *device)
         struct timeout *t = node->data;
 
         if (!strcmp(t->device, device)) {
-            gtk_timeout_remove(t->id);
+            g_source_remove(t->id);
             timeout_destroy(t);
             return;
         }
@@ -273,7 +278,7 @@ static void cleanup(void)
 {
     while (timeout_list) {
         struct timeout *t = timeout_list->data;
-        gtk_timeout_remove(t->id);
+        g_source_remove(t->id);
         stop_timeout(t);
     }
     cddb_quit();
@@ -589,7 +594,7 @@ static void stop(void)
     if (!cdda_playing.drive.dae) {
         to_info = g_malloc(sizeof(*to_info));
         to_info->device = g_strdup(cdda_playing.drive.device);
-        to_info->id = gtk_timeout_add(STOP_DELAY * 100, stop_timeout, to_info);
+        to_info->id = g_timeout_add(STOP_DELAY * 100, stop_timeout, to_info);
         timeout_list = g_list_prepend(timeout_list, to_info);
     }
 }

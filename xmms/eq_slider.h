@@ -26,7 +26,7 @@ typedef struct {
     gint es_drag_y;
 } EqSlider;
 
-EqSlider *create_eqslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
+EqSlider *create_eqslider(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y);
 void eqslider_set_position(EqSlider *es, gfloat pos);
 gfloat eqslider_get_position(EqSlider *es);
 

@@ -47,6 +47,5 @@ void alsa_about(void)
                             "USA.\n"
                             "Author: Matthieu Sozeau (mattam@altern.org)"),
                           _("OK"), FALSE, NULL, NULL);
-    gtk_signal_connect(GTK_OBJECT(dialog), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &dialog);
+    g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(gtk_widget_destroyed), &dialog);
 }

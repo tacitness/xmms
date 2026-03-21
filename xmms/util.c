@@ -19,7 +19,7 @@
  */
 #include <X11/Xlib.h>
 #include <ctype.h>
-#include <gdk/gdkprivate.h>
+/* GTK3: gdk/gdkprivate.h removed */
 #include <sys/ipc.h>
 
 #include "xmms.h"
@@ -31,7 +31,7 @@ static GQuark quark_popup_data;
 
 
 /*
- * find_file_recursively() by J�rg Schuler Wed, 17 Feb 1999 23:50:52
+ * find_file_recursively() by J�rg Schuler Wed, 17 Feb 1999 23:50:52
  * +0100 Placed under GPL version 2 or (at your option) any later
  * version
  */
@@ -151,108 +151,22 @@ void del_directory(const char *dirname)
 #endif /* !HAVE_FTS_H */
 }
 
-GdkImage *create_dblsize_image(GdkImage *img)
+/* GTK3: pixel-doubling via cairo scaling - replaces GdkImage X11 approach */
+cairo_surface_t *create_dblsize_surface(cairo_surface_t *src_surf)
 {
-    GdkImage *dblimg;
-    register guint x, y;
+    gint w = cairo_image_surface_get_width(src_surf);
+    gint h = cairo_image_surface_get_height(src_surf);
+    cairo_surface_t *dst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w * 2, h * 2);
+    cairo_t *cr = cairo_create(dst);
+    cairo_pattern_t *pat;
 
-    /*
-     * This needs to be optimized
-     */
-
-    dblimg =
-        gdk_image_new(GDK_IMAGE_NORMAL, gdk_visual_get_best(), img->width << 1, img->height << 1);
-    if (dblimg->bpp == 1) {
-        char *srcptr, *ptr, *ptr2;
-
-        srcptr = GDK_IMAGE_XIMAGE(img)->data;
-        ptr = GDK_IMAGE_XIMAGE(dblimg)->data;
-        ptr2 = ptr + dblimg->bpl;
-
-        for (y = 0; y < img->height; y++) {
-            for (x = 0; x < img->width; x++) {
-                gint8 pix = *srcptr++;
-                *ptr++ = pix;
-                *ptr++ = pix;
-                *ptr2++ = pix;
-                *ptr2++ = pix;
-            }
-            srcptr += img->bpl - img->width;
-            ptr += (dblimg->bpl << 1) - dblimg->width;
-            ptr2 += (dblimg->bpl << 1) - dblimg->width;
-        }
-    }
-    if (dblimg->bpp == 2) {
-        guint16 *srcptr, *ptr, *ptr2;
-
-        srcptr = (guint16 *)GDK_IMAGE_XIMAGE(img)->data;
-        ptr = (guint16 *)GDK_IMAGE_XIMAGE(dblimg)->data;
-        ptr2 = ptr + (dblimg->bpl >> 1);
-
-        for (y = 0; y < img->height; y++) {
-            for (x = 0; x < img->width; x++) {
-                guint16 pix = *srcptr++;
-                *ptr++ = pix;
-                *ptr++ = pix;
-                *ptr2++ = pix;
-                *ptr2++ = pix;
-            }
-            srcptr += (img->bpl >> 1) - img->width;
-            ptr += (dblimg->bpl) - dblimg->width;
-            ptr2 += (dblimg->bpl) - dblimg->width;
-        }
-    }
-    if (dblimg->bpp == 3) {
-        char *srcptr, *ptr, *ptr2;
-
-        srcptr = GDK_IMAGE_XIMAGE(img)->data;
-        ptr = GDK_IMAGE_XIMAGE(dblimg)->data;
-        ptr2 = ptr + dblimg->bpl;
-
-        for (y = 0; y < img->height; y++) {
-            for (x = 0; x < img->width; x++) {
-                char pix1 = *srcptr++;
-                char pix2 = *srcptr++;
-                char pix3 = *srcptr++;
-                *ptr++ = pix1;
-                *ptr++ = pix2;
-                *ptr++ = pix3;
-                *ptr++ = pix1;
-                *ptr++ = pix2;
-                *ptr++ = pix3;
-                *ptr2++ = pix1;
-                *ptr2++ = pix2;
-                *ptr2++ = pix3;
-                *ptr2++ = pix1;
-                *ptr2++ = pix2;
-                *ptr2++ = pix3;
-            }
-            srcptr += img->bpl - (img->width * 3);
-            ptr += (dblimg->bpl << 1) - (dblimg->width * 3);
-            ptr2 += (dblimg->bpl << 1) - (dblimg->width * 3);
-        }
-    }
-    if (dblimg->bpp == 4) {
-        register guint32 *srcptr, *ptr, *ptr2, pix;
-
-        srcptr = (guint32 *)GDK_IMAGE_XIMAGE(img)->data;
-        ptr = (guint32 *)GDK_IMAGE_XIMAGE(dblimg)->data;
-        ptr2 = ptr + (dblimg->bpl >> 2);
-
-        for (y = 0; y < img->height; y++) {
-            for (x = 0; x < img->width; x++) {
-                pix = *srcptr++;
-                *ptr++ = pix;
-                *ptr++ = pix;
-                *ptr2++ = pix;
-                *ptr2++ = pix;
-            }
-            srcptr += (img->bpl >> 2) - img->width;
-            ptr += (dblimg->bpl >> 1) - dblimg->width;
-            ptr2 += (dblimg->bpl >> 1) - dblimg->width;
-        }
-    }
-    return dblimg;
+    cairo_scale(cr, 2.0, 2.0);
+    cairo_set_source_surface(cr, src_surf, 0.0, 0.0);
+    pat = cairo_get_source(cr);
+    cairo_pattern_set_filter(pat, CAIRO_FILTER_NEAREST);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+    return dst;
 }
 
 static char *read_string(const char *filename, const char *section, const char *key,
@@ -389,31 +303,11 @@ void glist_moveup(GList *list)
     }
 }
 
-struct MenuPos {
-    gint x;
-    gint y;
-};
-
-static void util_menu_position(GtkMenu *menu, gint *x, gint *y, gpointer data)
+/* GTK3: GtkObject removed; use GObject and g_object_steal_qdata */
+static void util_menu_delete_popup_data(GObject *object, gpointer ifactory)
 {
-    GtkRequisition requisition;
-    gint screen_width;
-    gint screen_height;
-    struct MenuPos *pos = data;
-
-    gtk_widget_size_request(GTK_WIDGET(menu), &requisition);
-
-    screen_width = gdk_screen_width();
-    screen_height = gdk_screen_height();
-
-    *x = CLAMP(pos->x - 2, 0, MAX(0, screen_width - requisition.width));
-    *y = CLAMP(pos->y - 2, 0, MAX(0, screen_height - requisition.height));
-}
-
-static void util_menu_delete_popup_data(GtkObject *object, GtkItemFactory *ifactory)
-{
-    gtk_signal_disconnect_by_func(object, GTK_SIGNAL_FUNC(util_menu_delete_popup_data), ifactory);
-    gtk_object_remove_data_by_id(GTK_OBJECT(ifactory), quark_popup_data);
+    g_signal_handlers_disconnect_by_func(object, util_menu_delete_popup_data, ifactory);
+    g_object_steal_qdata(G_OBJECT(ifactory), quark_popup_data);
 }
 
 
@@ -425,43 +319,57 @@ static void util_menu_delete_popup_data(GtkObject *object, GtkItemFactory *ifact
  * screen.  This means it does not necessarily pop up at (x,y).
  */
 
-void util_item_factory_popup_with_data(GtkItemFactory *ifactory, gpointer data,
-                                       GtkDestroyNotify destroy, guint x, guint y,
-                                       guint mouse_button, guint32 time)
+void util_item_factory_popup_with_data(GtkWidget *ifactory, gpointer data, GDestroyNotify destroy,
+                                       guint x, guint y, guint mouse_button, guint32 time)
 {
-    static GQuark quark_user_menu_pos = 0;
-    struct MenuPos *pos;
-
-    if (!quark_user_menu_pos)
-        quark_user_menu_pos = g_quark_from_static_string("user_menu_pos");
+    (void)mouse_button;
+    (void)time;
 
     if (!quark_popup_data)
         quark_popup_data = g_quark_from_static_string("GtkItemFactory-popup-data");
 
-    pos = gtk_object_get_data_by_id(GTK_OBJECT(ifactory), quark_user_menu_pos);
-    if (!pos) {
-        pos = g_malloc0(sizeof(struct MenuPos));
-
-        gtk_object_set_data_by_id_full(GTK_OBJECT(ifactory->widget), quark_user_menu_pos, pos,
-                                       g_free);
-    }
-    pos->x = x;
-    pos->y = y;
-
     if (data != NULL) {
-        gtk_object_set_data_by_id_full(GTK_OBJECT(ifactory), quark_popup_data, data, destroy);
-        gtk_signal_connect(GTK_OBJECT(ifactory->widget), "selection-done",
-                           GTK_SIGNAL_FUNC(util_menu_delete_popup_data), ifactory);
+        g_object_set_qdata_full(G_OBJECT(ifactory), quark_popup_data, data, destroy);
+        g_signal_connect(G_OBJECT(ifactory), "selection-done",
+                         G_CALLBACK(util_menu_delete_popup_data), ifactory);
     }
 
-    gtk_menu_popup(GTK_MENU(ifactory->widget), NULL, NULL, (GtkMenuPositionFunc)util_menu_position,
-                   pos, mouse_button, time);
+    /* GTK3 migration: gtk_menu_popup() + GtkMenuPositionFunc is deprecated in
+     * GTK3.22 and broken in practice: with GDK_CURRENT_TIME (no real button
+     * event) GTK3 cannot acquire a pointer grab, so the position function
+     * result is ignored and the menu appears at (0,0) — top-left of screen.
+     *
+     * gtk_menu_popup_at_rect() (GTK3.22+) does not need a pointer grab: it
+     * positions the menu relative to a GdkWindow + GdkRectangle in screen
+     * coordinates and handles screen-edge clamping internally. */
+    {
+        GdkRectangle rect = { (gint)x, (gint)y, 1, 1 };
+        gtk_menu_popup_at_rect(GTK_MENU(ifactory),
+                               gdk_screen_get_root_window(gdk_screen_get_default()),
+                               &rect,
+                               GDK_GRAVITY_NORTH_WEST,
+                               GDK_GRAVITY_NORTH_WEST,
+                               NULL);
+    }
 }
 
-void util_item_factory_popup(GtkItemFactory *ifactory, guint x, guint y, guint mouse_button,
+void util_item_factory_popup(GtkWidget *ifactory, guint x, guint y, guint mouse_button,
                              guint32 time)
 {
     util_item_factory_popup_with_data(ifactory, NULL, NULL, x, y, mouse_button, time);
+}
+
+/*
+ * util_get_root_pointer() — GTK3 replacement for gdk_window_get_pointer(NULL, ...).
+ * In GTK2, passing NULL as the window returned screen-root coordinates.
+ * In GTK3, the root-window case is handled via the device API.
+ */
+void util_get_root_pointer(gint *x, gint *y)
+{
+    GdkDisplay *display = gdk_display_get_default();
+    GdkSeat *seat = gdk_display_get_default_seat(display);
+    GdkDevice *dev = gdk_seat_get_pointer(seat);
+    gdk_device_get_position(dev, NULL, x, y);
 }
 
 static gint util_find_compare_func(gconstpointer a, gconstpointer b)
@@ -485,44 +393,46 @@ static void util_add_url_callback(GtkWidget *w, GtkWidget *entry)
     }
 }
 
-GtkWidget *util_create_add_url_window(gchar *caption, GtkSignalFunc ok_func,
-                                      GtkSignalFunc enqueue_func)
+GtkWidget *util_create_add_url_window(gchar *caption, GCallback ok_func, GCallback enqueue_func)
 {
-    GtkWidget *win, *vbox, *bbox, *ok, *enqueue, *cancel, *combo;
+    /* GTK3: GtkCombo————— removed; use GtkComboBoxText with built-in entry */
+    GtkWidget *win, *vbox, *bbox, *ok, *enqueue, *cancel, *combo, *centry;
 
-    win = gtk_window_new(GTK_WINDOW_DIALOG);
+    win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(win), caption);
     gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_MOUSE);
     gtk_window_set_default_size(GTK_WINDOW(win), 400, -1);
     gtk_container_set_border_width(GTK_CONTAINER(win), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(win), vbox);
 
-    combo = gtk_combo_new();
-    if (cfg.url_history)
-        gtk_combo_set_popdown_strings(GTK_COMBO(combo), cfg.url_history);
-    gtk_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", util_add_url_callback,
-                       GTK_COMBO(combo)->entry);
-    gtk_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", ok_func,
-                       GTK_COMBO(combo)->entry);
+    combo = gtk_combo_box_text_new_with_entry();
+    centry = gtk_bin_get_child(GTK_BIN(combo));
+    if (cfg.url_history) {
+        GList *node = cfg.url_history;
+        while (node) {
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), (const gchar *)node->data);
+            node = g_list_next(node);
+        }
+    }
+    g_signal_connect(G_OBJECT(centry), "activate", G_CALLBACK(util_add_url_callback), centry);
+    g_signal_connect(G_OBJECT(centry), "activate", ok_func, centry);
     gtk_box_pack_start(GTK_BOX(vbox), combo, FALSE, FALSE, 0);
-    gtk_window_set_focus(GTK_WINDOW(win), GTK_COMBO(combo)->entry);
-    gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
-    gtk_combo_set_use_arrows_always(GTK_COMBO(combo), TRUE);
+    gtk_window_set_focus(GTK_WINDOW(win), centry);
+    gtk_entry_set_text(GTK_ENTRY(centry), "");
     gtk_widget_show(combo);
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
     gtk_widget_show(bbox);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5); /* GTK3: gtk_button_box_set_spacing removed */
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", util_add_url_callback, GTK_COMBO(combo)->entry);
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", ok_func, GTK_COMBO(combo)->entry);
-
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(util_add_url_callback), centry);
+    g_signal_connect(G_OBJECT(ok), "clicked", ok_func, centry);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_widget_grab_default(ok);
     gtk_box_pack_start(GTK_BOX(bbox), ok, FALSE, FALSE, 0);
     gtk_widget_show(ok);
@@ -530,18 +440,17 @@ GtkWidget *util_create_add_url_window(gchar *caption, GtkSignalFunc ok_func,
     if (enqueue_func) {
         /* I18N: "Enqueue" here means "Add to playlist" */
         enqueue = gtk_button_new_with_label(_("Enqueue"));
-        gtk_signal_connect(GTK_OBJECT(enqueue), "clicked", util_add_url_callback,
-                           GTK_COMBO(combo)->entry);
-        gtk_signal_connect(GTK_OBJECT(enqueue), "clicked", enqueue_func, GTK_COMBO(combo)->entry);
-        GTK_WIDGET_SET_FLAGS(enqueue, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(enqueue), "clicked", G_CALLBACK(util_add_url_callback), centry);
+        g_signal_connect(G_OBJECT(enqueue), "clicked", enqueue_func, centry);
+        gtk_widget_set_can_default(enqueue, TRUE);
         gtk_box_pack_start(GTK_BOX(bbox), enqueue, FALSE, FALSE, 0);
         gtk_widget_show(enqueue);
     }
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(win));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             GTK_WIDGET(win));
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, FALSE, FALSE, 0);
     gtk_widget_show(cancel);
 
@@ -549,311 +458,86 @@ GtkWidget *util_create_add_url_window(gchar *caption, GtkSignalFunc ok_func,
     return win;
 }
 
-static int int_compare_func(gconstpointer a, gconstpointer b)
+/* GTK3: GtkFileSelection removed -- reimplemented with GtkFileChooserDialog.
+ * The old GtkFileSelection + GtkCList helpers are replaced by a single
+ * response callback.  TODO(#gtk3): restore CDDA directory hijack if needed.
+ */
+
+static void filebrowser_response_cb(GtkWidget *dialog, gint response, gpointer data)
 {
-    if (GPOINTER_TO_INT(a) < GPOINTER_TO_INT(b))
-        return -1;
-    if (GPOINTER_TO_INT(a) > GPOINTER_TO_INT(b))
-        return 1;
-    else
-        return 0;
-}
+    gboolean play_button = GPOINTER_TO_INT(data);
 
-static void filebrowser_changed(GtkFileSelection *filesel)
-{
-    GList *list, *node;
-    char *filename = gtk_file_selection_get_filename(filesel);
+    if (response == GTK_RESPONSE_ACCEPT) {
+        GSList *files, *node;
+        gchar *folder;
 
-    if ((list = input_scan_dir(filename)) != NULL) {
-        /*
-         * We enter a directory that has been "hijacked" by an
-         * input-plugin. This is used by the CDDA plugin
-         */
-        char *current = "./", *parent = "../";
+        if (cfg.filesel_path)
+            g_free(cfg.filesel_path);
+        folder = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(dialog));
+        cfg.filesel_path = folder;
 
-        gtk_clist_clear(GTK_CLIST(filesel->dir_list));
-        gtk_clist_append(GTK_CLIST(filesel->dir_list), &current);
-        gtk_clist_append(GTK_CLIST(filesel->dir_list), &parent);
-
-        gtk_clist_freeze(GTK_CLIST(filesel->file_list));
-        gtk_clist_clear(GTK_CLIST(filesel->file_list));
-        node = list;
-        while (node) {
-            gtk_clist_append(GTK_CLIST(filesel->file_list), (gchar **)&node->data);
+        files = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(dialog));
+        if (play_button)
+            playlist_clear();
+        for (node = files; node; node = g_slist_next(node)) {
+            playlist_add((char *)node->data);
             g_free(node->data);
-            node = g_list_next(node);
         }
-        gtk_clist_thaw(GTK_CLIST(filesel->file_list));
-        g_list_free(list);
+        g_slist_free(files);
+
+        if (play_button)
+            playlist_play();
+        playlistwin_update_list();
     }
+    gtk_widget_destroy(dialog);
 }
 
-static int filebrowser_idle_changed(gpointer data)
+gboolean util_filebrowser_is_dir(GtkFileChooser *filesel)
 {
-    GDK_THREADS_ENTER();
-    filebrowser_changed(GTK_FILE_SELECTION(data));
-    GDK_THREADS_LEAVE();
+    gchar *filename = gtk_file_chooser_get_filename(filesel);
+    gboolean is_dir = FALSE;
 
-    return FALSE;
-}
-
-static void filebrowser_entry_changed(GtkEditable *entry, gpointer data)
-{
-    char *text = gtk_entry_get_text(GTK_ENTRY(entry));
-
-    if (!text || !(*text))
-        filebrowser_changed(GTK_FILE_SELECTION(data));
-}
-
-static void filebrowser_dir_select(GtkCList *clist, int row, int col, GdkEventButton *event,
-                                   gpointer data)
-{
-    if (event && event->type == GDK_2BUTTON_PRESS)
-        gtk_idle_add(filebrowser_idle_changed, data);
-}
-
-gboolean util_filebrowser_is_dir(GtkFileSelection *filesel)
-{
-    char *text;
-    struct stat buf;
-    gboolean retv = FALSE;
-
-    text = g_strdup(gtk_file_selection_get_filename(filesel));
-    if (strlen(text) == 0) {
-        /*
-         * This is a weird special case.  If the "current" dir
-         * don't exist, gtk_file_selection_get_filename()
-         * return an empty string, even if the user typed in a
-         * dir.
-         */
-        g_free(text);
-        text = g_strdup(gtk_entry_get_text(GTK_ENTRY(filesel->selection_entry)));
+    if (filename) {
+        struct stat buf;
+        is_dir = (stat(filename, &buf) == 0 && S_ISDIR(buf.st_mode));
+        g_free(filename);
     }
-
-    if ((stat(text, &buf) == 0 && S_ISDIR(buf.st_mode)) || strlen(text) == 0) {
-        /* Selected directory */
-        int len = strlen(text);
-        if (len > 3 && !strcmp(text + len - 4, "/../")) {
-            if (len == 4)
-                /* At the root already */
-                *(text + len - 3) = '\0';
-            else {
-                char *ptr;
-                *(text + len - 4) = '\0';
-                ptr = strrchr(text, '/');
-                *(ptr + 1) = '\0';
-            }
-        } else if (len > 2 && !strcmp(text + len - 3, "/./"))
-            *(text + len - 2) = '\0';
-        gtk_file_selection_set_filename(filesel, text);
-        retv = TRUE;
-    }
-    g_free(text);
-    return retv;
-}
-
-static void filebrowser_add_files(GtkFileSelection *filesel)
-{
-    GList *sel_list = NULL, *node;
-    char *text, *ptr;
-
-    if (cfg.filesel_path)
-        g_free(cfg.filesel_path);
-
-    /*
-     * There got to be some clean way to do this too
-     */
-    gtk_label_get(GTK_LABEL(GTK_BIN(filesel->history_pulldown)->child), &ptr);
-    /* This will give an extra slash if the current dir is the root. */
-    cfg.filesel_path = g_strconcat(ptr, "/", NULL);
-
-    node = GTK_CLIST(filesel->file_list)->selection;
-    while (node) {
-        sel_list = g_list_prepend(sel_list, node->data);
-        node = g_list_next(node);
-    }
-    sel_list = g_list_sort(sel_list, int_compare_func);
-
-    node = sel_list;
-
-    if (node) {
-        do {
-            char *tmp;
-            gtk_clist_get_text(GTK_CLIST(filesel->file_list), GPOINTER_TO_INT(node->data), 0,
-                               &text);
-            tmp = g_strconcat(cfg.filesel_path, text, NULL);
-            playlist_add(tmp);
-            g_free(tmp);
-        } while ((node = g_list_next(node)) != NULL);
-    } else {
-        /*
-         * No files selected, but the user may have
-         * typed a filename.
-         */
-        text = gtk_file_selection_get_filename(filesel);
-        if (text[strlen(text) - 1] != '/')
-            playlist_add(text);
-        gtk_file_selection_set_filename(filesel, "");
-    }
-    g_list_free(sel_list);
-    playlistwin_update_list();
-}
-
-static void filebrowser_add(GtkWidget *w, GtkWidget *filesel)
-{
-    if (util_filebrowser_is_dir(GTK_FILE_SELECTION(filesel)))
-        return;
-    gtk_widget_hide(filesel);
-    filebrowser_add_files(GTK_FILE_SELECTION(filesel));
-    gtk_widget_destroy(filesel);
-}
-
-static void filebrowser_play(GtkWidget *w, GtkWidget *filesel)
-{
-    if (util_filebrowser_is_dir(GTK_FILE_SELECTION(filesel)))
-        return;
-    playlist_clear();
-    gtk_widget_hide(filesel);
-    filebrowser_add_files(GTK_FILE_SELECTION(filesel));
-    gtk_widget_destroy(filesel);
-    playlist_play();
-}
-
-static void filebrowser_add_selected_files(GtkWidget *w, gpointer data)
-{
-    GtkFileSelection *filesel = GTK_FILE_SELECTION(data);
-
-    filebrowser_add_files(filesel);
-    gtk_clist_unselect_all(GTK_CLIST(filesel->file_list));
-
-    /*HACK*/
-    gtk_entry_set_text(GTK_ENTRY(filesel->selection_entry), "");
-}
-
-static void filebrowser_add_all_files(GtkWidget *w, gpointer data)
-{
-    GtkFileSelection *filesel = GTK_FILE_SELECTION(data);
-
-    gtk_clist_freeze(GTK_CLIST(filesel->file_list));
-    gtk_clist_select_all(GTK_CLIST(filesel->file_list));
-    filebrowser_add_files(filesel);
-    /*
-     * We want gtk_clist_undo_selection() but it seems to be buggy
-     * in GTK+ 1.2.6
-     */
-    /*  gtk_clist_undo_selection(GTK_CLIST(GTK_FILE_SELECTION(filesel)->file_list)); */
-    gtk_clist_unselect_all(GTK_CLIST(filesel->file_list));
-    gtk_clist_thaw(GTK_CLIST(filesel->file_list));
-
-    gtk_entry_set_text(GTK_ENTRY(filesel->selection_entry), "");
+    return is_dir;
 }
 
 GtkWidget *util_create_filebrowser(gboolean play_button)
 {
-    GtkWidget *filebrowser, *bbox, *add_selected, *add_all, *label, *button;
-    GtkFileSelection *fb;
-    GtkSignalFunc sf;
-    char *title;
+    GtkWidget *dialog;
+    const char *title = play_button ? _("Play files") : _("Load files");
+    const char *ok_label = play_button ? _("Play") : _("Add");
 
-    if (play_button)
-        title = _("Play files");
-    else
-        title = _("Load files");
+    dialog = gtk_file_chooser_dialog_new(title, NULL, GTK_FILE_CHOOSER_ACTION_OPEN, _("Close"),
+                                         GTK_RESPONSE_CANCEL, ok_label, GTK_RESPONSE_ACCEPT, NULL);
 
-    filebrowser = gtk_file_selection_new(title);
-    fb = GTK_FILE_SELECTION(filebrowser);
-
-    gtk_clist_set_selection_mode(GTK_CLIST(fb->file_list), GTK_SELECTION_EXTENDED);
-    gtk_signal_connect(GTK_OBJECT(fb->selection_entry), "changed", filebrowser_entry_changed,
-                       filebrowser);
-    gtk_signal_connect(GTK_OBJECT(fb->dir_list), "select_row", filebrowser_dir_select, filebrowser);
-    if (play_button)
-        sf = filebrowser_play;
-    else
-        sf = filebrowser_add;
-    gtk_signal_connect(GTK_OBJECT(fb->ok_button), "clicked", sf, filebrowser);
-    gtk_signal_connect_object(GTK_OBJECT(fb->cancel_button), "clicked",
-                              GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(filebrowser));
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(dialog), TRUE);
 
     if (cfg.filesel_path)
-        gtk_file_selection_set_filename(fb, cfg.filesel_path);
-    bbox = gtk_hbutton_box_new();
-    gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 0);
-    gtk_box_pack_end(GTK_BOX(fb->action_area), bbox, TRUE, TRUE, 0);
-    add_selected = gtk_button_new_with_label(_("Add selected files"));
-    gtk_box_pack_start(GTK_BOX(bbox), add_selected, FALSE, FALSE, 0);
-    gtk_signal_connect(GTK_OBJECT(add_selected), "clicked", filebrowser_add_selected_files,
-                       filebrowser);
-    add_all = gtk_button_new_with_label(_("Add all files in directory"));
-    gtk_box_pack_start(GTK_BOX(bbox), add_all, FALSE, FALSE, 0);
-    gtk_signal_connect(GTK_OBJECT(add_all), "clicked", filebrowser_add_all_files, filebrowser);
-    gtk_widget_show_all(bbox);
+        gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(dialog), cfg.filesel_path);
 
-    /*
-     * Change the Cancel buttons caption to Close.
-     */
+    g_signal_connect(dialog, "response", G_CALLBACK(filebrowser_response_cb),
+                     GINT_TO_POINTER(play_button));
 
-    label = gtk_label_new(_("Close"));
-    gtk_misc_set_alignment(GTK_MISC(label), 0.5, 0.5);
-    gtk_container_remove(GTK_CONTAINER(fb->cancel_button), GTK_BIN(fb->cancel_button)->child);
-    gtk_container_add(GTK_CONTAINER(fb->cancel_button), label);
-    gtk_widget_show(label);
-
-    /*
-     * Change the OK buttons caption to Add or Play.
-     */
-
-    if (play_button)
-        label = gtk_label_new(_("Play"));
-    else
-        label = gtk_label_new(_("Add"));
-    gtk_misc_set_alignment(GTK_MISC(label), 0.5, 0.5);
-    gtk_container_remove(GTK_CONTAINER(fb->ok_button), GTK_BIN(fb->ok_button)->child);
-    gtk_container_add(GTK_CONTAINER(fb->ok_button), label);
-    gtk_widget_show(label);
-
-    if (play_button) {
-        GtkArg arg;
-
-        /*
-         * The amount of fiddling we do with the filesel
-         * internals are starting to get ridicolous.  Maybe we
-         * should copy the entire filesel code instead.
-         */
-        arg.name = "GtkWidget::parent";
-        gtk_object_arg_get(GTK_OBJECT(fb->ok_button), &arg, NULL);
-        button = gtk_button_new_with_label(_("Add"));
-        gtk_signal_connect(GTK_OBJECT(button), "clicked", filebrowser_add, filebrowser);
-        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
-        gtk_box_pack_start(GTK_BOX(arg.d.object_data), button, TRUE, TRUE, 0);
-        gtk_box_reorder_child(GTK_BOX(arg.d.object_data), button, 1);
-        gtk_widget_show(button);
-    }
-
-    gtk_widget_show(filebrowser);
-    return filebrowser;
+    gtk_widget_show(dialog);
+    return dialog;
 }
 
-GdkFont *util_font_load(char *name)
+PangoFontDescription *util_font_load(char *name)
 {
-    GdkFont *font;
+    PangoFontDescription *font;
 
-    /* First try the preferred way, then just try to get some font */
-
-    if (!cfg.use_fontsets) {
-        if ((font = gdk_font_load(name)) == NULL)
-            font = gdk_fontset_load(name);
-    } else {
-        if ((font = gdk_fontset_load(name)) == NULL)
-            font = gdk_font_load(name);
+    /* GTK3: use Pango font descriptions instead of GdkFont */
+    font = pango_font_description_from_string(name);
+    if (!font || pango_font_description_get_size(font) == 0) {
+        if (font)
+            pango_font_description_free(font);
+        g_warning("Failed to parse font: \"%s\", using fallback.", name);
+        font = pango_font_description_from_string("Sans 9");
     }
-
-    if (!font) {
-        g_warning("Failed to open font: \"%s\".", name);
-        font = gdk_font_load("fixed");
-    }
-
     return font;
 }
 
@@ -877,7 +561,7 @@ void util_set_cursor(GtkWidget *window)
 
     if (!window) {
         if (cursor) {
-            gdk_cursor_destroy(cursor);
+            g_object_unref(cursor); /* GTK3: gdk_cursor_destroy -> g_object_unref */
             cursor = NULL;
         }
         return;
@@ -885,25 +569,26 @@ void util_set_cursor(GtkWidget *window)
     if (!cursor)
         cursor = gdk_cursor_new(GDK_LEFT_PTR);
 
-    gdk_window_set_cursor(window->window, cursor);
+    /* GTK3: window->window -> gtk_widget_get_window() */
+    gdk_window_set_cursor(gtk_widget_get_window(window), cursor);
 }
 
 void util_dump_menu_rc(void)
 {
     char *filename = g_strconcat(g_get_home_dir(), "/.xmms/menurc", NULL);
-    gtk_item_factory_dump_rc(filename, NULL, FALSE);
+    /* gtk_item_factory_dump_rc(filename, NULL, FALSE); */ /* GTK3: removed */
     g_free(filename);
 }
 
 void util_read_menu_rc(void)
 {
     char *filename = g_strconcat(g_get_home_dir(), "/.xmms/menurc", NULL);
-    gtk_item_factory_parse_rc(filename);
+    /* gtk_item_factory_parse_rc(filename); */ /* GTK3: removed */
     g_free(filename);
 }
 
 void util_dialog_keypress_cb(GtkWidget *w, GdkEventKey *event, gpointer data)
 {
-    if (event && event->keyval == GDK_Escape)
+    if (event && event->keyval == GDK_KEY_Escape) /* GTK3: GDK_Escape -> GDK_KEY_Escape */
         gtk_widget_destroy(w);
 }

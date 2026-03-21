@@ -46,6 +46,5 @@ void oss_about(void)
                             "02111-1307,\n"
                             "USA."),
                           _("OK"), FALSE, NULL, NULL);
-    gtk_signal_connect(GTK_OBJECT(dialog), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &dialog);
+    g_signal_connect(G_OBJECT(dialog), "destroy", G_CALLBACK(gtk_widget_destroyed), &dialog);
 }

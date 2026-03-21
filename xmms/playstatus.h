@@ -27,6 +27,6 @@ typedef struct {
 } PlayStatus;
 
 void playstatus_set_status(PlayStatus *ps, PStatus status);
-PlayStatus *create_playstatus(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y);
+PlayStatus *create_playstatus(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y);
 
 #endif

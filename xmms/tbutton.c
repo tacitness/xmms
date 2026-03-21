@@ -21,27 +21,27 @@
 void tbutton_draw(Widget *w)
 {
     TButton *button = (TButton *)w;
-    GdkPixmap *obj;
+    cairo_surface_t *obj;
 
     obj = button->tb_widget.parent;
 
     if (button->tb_pressed && button->tb_inside) {
         if (button->tb_selected) {
-            skin_draw_pixmap(obj, button->tb_widget.gc, button->tb_skin_index, button->tb_psx,
+            skin_draw_pixmap(button->tb_widget.cr, button->tb_skin_index, button->tb_psx,
                              button->tb_psy, button->tb_widget.x, button->tb_widget.y,
                              button->tb_widget.width, button->tb_widget.height);
         } else {
-            skin_draw_pixmap(obj, button->tb_widget.gc, button->tb_skin_index, button->tb_pux,
+            skin_draw_pixmap(button->tb_widget.cr, button->tb_skin_index, button->tb_pux,
                              button->tb_puy, button->tb_widget.x, button->tb_widget.y,
                              button->tb_widget.width, button->tb_widget.height);
         }
     } else {
         if (button->tb_selected) {
-            skin_draw_pixmap(obj, button->tb_widget.gc, button->tb_skin_index, button->tb_nsx,
+            skin_draw_pixmap(button->tb_widget.cr, button->tb_skin_index, button->tb_nsx,
                              button->tb_nsy, button->tb_widget.x, button->tb_widget.y,
                              button->tb_widget.width, button->tb_widget.height);
         } else {
-            skin_draw_pixmap(obj, button->tb_widget.gc, button->tb_skin_index, button->tb_nux,
+            skin_draw_pixmap(button->tb_widget.cr, button->tb_skin_index, button->tb_nux,
                              button->tb_nuy, button->tb_widget.x, button->tb_widget.y,
                              button->tb_widget.width, button->tb_widget.height);
         }
@@ -87,23 +87,25 @@ void tbutton_motion_cb(GtkWidget *widget, GdkEventMotion *event, TButton *button
     }
 }
 
-TButton *create_tbutton(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, gint w, gint h,
-                        gint nux, gint nuy, gint pux, gint puy, gint nsx, gint nsy, gint psx,
-                        gint psy, void (*cb)(gboolean), SkinIndex si)
+TButton *create_tbutton(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y, gint w,
+                        gint h, gint nux, gint nuy, gint pux, gint puy, gint nsx, gint nsy,
+                        gint psx, gint psy, void (*cb)(gboolean), SkinIndex si)
 {
     TButton *b;
 
     b = (TButton *)g_malloc0(sizeof(TButton));
     b->tb_widget.parent = parent;
-    b->tb_widget.gc = gc;
+    b->tb_widget.cr = cr;
     b->tb_widget.x = x;
     b->tb_widget.y = y;
     b->tb_widget.width = w;
     b->tb_widget.height = h;
     b->tb_widget.visible = 1;
-    b->tb_widget.button_press_cb = GTK_SIGNAL_FUNC(tbutton_button_press_cb);
-    b->tb_widget.button_release_cb = GTK_SIGNAL_FUNC(tbutton_button_release_cb);
-    b->tb_widget.motion_cb = GTK_SIGNAL_FUNC(tbutton_motion_cb);
+    b->tb_widget.button_press_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))tbutton_button_press_cb;
+    b->tb_widget.button_release_cb =
+        (void (*)(GtkWidget *, GdkEventButton *, gpointer))tbutton_button_release_cb;
+    b->tb_widget.motion_cb = (void (*)(GtkWidget *, GdkEventMotion *, gpointer))tbutton_motion_cb;
     b->tb_widget.draw = tbutton_draw;
     b->tb_nux = nux;
     b->tb_nuy = nuy;

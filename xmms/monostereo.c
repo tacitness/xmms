@@ -22,27 +22,27 @@
 void monostereo_draw(Widget *w)
 {
     MonoStereo *ms = (MonoStereo *)w;
-    GdkPixmap *obj;
+    cairo_surface_t *obj;
 
     obj = ms->ms_widget.parent;
 
     switch (ms->ms_num_channels) {
     case 0:
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
                          ms->ms_widget.y, 27, 12);
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
                          ms->ms_widget.y, 29, 12);
         break;
     case 1:
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 0, ms->ms_widget.x,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 29, 0, ms->ms_widget.x,
                          ms->ms_widget.y, 27, 12);
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 0, 12, ms->ms_widget.x + 27,
                          ms->ms_widget.y, 29, 12);
         break;
     case 2:
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 29, 12, ms->ms_widget.x,
                          ms->ms_widget.y, 27, 12);
-        skin_draw_pixmap(obj, ms->ms_widget.gc, ms->ms_skin_index, 0, 0, ms->ms_widget.x + 27,
+        skin_draw_pixmap(ms->ms_widget.cr, ms->ms_skin_index, 0, 0, ms->ms_widget.x + 27,
                          ms->ms_widget.y, 29, 12);
         break;
     }
@@ -54,14 +54,14 @@ void monostereo_set_num_channels(MonoStereo *ms, gint nch)
     draw_widget(ms);
 }
 
-MonoStereo *create_monostereo(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
+MonoStereo *create_monostereo(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
                               SkinIndex si)
 {
     MonoStereo *ms;
 
     ms = (MonoStereo *)g_malloc0(sizeof(MonoStereo));
     ms->ms_widget.parent = parent;
-    ms->ms_widget.gc = gc;
+    ms->ms_widget.cr = cr;
     ms->ms_widget.x = x;
     ms->ms_widget.y = y;
     ms->ms_widget.width = 56;

@@ -69,6 +69,11 @@ static gboolean pause_request; /* pause status currently requested */
 static int flush_request;      /* flush status (time) currently requested */
 static int prebuffer_size;
 
+/* EOF drain detection for PipeWire (issues/19):
+ * PipeWire never leaves SND_PCM_STATE_RUNNING so we detect completion by
+ * watching the time since the last alsa_write() call. */
+static gint64 last_write_time_us;  /* g_get_monotonic_time() at last write */
+
 static guint mixer_timeout;
 
 struct snd_format {
@@ -126,7 +131,27 @@ int alsa_playing(void)
     if (!going || paused || alsa_pcm == NULL)
         return FALSE;
 
-    return snd_pcm_state(alsa_pcm) == SND_PCM_STATE_RUNNING;
+    if (snd_pcm_state(alsa_pcm) != SND_PCM_STATE_RUNNING)
+        return FALSE;
+
+    /* PipeWire keeps the PCM in SND_PCM_STATE_RUNNING indefinitely,
+     * filling silence instead of triggering an XRUN.  snd_pcm_state() and
+     * snd_pcm_delay() are both unreliable for EOF detection on PipeWire.
+     *
+     * Reliable approach: alsa_write() stamps last_write_time_us on every
+     * call from the decoder.  When the decoder reaches EOF it stops
+     * calling alsa_write().  Once (hw_buffer_size/bps + 300) ms have
+     * elapsed since the last write the PCM hardware buffer has fully
+     * drained and we signal completion.
+     * Ref: https://github.com/tacitness/xmms/issues/19 */
+    if (last_write_time_us > 0 && outputf && outputf->bps > 0) {
+        gint64 hw_drain_ms = (gint64)hw_buffer_size * 1000 / outputf->bps;
+        gint64 silence_us  = g_get_monotonic_time() - last_write_time_us;
+        if (silence_us > (hw_drain_ms + 300) * G_GINT64_CONSTANT(1000))
+            return FALSE;
+    }
+
+    return TRUE;
 }
 
 static int xrun_recover(void)
@@ -290,6 +315,7 @@ static void alsa_do_flush(int time)
     output_time_offset = time;
     alsa_total_written = (guint64)time * inputf->bps / 1000;
     rd_index = wr_index = alsa_hw_written = 0;
+    last_write_time_us = 0;
 }
 
 void alsa_flush(int time)
@@ -382,6 +408,24 @@ static int alsa_setup_mixer(void)
 
     pcm_element = alsa_get_mixer_elem(mixer, name, index);
 
+    /* fix(#12): fall back through common mixer element names if the configured
+     * one is absent (e.g. old default "PCM" doesn't exist on PulseAudio /
+     * PipeWire systems; "Master" is the standard element there). */
+    if (!pcm_element) {
+        const char *fallbacks[] = {"Master", "PCM", "Front", "Speaker", NULL};
+        int fi;
+        for (fi = 0; fallbacks[fi] != NULL; fi++) {
+            if (g_ascii_strcasecmp(name, fallbacks[fi]) != 0) {
+                pcm_element = alsa_get_mixer_elem(mixer, (char *)fallbacks[fi], 0);
+                if (pcm_element) {
+                    g_message("alsa_setup_mixer(): '%s' not found, falling back to '%s'", name,
+                              fallbacks[fi]);
+                    break;
+                }
+            }
+        }
+    }
+
     g_free(name);
 
     if (!pcm_element) {
@@ -395,7 +439,13 @@ static int alsa_setup_mixer(void)
      * This hack should be removed once we depend on Alsa 1.0.0.
      */
     snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, &a);
-    snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &b);
+    /* fix(#12/mono): pvolume-joined controls (e.g. Master on most systems) expose
+     * only SND_MIXER_SCHN_MONO/FRONT_LEFT.  FRONT_RIGHT is absent: the call
+     * returns an error and leaves 'b' unchanged (its uninitialised value). */
+    if (snd_mixer_selem_is_playback_mono(pcm_element))
+        b = a;
+    else
+        snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &b);
 
     snd_mixer_selem_get_playback_volume_range(pcm_element, &alsa_min_vol, &alsa_max_vol);
     snd_mixer_selem_set_playback_volume_range(pcm_element, 0, 100);
@@ -456,13 +506,19 @@ void alsa_get_volume(int *l, int *r)
 
     if (!alsa_cfg.soft_volume) {
         snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, &ll);
-        snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &lr);
+        /* fix(#12/mono): for pvolume-joined (Mono) elements FRONT_RIGHT does not
+         * exist; copying ll → lr so both channels carry the same hardware value
+         * prevents read_volume() from computing a nonsensical balance offset. */
+        if (snd_mixer_selem_is_playback_mono(pcm_element))
+            lr = ll;
+        else
+            snd_mixer_selem_get_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, &lr);
         *l = ll;
         *r = lr;
     }
     if (mixer_timeout)
-        gtk_timeout_remove(mixer_timeout);
-    mixer_timeout = gtk_timeout_add(5000, alsa_mixer_timeout, NULL);
+        g_source_remove(mixer_timeout);
+    mixer_timeout = g_timeout_add(5000, alsa_mixer_timeout, NULL);
 }
 
 
@@ -474,11 +530,25 @@ void alsa_set_volume(int l, int r)
         return;
     }
 
+    /* fix(#12): initialise mixer on demand if alsa_get_volume() hasn't been
+     * called first (e.g. user drags slider before the first idle-func read).
+     * IMPORTANT: clear mixer_start BEFORE calling alsa_setup_mixer() to break
+     * the mutual recursion: alsa_setup_mixer() calls alsa_set_volume() as an
+     * alsa-lib workaround, and that re-entrant call must not re-enter here. */
+    if (mixer_start) {
+        mixer_start = FALSE;
+        alsa_setup_mixer();
+    }
+
     if (!pcm_element)
         return;
 
     snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_LEFT, l);
-    snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, r);
+    /* fix(#12/mono): skip FRONT_RIGHT for pvolume-joined (Mono) elements; the
+     * single joined channel was already set above via FRONT_LEFT == MONO (0)
+     * and the FRONT_RIGHT call would return an error silently. */
+    if (!snd_mixer_selem_is_playback_mono(pcm_element))
+        snd_mixer_selem_set_playback_volume(pcm_element, SND_MIXER_SCHN_FRONT_RIGHT, r);
 }
 
 
@@ -502,7 +572,11 @@ int alsa_get_output_time(void)
     if (!going || alsa_pcm == NULL)
         return 0;
 
-    if (!snd_pcm_delay(alsa_pcm, &delay)) {
+    /* Guard against negative delay (can occur with PipeWire when the
+     * hardware read pointer has advanced past our last write — casting a
+     * negative snd_pcm_sframes_t to unsigned int produces a huge number
+     * that would wrongly zero-out the output time. */
+    if (!snd_pcm_delay(alsa_pcm, &delay) && delay > 0) {
         unsigned int d = snd_pcm_frames_to_bytes(alsa_pcm, delay);
         if (bytes < d)
             bytes = 0;
@@ -671,6 +745,7 @@ void alsa_write(gpointer data, int length)
     char *src = (char *)data;
 
     remove_prebuffer = FALSE;
+    last_write_time_us = g_get_monotonic_time();
 
     alsa_total_written += length;
     while (length > 0) {
@@ -799,6 +874,7 @@ int alsa_open(AFormat fmt, int rate, int nch)
 
     output_time_offset = 0;
     alsa_total_written = alsa_hw_written = 0;
+    last_write_time_us = 0;
     going = TRUE;
     paused = FALSE;
     prebuffer = TRUE;

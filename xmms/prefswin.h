@@ -20,6 +20,9 @@
 #ifndef PREFSWIN_H
 #define PREFSWIN_H
 
+#include <glib.h>
+#include <gtk/gtk.h>
+
 void create_prefs_window(void);
 void show_prefs_window(void);
 void prefswin_vplugins_rescan(void);

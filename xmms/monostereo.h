@@ -25,7 +25,7 @@ typedef struct {
     SkinIndex ms_skin_index;
 } MonoStereo;
 
-MonoStereo *create_monostereo(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
+MonoStereo *create_monostereo(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
                               SkinIndex si);
 void monostereo_set_num_channels(MonoStereo *ms, gint nch);
 

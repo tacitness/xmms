@@ -40,6 +40,7 @@ typedef struct {
     gboolean use_backslash_as_dir_delimiter;
     gboolean random_skin_on_play, use_fontsets;
     gboolean mainwin_use_xfont, timer_minutes_only;
+    gboolean eq_auto_level;  /* reduce preamp to prevent clipping (#14) */
     gfloat equalizer_preamp, equalizer_bands[10];
     gchar *skin, *outputplugin, *filesel_path, *playlist_path;
     gchar *playlist_font, *mainwin_font;
@@ -60,12 +61,13 @@ typedef struct {
 extern Config cfg;
 
 extern GtkWidget *mainwin;
-extern GdkGC *mainwin_gc;
+extern cairo_t *mainwin_cr; /* GTK3: was GdkGC *mainwin_gc */
 extern gboolean mainwin_moving;
 extern GList *disabled_iplugins;
 extern GtkWidget *equalizerwin;
 extern GtkWidget *playlistwin;
-extern GtkItemFactory *mainwin_vis_menu, *mainwin_general_menu, *mainwin_options_menu;
+/* GTK3: GtkItemFactory removed — TODO(#3): migrate to GMenuModel/GtkPopoverMenu */
+extern GtkWidget *mainwin_vis_menu, *mainwin_general_menu, *mainwin_options_menu;
 extern GList *dock_window_list;
 extern gboolean pposition_broken;
 
@@ -114,6 +116,15 @@ void mainwin_set_shade_menu_cb(gboolean shaded);
 void mainwin_set_shade(gboolean shaded);
 void mainwin_shade_toggle(void);
 void mainwin_queue_manager(void);
+
+/* GTK3 menu builder helpers — usable from other translation units (e.g. equalizer.c) */
+GtkWidget *menu_item_new(GtkWidget *m, const char *label, GCallback cb, guint action);
+GtkWidget *menu_check_new(GtkWidget *m, const char *label, gboolean active, GCallback cb,
+                          guint action);
+GtkWidget *menu_radio_new(GtkWidget *m, const char *label, GSList **grp, gboolean active,
+                          GCallback cb, guint action);
+void menu_sep_new(GtkWidget *m);
+GtkWidget *menu_sub_new(GtkWidget *m, const char *label);
 
 #define PLAYER_HEIGHT ((cfg.player_shaded ? 14 : 116) * (cfg.doublesize + 1))
 #define PLAYER_WIDTH (275 * (cfg.doublesize + 1))

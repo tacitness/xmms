@@ -21049,7 +21049,7 @@ printf "%s\n" "#define SIZEOF_LONG $ac_cv_sizeof_long" >>confdefs.h
 
 if test -n "$GCC"
 then
-  CFLAGS="$CFLAGS -Wall -Wpointer-arith -finline-functions"
+  CFLAGS="$CFLAGS -Wall -Wpointer-arith -finline-functions -D_DEFAULT_SOURCE"
   case "$CFLAGS" in
     -g*) ;;
     *\ -g*) ;;
@@ -23920,4 +23920,3 @@ if test "x$XMMS_PATH" != "xno" && test "x$prefix/bin/xmms" != "x$XMMS_PATH"; the
   echo "the --prefix option set to the location of the old xmms, or uninstall"
   echo "the old xmms."
 fi
-

@@ -16,7 +16,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include "xmms.h"
+/* widget.h + GTK3: include only what this file actually uses to avoid circular
+ * xmms.h include chains that break compilation when Widget type isn't in scope yet */
+#include "widget.h"
+
+#include <gtk/gtk.h>
+
+#include <pthread.h>
 
 int inside_widget(gint x, gint y, void *p)
 {
@@ -124,13 +130,24 @@ void draw_widget_list(GList *wlist, gboolean *redraw, gboolean force)
     }
 }
 
-void widget_list_change_pixmap(GList *wlist, GdkPixmap *pixmap)
+void widget_list_change_surface(GList *wlist, cairo_surface_t *pixmap)
 {
     GList *wl;
 
     wl = wlist;
     while (wl) {
         ((Widget *)wl->data)->parent = pixmap;
+        wl = wl->next;
+    }
+}
+
+/* GTK3: update every widget's cairo_t after a surface is recreated on resize */
+void widget_list_change_cr(GList *wlist, cairo_t *cr)
+{
+    GList *wl = wlist;
+
+    while (wl) {
+        ((Widget *)wl->data)->cr = cr;
         wl = wl->next;
     }
 }

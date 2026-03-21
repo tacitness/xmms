@@ -67,8 +67,6 @@ float eval_spline(gfloat xa[], gfloat ya[], gfloat y2a[], gint n, gfloat x)
 void eqgraph_draw(Widget *w)
 {
     EqGraph *eg = (EqGraph *)w;
-    GdkPixmap *obj;
-    GdkColor col;
     guint32 cols[19];
     gint i, y, ymin, ymax, py = 0;
     gfloat x[] = {0, 11, 23, 35, 47, 59, 71, 83, 97, 109}, yf[10];
@@ -80,10 +78,9 @@ void eqgraph_draw(Widget *w)
      */
     void (*__init_spline)(gfloat *, gfloat *, gint, gfloat *) = init_spline;
 
-    obj = eg->eg_widget.parent;
-    skin_draw_pixmap(obj, eg->eg_widget.gc, SKIN_EQMAIN, 0, 294, eg->eg_widget.x, eg->eg_widget.y,
+    skin_draw_pixmap(eg->eg_widget.cr, SKIN_EQMAIN, 0, 294, eg->eg_widget.x, eg->eg_widget.y,
                      eg->eg_widget.width, eg->eg_widget.height);
-    skin_draw_pixmap(obj, eg->eg_widget.gc, SKIN_EQMAIN, 0, 314, eg->eg_widget.x,
+    skin_draw_pixmap(eg->eg_widget.cr, SKIN_EQMAIN, 0, 314, eg->eg_widget.x,
                      eg->eg_widget.y + 9 + ((cfg.equalizer_preamp * 9) / 20), eg->eg_widget.width,
                      1);
 
@@ -107,20 +104,22 @@ void eqgraph_draw(Widget *w)
         }
         py = y;
         for (y = ymin; y <= ymax; y++) {
-            col.pixel = cols[y];
-            gdk_gc_set_foreground(eg->eg_widget.gc, &col);
-            gdk_draw_point(obj, eg->eg_widget.gc, eg->eg_widget.x + i + 2, eg->eg_widget.y + y);
+            guint32 px = cols[y];
+            cairo_set_source_rgb(eg->eg_widget.cr, ((px >> 16) & 0xff) / 255.0,
+                                 ((px >> 8) & 0xff) / 255.0, (px & 0xff) / 255.0);
+            cairo_rectangle(eg->eg_widget.cr, eg->eg_widget.x + i + 2, eg->eg_widget.y + y, 1, 1);
+            cairo_fill(eg->eg_widget.cr);
         }
     }
 }
 
-EqGraph *create_eqgraph(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y)
+EqGraph *create_eqgraph(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y)
 {
     EqGraph *eg;
 
     eg = (EqGraph *)g_malloc0(sizeof(EqGraph));
     eg->eg_widget.parent = parent;
-    eg->eg_widget.gc = gc;
+    eg->eg_widget.cr = cr;
     eg->eg_widget.x = x;
     eg->eg_widget.y = y;
     eg->eg_widget.width = 113;

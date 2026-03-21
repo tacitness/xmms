@@ -5,6 +5,11 @@
  * Layer-3 huffman table is in huffman.h
  */
 
+/* GTK3: need struct al_table definition */
+#ifndef MPGLIB_H
+#    include "mpg123.h"
+#endif
+
 struct al_table alloc_0[] =
     {{4, 0},       {5, 3},       {3, -3},      {4, -7},      {5, -15},     {6, -31},
      {7, -63},     {8, -127},    {9, -255},    {10, -511},   {11, -1023},  {12, -2047},

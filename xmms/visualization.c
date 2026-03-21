@@ -143,6 +143,22 @@ gchar *vis_stringify_enabled_list(void)
     return enalist;
 }
 
+void vis_disable_all(void)
+{
+    GList *node, *next;
+
+    /* Disable all currently-enabled vis plugins so their windows are destroyed
+     * now, before any long-running teardown (audio drain, thread joins) that
+     * would leave them visible and apparently orphaned. */
+    node = vp_data->enabled_list;
+    while (node) {
+        VisPlugin *vp = (VisPlugin *)node->data;
+        next = node->next;
+        enable_vis_plugin(g_list_index(vp_data->vis_list, vp), FALSE);
+        node = next;
+    }
+}
+
 void vis_enable_from_stringified_list(gchar *list)
 {
     gchar **plugins, *base;

@@ -29,25 +29,26 @@ void number_set_number(Number *nu, int number)
 void number_draw(Widget *w)
 {
     Number *nu = (Number *)w;
-    GdkPixmap *obj;
+    cairo_surface_t *obj;
 
     obj = nu->nu_widget.parent;
 
     if (nu->nu_number <= 11)
-        skin_draw_pixmap(obj, nu->nu_widget.gc, nu->nu_skin_index, nu->nu_number * 9, 0,
-                         nu->nu_widget.x, nu->nu_widget.y, 9, 13);
+        skin_draw_pixmap(nu->nu_widget.cr, nu->nu_skin_index, nu->nu_number * 9, 0, nu->nu_widget.x,
+                         nu->nu_widget.y, 9, 13);
     else
-        skin_draw_pixmap(obj, nu->nu_widget.gc, nu->nu_skin_index, 90, 0, nu->nu_widget.x,
+        skin_draw_pixmap(nu->nu_widget.cr, nu->nu_skin_index, 90, 0, nu->nu_widget.x,
                          nu->nu_widget.y, 9, 13);
 }
 
-Number *create_number(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y, SkinIndex si)
+Number *create_number(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y,
+                      SkinIndex si)
 {
     Number *nu;
 
     nu = (Number *)g_malloc0(sizeof(Number));
     nu->nu_widget.parent = parent;
-    nu->nu_widget.gc = gc;
+    nu->nu_widget.cr = cr;
     nu->nu_widget.x = x;
     nu->nu_widget.y = y;
     nu->nu_widget.width = 9;

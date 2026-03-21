@@ -1,6 +1,8 @@
 #ifndef BLUR_SCOPE_H
 #define BLUR_SCOPE_H
 
+#include <glib.h>
+
 void bscope_configure(void);
 void bscope_read_config(void);
 

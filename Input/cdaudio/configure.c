@@ -313,24 +313,24 @@ static void configurewin_check_drive(GtkButton *w, gpointer data)
         }
     }
 
-    window = gtk_window_new(GTK_WINDOW_DIALOG);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_transient_for(GTK_WINDOW(window), GTK_WINDOW(cdda_configure_win));
     gtk_container_set_border_width(GTK_CONTAINER(window), 10);
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(window), vbox);
     label = gtk_label_new(str->str);
     gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_LEFT);
     gtk_box_pack_start(GTK_BOX(vbox), label, TRUE, TRUE, 0);
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_SPREAD);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     closeb = gtk_button_new_with_label("Close");
-    GTK_WIDGET_SET_FLAGS(closeb, GTK_CAN_DEFAULT);
-    gtk_signal_connect_object(GTK_OBJECT(closeb), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(window));
+    gtk_widget_set_can_default(closeb, TRUE);
+    g_signal_connect_swapped(G_OBJECT(closeb), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(window));
     gtk_box_pack_start(GTK_BOX(bbox), closeb, TRUE, TRUE, 0);
     gtk_widget_grab_default(closeb);
 
@@ -347,7 +347,7 @@ static GtkWidget *configurewin_add_drive(struct driveinfo *drive, void *nb)
     GtkWidget *readmode_frame, *readmode_box, *readmode_analog;
     struct driveconfig *d = g_malloc(sizeof(struct driveconfig));
 
-    vbox = gtk_vbox_new(FALSE, 5);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 5);
 
     dev_frame = gtk_frame_new(_("Device:"));
@@ -376,7 +376,7 @@ static GtkWidget *configurewin_add_drive(struct driveinfo *drive, void *nb)
     readmode_frame = gtk_frame_new(_("Play mode:"));
     gtk_box_pack_start(GTK_BOX(vbox), readmode_frame, FALSE, FALSE, 0);
 
-    readmode_box = gtk_vbox_new(5, FALSE);
+    readmode_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, FALSE);
     gtk_container_add(GTK_CONTAINER(readmode_frame), readmode_box);
 
     readmode_analog = gtk_radio_button_new_with_label(NULL, _("Analog"));
@@ -396,7 +396,7 @@ static GtkWidget *configurewin_add_drive(struct driveinfo *drive, void *nb)
     volume_frame = gtk_frame_new(_("Volume control:"));
     gtk_box_pack_start(GTK_BOX(vbox), volume_frame, FALSE, FALSE, 0);
 
-    volume_box = gtk_vbox_new(5, FALSE);
+    volume_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, FALSE);
     gtk_container_add(GTK_CONTAINER(volume_frame), volume_box);
 
     volume_none = gtk_radio_button_new_with_label(NULL, _("No mixer"));
@@ -410,8 +410,8 @@ static GtkWidget *configurewin_add_drive(struct driveinfo *drive, void *nb)
         gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(volume_none), _("OSS mixer"));
     gtk_box_pack_start(GTK_BOX(volume_box), d->mixer_oss, FALSE, FALSE, 0);
 
-    gtk_signal_connect(GTK_OBJECT(readmode_analog), "toggled", toggle_set_sensitive_cb,
-                       volume_frame);
+    g_signal_connect(G_OBJECT(readmode_analog), "toggled", G_CALLBACK(toggle_set_sensitive_cb),
+                     volume_frame);
 #ifndef HAVE_OSS
     gtk_widget_set_sensitive(d->mixer_oss, FALSE);
 #endif
@@ -426,21 +426,20 @@ static GtkWidget *configurewin_add_drive(struct driveinfo *drive, void *nb)
             SET_TB(d->dae);
     }
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_SPREAD);
 
     check_btn = gtk_button_new_with_label(_("Check drive..."));
-    GTK_WIDGET_SET_FLAGS(check_btn, GTK_CAN_DEFAULT);
-    gtk_box_pack_start_defaults(GTK_BOX(bbox), check_btn);
-    gtk_signal_connect(GTK_OBJECT(check_btn), "clicked", GTK_SIGNAL_FUNC(configurewin_check_drive),
-                       d);
+    gtk_widget_set_can_default(check_btn, TRUE);
+    gtk_box_pack_start(GTK_BOX(bbox), check_btn, TRUE, TRUE, 0);
+    g_signal_connect(G_OBJECT(check_btn), "clicked", G_CALLBACK(configurewin_check_drive), d);
 
     d->remove_button = gtk_button_new_with_label(_("Remove drive"));
-    GTK_WIDGET_SET_FLAGS(d->remove_button, GTK_CAN_DEFAULT);
-    gtk_box_pack_start_defaults(GTK_BOX(bbox), d->remove_button);
-    gtk_signal_connect(GTK_OBJECT(d->remove_button), "clicked",
-                       GTK_SIGNAL_FUNC(configurewin_remove_page), nb);
+    gtk_widget_set_can_default(d->remove_button, TRUE);
+    gtk_box_pack_start(GTK_BOX(bbox), d->remove_button, TRUE, TRUE, 0);
+    g_signal_connect(G_OBJECT(d->remove_button), "clicked", G_CALLBACK(configurewin_remove_page),
+                     nb);
 
 
     if (drives == NULL)
@@ -478,15 +477,14 @@ void cdda_configure(void)
     if (cdda_configure_win)
         return;
 
-    cdda_configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(cdda_configure_win), "destroy",
-                       GTK_SIGNAL_FUNC(gtk_widget_destroyed), &cdda_configure_win);
+    cdda_configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(cdda_configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &cdda_configure_win);
     gtk_window_set_title(GTK_WINDOW(cdda_configure_win), _("CD Audio Player Configuration"));
-    gtk_window_set_policy(GTK_WINDOW(cdda_configure_win), FALSE, FALSE, FALSE);
     gtk_window_set_position(GTK_WINDOW(cdda_configure_win), GTK_WIN_POS_MOUSE);
-    gtk_container_border_width(GTK_CONTAINER(cdda_configure_win), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(cdda_configure_win), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(cdda_configure_win), vbox);
 
     notebook = gtk_notebook_new();
@@ -495,7 +493,7 @@ void cdda_configure(void)
     /*
      * Device config
      */
-    dev_vbox = gtk_vbox_new(FALSE, 5);
+    dev_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(dev_vbox), 5);
 
     dev_notebook = gtk_notebook_new();
@@ -512,12 +510,12 @@ void cdda_configure(void)
         g_free(label);
     }
 
-    add_bbox = gtk_hbutton_box_new();
+    add_bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_box_pack_start(GTK_BOX(dev_vbox), add_bbox, FALSE, FALSE, 0);
     add_drive = gtk_button_new_with_label(_("Add drive"));
-    gtk_signal_connect(GTK_OBJECT(add_drive), "clicked", GTK_SIGNAL_FUNC(configurewin_add_page),
-                       dev_notebook);
-    GTK_WIDGET_SET_FLAGS(add_drive, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(add_drive), "clicked", G_CALLBACK(configurewin_add_page),
+                     dev_notebook);
+    gtk_widget_set_can_default(add_drive, TRUE);
     gtk_box_pack_start(GTK_BOX(add_bbox), add_drive, FALSE, FALSE, 0);
 
 
@@ -526,7 +524,7 @@ void cdda_configure(void)
     /*
      * CD Info config
      */
-    cdi_vbox = gtk_vbox_new(FALSE, 5);
+    cdi_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(cdi_vbox), 5);
 
 
@@ -534,12 +532,12 @@ void cdda_configure(void)
     cdi_cddb_frame = gtk_frame_new(_("CDDB:"));
     gtk_box_pack_start(GTK_BOX(cdi_vbox), cdi_cddb_frame, FALSE, FALSE, 0);
 
-    cdi_cddb_vbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(cdi_cddb_vbox), 5);
+    cdi_cddb_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(cdi_cddb_vbox), 5);
     gtk_container_add(GTK_CONTAINER(cdi_cddb_frame), cdi_cddb_vbox);
 
-    cdi_cddb_hbox = gtk_hbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(cdi_cddb_hbox), 0);
+    cdi_cddb_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(cdi_cddb_hbox), 0);
     gtk_box_pack_start(GTK_BOX(cdi_cddb_vbox), cdi_cddb_hbox, FALSE, FALSE, 0);
     cdi_use_cddb = gtk_check_button_new_with_label(_("Use CDDB"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cdi_use_cddb), cdda_cfg.use_cddb);
@@ -547,11 +545,11 @@ void cdda_configure(void)
     cdi_cddb_server_list = gtk_button_new_with_label(_("Get server list"));
     gtk_box_pack_end(GTK_BOX(cdi_cddb_hbox), cdi_cddb_server_list, FALSE, FALSE, 0);
     cdi_cddb_debug_win = gtk_button_new_with_label(_("Show network window"));
-    gtk_signal_connect(GTK_OBJECT(cdi_cddb_debug_win), "clicked",
-                       GTK_SIGNAL_FUNC(cdda_cddb_show_network_window), NULL);
+    g_signal_connect(G_OBJECT(cdi_cddb_debug_win), "clicked",
+                     G_CALLBACK(cdda_cddb_show_network_window), NULL);
     gtk_box_pack_end(GTK_BOX(cdi_cddb_hbox), cdi_cddb_debug_win, FALSE, FALSE, 0);
 
-    cdi_cddb_server_hbox = gtk_hbox_new(FALSE, 5);
+    cdi_cddb_server_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(cdi_cddb_vbox), cdi_cddb_server_hbox, FALSE, FALSE, 0);
 
     cdi_cddb_server_label = gtk_label_new(_("CDDB server:"));
@@ -560,8 +558,8 @@ void cdda_configure(void)
     cdi_cddb_server = gtk_entry_new();
     gtk_entry_set_text(GTK_ENTRY(cdi_cddb_server), cdda_cfg.cddb_server);
     gtk_box_pack_start(GTK_BOX(cdi_cddb_server_hbox), cdi_cddb_server, TRUE, TRUE, 0);
-    gtk_signal_connect(GTK_OBJECT(cdi_cddb_server_list), "clicked",
-                       GTK_SIGNAL_FUNC(cdda_cddb_show_server_dialog), cdi_cddb_server);
+    g_signal_connect(G_OBJECT(cdi_cddb_server_list), "clicked",
+                     G_CALLBACK(cdda_cddb_show_server_dialog), cdi_cddb_server);
 
 #if 0
 	/*
@@ -570,15 +568,15 @@ void cdda_configure(void)
 	cdi_cdin_frame = gtk_frame_new(_("CD Index:"));
 	gtk_box_pack_start(GTK_BOX(cdi_vbox), cdi_cdin_frame, FALSE, FALSE, 0);
 
-	cdi_cdin_vbox = gtk_vbox_new(FALSE, 10);
-	gtk_container_border_width(GTK_CONTAINER(cdi_cdin_vbox), 5);
+	cdi_cdin_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+	gtk_container_set_border_width(GTK_CONTAINER(cdi_cdin_vbox), 5);
 	gtk_container_add(GTK_CONTAINER(cdi_cdin_frame), cdi_cdin_vbox);
 
 	cdi_use_cdin = gtk_check_button_new_with_label(_("Use CD Index"));
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cdi_use_cdin), cdda_cfg.use_cdin);
 	gtk_box_pack_start(GTK_BOX(cdi_cdin_vbox), cdi_use_cdin, FALSE, FALSE, 0);
 
-	cdi_cdin_server_hbox = gtk_hbox_new(FALSE, 5);
+	cdi_cdin_server_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 	gtk_box_pack_start(GTK_BOX(cdi_cdin_vbox), cdi_cdin_server_hbox, FALSE, FALSE, 0);
 
 	cdi_cdin_server_label = gtk_label_new(_("CD Index server:"));
@@ -599,20 +597,20 @@ void cdda_configure(void)
     cdi_name_frame = gtk_frame_new(_("Track names:"));
     gtk_box_pack_start(GTK_BOX(cdi_vbox), cdi_name_frame, FALSE, FALSE, 0);
 
-    cdi_name_vbox = gtk_vbox_new(FALSE, 10);
+    cdi_name_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(cdi_name_frame), cdi_name_vbox);
-    gtk_container_border_width(GTK_CONTAINER(cdi_name_vbox), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(cdi_name_vbox), 5);
     cdi_name_override = gtk_check_button_new_with_label(_("Override generic titles"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cdi_name_override), cdda_cfg.title_override);
     gtk_box_pack_start(GTK_BOX(cdi_name_vbox), cdi_name_override, FALSE, FALSE, 0);
 
-    cdi_name_enable_vbox = gtk_vbox_new(FALSE, 10);
+    cdi_name_enable_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(cdi_name_vbox), cdi_name_enable_vbox);
     gtk_widget_set_sensitive(cdi_name_enable_vbox, cdda_cfg.title_override);
-    gtk_signal_connect(GTK_OBJECT(cdi_name_override), "toggled", toggle_set_sensitive_cb,
-                       cdi_name_enable_vbox);
+    g_signal_connect(G_OBJECT(cdi_name_override), "toggled", G_CALLBACK(toggle_set_sensitive_cb),
+                     cdi_name_enable_vbox);
 
-    cdi_name_hbox = gtk_hbox_new(FALSE, 5);
+    cdi_name_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(cdi_name_enable_vbox), cdi_name_hbox, FALSE, FALSE, 0);
     cdi_name_label = gtk_label_new(_("Name format:"));
     gtk_box_pack_start(GTK_BOX(cdi_name_hbox), cdi_name_label, FALSE, FALSE, 0);
@@ -625,21 +623,21 @@ void cdda_configure(void)
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), cdi_vbox, gtk_label_new(_("CD Info")));
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(cdda_configurewin_ok_cb), NULL);
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(configurewin_close), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(cdda_configurewin_ok_cb), NULL);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(configurewin_close), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(ok);
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(configurewin_close), NULL);
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(cancel), "clicked", G_CALLBACK(configurewin_close), NULL);
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(cdda_configure_win);

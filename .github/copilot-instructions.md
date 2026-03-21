@@ -160,6 +160,7 @@ gtk3(mainwin): migrate GtkFixed layout to GtkOverlay
 - **PR title:** Must follow Conventional Commits format
 - **PR description:** Fill in the template — what, why, how tested
 - **Links:** Reference GH issues: `Closes #123` or `Refs #456`
+- **Milestone:** The linked issue must be assigned to a milestone before the PR is opened
 - **Review:** Minimum 1 approval; maintainer approval for GTK migration PRs
 - **Squash and merge** for feature branches; **merge commit** for release branches
 
@@ -187,6 +188,81 @@ Hooks run on every `git commit`:
 
 ---
 
+## Release Milestones & Agile Workflow
+
+### Version scheme
+
+XMMS Resurrection follows **Semantic Versioning** from the original 1.2.11 baseline:
+
+| Version | Target | Description |
+|---------|--------|-------------|
+| `v1.3.0` | 2026-06-30 | **GTK3 Parity Release** — 100% functional parity with XMMS 1.2.11, zero `TODO(#gtk3)` stubs, all menus/shaping/skins working |
+| `v1.4.0` | 2026-12-31 | **GTK4 + Enhancements** — GdkEventController, GtkListView playlist, Wayland-first, next-gen vis |
+| `v1.5.0+` | TBD | Post-GTK4: skin editor, advanced features |
+
+Rationale for `1.3` over `2.0`: this is a port, not a rewrite — the ABI, plugin interface, skin format, and control socket protocol remain compatible with XMMS 1.2.x.
+
+### Milestone management
+
+- Every open issue **must** be assigned to a milestone before it can be marked `in-progress`
+- Copilot and contributors must set `--milestone` when creating issues via `gh issue create`
+- Use `gh milestone list` to see current milestones and their progress
+- A milestone is **closed** only when all its issues are closed and a git tag + GitHub Release is created
+
+```bash
+# Create a milestone
+gh milestone create --title "v1.3.0 — GTK3 Parity Release" --due-date "2026-06-30" --description "..."
+
+# Assign an issue
+gh issue edit <N> --milestone "v1.3.0 — GTK3 Parity Release"
+
+# Check milestone progress
+gh milestone list
+```
+
+### Agile development workflow
+
+This project uses a **lightweight Kanban flow** driven entirely by GitHub Issues + Milestones. There are no sprints — work is continuous and milestone-gated.
+
+#### Issue lifecycle
+
+```
+[filed] → needs-triage → confirmed → in-progress → ready-for-review → closed
+```
+
+1. **File** every bug/feature/task as an issue before touching code
+2. **Triage**: add labels (type + component + priority + effort) and assign to a milestone
+3. **Start work**: move to `in-progress`, create a branch `fix/NNN-short-desc` or `feat/NNN-short-desc`
+4. **Open a PR** referencing the issue (`Closes #NNN`); mark as Draft until CI passes
+5. **Review**: convert Draft → Ready; minimum 1 approval required
+6. **Merge**: squash-merge for features/fixes; the issue closes automatically via `Closes #NNN`
+
+#### Branch naming
+
+```
+fix/25-child-window-raise       ← bug fix for issue #25
+feat/27-skin-test-corpus        ← feature or test work for issue #27
+gtk3/26-mainwin-shaping         ← GTK migration work
+refactor/24-gtkclist-completion ← refactor sub-task of #24
+release/v1.3.0                  ← release prep
+```
+
+#### PR checklist additions (milestone-aware)
+
+- [ ] Issue is assigned to a milestone before PR is opened
+- [ ] PR title references the issue: `fix(core): raise child windows on focus (Closes #25)`
+- [ ] Milestone acceptance criteria are checked before marking ready-for-review
+
+#### Working with Copilot on milestone items
+
+When Copilot starts work on a tracked issue it should:
+1. State which issue/milestone the work addresses at the start of the session
+2. Create the branch with the `fix/NNN-` or `feat/NNN-` naming convention
+3. Reference `Closes #NNN` in every commit that fully resolves an issue
+4. After each commit, update the issue with a brief progress note if the issue spans multiple PRs
+
+---
+
 ## Issue Tracking (GitHub Issues)
 
 ### When to file an issue
@@ -198,12 +274,12 @@ Hooks run on every `git commit`:
 
 ### Issue Labels (see `scripts/create-gh-labels.sh`)
 
-**Type:** `bug`, `feature`, `refactor`, `docs`, `question`, `security`  
-**Component:** `skin`, `playlist`, `equalizer`, `visualizer`, `input-plugin`, `output-plugin`, `effect-plugin`, `general-plugin`, `prefs`, `build`, `ci-cd`, `packaging`, `i18n`  
+**Type:** `bug`, `feature`, `refactor`, `docs`, `test`, `security`, `chore`  
+**Component:** `comp:core`, `comp:skin`, `comp:playlist`, `comp:equalizer`, `comp:visualizer`, `comp:input-plugin`, `comp:output-plugin`, `comp:effect-plugin`, `comp:general-plugin`, `comp:prefs`, `comp:build`, `comp:ci-cd`, `comp:packaging`, `comp:i18n`  
 **Migration:** `gtk3`, `gtk4`, `gtk-migration`, `compat-break`  
-**Platform:** `linux-generic`, `fedora`, `debian-ubuntu`, `arch-linux`, `alpine`  
+**Platform:** `platform:linux`, `platform:fedora`, `platform:debian-ubuntu`, `platform:arch`, `platform:alpine`, `platform:wayland`, `platform:x11`  
 **Priority:** `P0-critical`, `P1-high`, `P2-medium`, `P3-low`  
-**Status:** `needs-triage`, `confirmed`, `in-progress`, `blocked`, `wontfix`  
+**Status:** `needs-triage`, `confirmed`, `in-progress`, `blocked`, `ready-for-review`, `needs-more-info`, `wontfix`  
 **Effort:** `effort-small`, `effort-medium`, `effort-large`, `effort-xlarge`
 
 ---
@@ -350,3 +426,7 @@ When GitHub Copilot assists with this project:
 8. **For i18n**: wrap user-visible strings in `_()` macro
 9. **Search before creating**: use symbol lookups before adding duplicate utilities
 10. **File issues for found bugs**: note TODOs as `/* TODO(#NN): description */`
+11. **Always assign a milestone** when creating issues — v1.3.0 for GTK3 parity work, v1.4.0 for GTK4/enhancement work
+12. **State the target issue/milestone** at the start of any multi-step coding session
+13. **Use branch naming convention**: `fix/NNN-short-desc`, `feat/NNN-short-desc`, `gtk3/NNN-desc`
+14. **Every commit resolving an issue** must include `Closes #NNN` or `Refs #NNN` in the message

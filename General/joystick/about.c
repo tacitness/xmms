@@ -34,6 +34,5 @@ void joy_about(void)
                                    "Control XMMS with one or two joysticks.\n"),
                                  _("OK"), FALSE, NULL, NULL);
 
-    gtk_signal_connect(GTK_OBJECT(aboutbox), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &aboutbox);
+    g_signal_connect(G_OBJECT(aboutbox), "destroy", G_CALLBACK(gtk_widget_destroyed), &aboutbox);
 }

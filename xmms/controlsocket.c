@@ -529,17 +529,13 @@ void check_ctrlsocket(void)
             break;
         case CMD_TOGGLE_REPEAT:
             mainwin_repeat_pushed(!cfg.repeat);
-            tbutton_set_toggled(mainwin_repeat,
-                                GTK_CHECK_MENU_ITEM(
-                                    gtk_item_factory_get_widget(mainwin_options_menu, "/Repeat"))
-                                    ->active);
+            /* GTK3: cfg.repeat is already updated; use it directly instead of
+             * gtk_item_factory (removed) + ->active (direct field access removed) */
+            tbutton_set_toggled(mainwin_repeat, cfg.repeat);
             break;
         case CMD_TOGGLE_SHUFFLE:
             mainwin_shuffle_pushed(!cfg.shuffle);
-            tbutton_set_toggled(mainwin_shuffle,
-                                GTK_CHECK_MENU_ITEM(
-                                    gtk_item_factory_get_widget(mainwin_options_menu, "/Shuffle"))
-                                    ->active);
+            tbutton_set_toggled(mainwin_shuffle, cfg.shuffle);
             break;
         case CMD_TOGGLE_ADVANCE:
             mainwin_advance_pushed(!cfg.no_playlist_advance);

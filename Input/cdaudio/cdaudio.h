@@ -56,6 +56,8 @@
 
 #ifdef HAVE_LINUX_CDROM_H
 #    include <linux/cdrom.h>
+#elif defined(__linux__)
+#    include <linux/cdrom.h>
 #elif defined HAVE_SYS_CDIO_H
 #    include <sys/cdio.h>
 #endif
@@ -163,5 +165,11 @@ struct driveinfo *cdda_find_drive(char *filename);
 void cdda_cddb_show_server_dialog(GtkWidget *w, gpointer data);
 void cdda_cddb_set_server(char *new_server);
 void cddb_quit(void);
+
+
+/* GTK3: DEV_MIXER fallback */
+#ifndef DEV_MIXER
+#    define DEV_MIXER "/dev/mixer"
+#endif
 
 #endif

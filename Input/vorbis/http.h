@@ -1,6 +1,8 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
+#include <glib.h>
+
 int vorbis_http_open(char *url);
 int vorbis_http_read(gpointer data, gint length);
 void vorbis_http_close(void);

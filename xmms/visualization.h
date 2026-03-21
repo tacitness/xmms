@@ -20,6 +20,10 @@
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
 
+#include <glib.h>
+
+#include "plugin.h"
+
 struct VisPluginData {
     GList *vis_list;
     GList *enabled_list;
@@ -38,5 +42,11 @@ gboolean vis_enabled(int i);
 gchar *vis_stringify_enabled_list(void);
 void vis_enable_from_stringified_list(gchar *list);
 void vis_send_data(gint16 pcm_data[2][512], int nch, int length);
+
+/* Immediately disable and destroy all enabled vis-plugin windows.
+ * Call this BEFORE blocking operations (audio drain, thread joins) so that
+ * vis windows do not appear to the user as orphaned after the main XMMS skin
+ * window is hidden. */
+void vis_disable_all(void);
 
 #endif

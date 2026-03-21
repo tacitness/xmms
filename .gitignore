@@ -131,3 +131,9 @@ tests/build/
 *.gcda
 *.gcno
 coverage/
+
+# libtool in-tree wrapper script (build artifact, not installed binary)
+xmms/xmms
+
+# AI-generated placeholder images
+Gemini_Generated_Image_*.png

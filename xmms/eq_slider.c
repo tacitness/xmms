@@ -38,7 +38,7 @@ gfloat eqslider_get_position(EqSlider *es)
 void eqslider_draw(Widget *w)
 {
     EqSlider *es = (EqSlider *)w;
-    GdkPixmap *obj;
+    cairo_surface_t *obj;
     SkinIndex src;
     gint frame;
 
@@ -47,16 +47,16 @@ void eqslider_draw(Widget *w)
 
     frame = 27 - ((es->es_position * 27) / 50);
     if (frame < 14)
-        skin_draw_pixmap(obj, es->es_widget.gc, src, (frame * 15) + 13, 164, es->es_widget.x,
+        skin_draw_pixmap(es->es_widget.cr, src, (frame * 15) + 13, 164, es->es_widget.x,
                          es->es_widget.y, es->es_widget.width, es->es_widget.height);
     else
-        skin_draw_pixmap(obj, es->es_widget.gc, src, ((frame - 14) * 15) + 13, 229, es->es_widget.x,
+        skin_draw_pixmap(es->es_widget.cr, src, ((frame - 14) * 15) + 13, 229, es->es_widget.x,
                          es->es_widget.y, es->es_widget.width, es->es_widget.height);
     if (es->es_isdragging)
-        skin_draw_pixmap(obj, es->es_widget.gc, src, 0, 176, es->es_widget.x + 1,
+        skin_draw_pixmap(es->es_widget.cr, src, 0, 176, es->es_widget.x + 1,
                          es->es_widget.y + es->es_position, 11, 11);
     else
-        skin_draw_pixmap(obj, es->es_widget.gc, src, 0, 164, es->es_widget.x + 1,
+        skin_draw_pixmap(es->es_widget.cr, src, 0, 164, es->es_widget.x + 1,
                          es->es_widget.y + es->es_position, 11, 11);
 }
 
@@ -149,21 +149,21 @@ void eqslider_button_release_cb(GtkWidget *w, GdkEventButton *event, gpointer da
     }
 }
 
-EqSlider *create_eqslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y)
+EqSlider *create_eqslider(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y)
 {
     EqSlider *es;
 
     es = (EqSlider *)g_malloc0(sizeof(EqSlider));
     es->es_widget.parent = parent;
-    es->es_widget.gc = gc;
+    es->es_widget.cr = cr;
     es->es_widget.x = x;
     es->es_widget.y = y;
     es->es_widget.width = 14;
     es->es_widget.height = 63;
     es->es_widget.visible = TRUE;
-    es->es_widget.button_press_cb = GTK_SIGNAL_FUNC(eqslider_button_press_cb);
-    es->es_widget.button_release_cb = GTK_SIGNAL_FUNC(eqslider_button_release_cb);
-    es->es_widget.motion_cb = GTK_SIGNAL_FUNC(eqslider_motion_cb);
+    es->es_widget.button_press_cb = eqslider_button_press_cb;
+    es->es_widget.button_release_cb = eqslider_button_release_cb;
+    es->es_widget.motion_cb = eqslider_motion_cb;
     es->es_widget.draw = eqslider_draw;
     add_widget(wlist, es);
     return es;

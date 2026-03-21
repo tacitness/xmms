@@ -38,6 +38,14 @@
 #include <dirent.h>
 #include <pthread.h>
 
+/* Order matters: plugin.h → widget.h → skin.h → vis.h must precede all
+ * headers that embed or reference InputPlugin/AFormat, Widget, SkinIndex,
+ * or VisType.  Do not reorder these four without careful dependency analysis. */
+#include "plugin.h"   /* InputPlugin, AFormat — must precede input.h, effect.h, output.h, general.h */
+#include "widget.h"   /* Widget struct — must precede vis.h, eq_graph.h, eq_slider.h, hslider.h, menurow.h, monostereo.h */
+#include "skin.h"     /* SkinIndex enum — must precede hslider.h, menurow.h, monostereo.h */
+#include "vis.h"      /* VisType enum; embeds Widget — must precede main.h */
+
 #include "about.h"
 #include "bmp.h"
 #include "config.h"
@@ -66,11 +74,9 @@
 #include "playlist_slider.h"
 #include "playlistwin.h"
 #include "playstatus.h"
-#include "plugin.h"
 #include "pluginenum.h"
 #include "prefswin.h"
 #include "sbutton.h"
-#include "skin.h"
 #include "skinwin.h"
 #include "sm.h"
 #include "svis.h"
@@ -78,8 +84,6 @@
 #include "textbox.h"
 #include "urldecode.h"
 #include "util.h"
-#include "vis.h"
 #include "visualization.h"
-#include "widget.h"
 
 #endif

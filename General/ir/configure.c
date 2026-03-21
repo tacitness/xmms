@@ -134,21 +134,20 @@ static void irconf_control_cb(GtkWidget *w, gchar *data)
 
         keepConfGoing = TRUE;
         irbutton_to_edit = data;
-        irconf_controlwin = gtk_window_new(GTK_WINDOW_DIALOG);
-        gtk_signal_connect(GTK_OBJECT(irconf_controlwin), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &irconf_controlwin);
+        irconf_controlwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        g_signal_connect(G_OBJECT(irconf_controlwin), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                         &irconf_controlwin);
         tmp = g_strdup_printf(_("`%s' Button Setup"), _(data));
         gtk_window_set_title(GTK_WINDOW(irconf_controlwin), tmp);
         g_free(tmp);
-        gtk_window_set_policy(GTK_WINDOW(irconf_controlwin), FALSE, FALSE, FALSE);
         gtk_window_set_position(GTK_WINDOW(irconf_controlwin), GTK_WIN_POS_MOUSE);
-        gtk_container_border_width(GTK_CONTAINER(irconf_controlwin), 10);
+        gtk_container_set_border_width(GTK_CONTAINER(irconf_controlwin), 10);
 
-        vbox = gtk_vbox_new(FALSE, 10);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_container_add(GTK_CONTAINER(irconf_controlwin), vbox);
 
         frame = gtk_frame_new(_("Enter code or use remote"));
-        gtk_container_border_width(GTK_CONTAINER(frame), 5);
+        gtk_container_set_border_width(GTK_CONTAINER(frame), 5);
         gtk_box_pack_start(GTK_BOX(vbox), frame, FALSE, FALSE, 0);
 
         table = gtk_table_new(1, 1, FALSE);
@@ -191,23 +190,23 @@ static void irconf_control_cb(GtkWidget *w, gchar *data)
                     gtk_entry_set_text(GTK_ENTRY(ircode_entry), ircfg.button[i]);
         gtk_widget_show(ircode_entry);
 
-        box = gtk_hbutton_box_new();
+        box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_button_box_set_layout(GTK_BUTTON_BOX(box), GTK_BUTTONBOX_END);
-        gtk_button_box_set_spacing(GTK_BUTTON_BOX(box), 5);
+        gtk_box_set_spacing(GTK_BOX(box), 5);
         gtk_box_pack_start(GTK_BOX(vbox), box, FALSE, FALSE, 0);
 
         button = gtk_button_new_with_label(_("OK"));
-        gtk_signal_connect_object(GTK_OBJECT(button), "clicked",
-                                  GTK_SIGNAL_FUNC(irconf_control_ok_cb), NULL);
-        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(button), "clicked", G_CALLBACK(irconf_control_ok_cb),
+                                 NULL);
+        gtk_widget_set_can_default(button, TRUE);
         gtk_box_pack_start(GTK_BOX(box), button, TRUE, TRUE, 0);
         gtk_widget_grab_default(button);
         gtk_widget_show(button);
 
         button = gtk_button_new_with_label(_("Cancel"));
-        gtk_signal_connect_object(GTK_OBJECT(button), "clicked",
-                                  GTK_SIGNAL_FUNC(irconf_control_cancel_cb), NULL);
-        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+        g_signal_connect_swapped(G_OBJECT(button), "clicked", G_CALLBACK(irconf_control_cancel_cb),
+                                 NULL);
+        gtk_widget_set_can_default(button, TRUE);
         gtk_box_pack_start(GTK_BOX(box), button, TRUE, TRUE, 0);
         gtk_widget_show(button);
 
@@ -221,7 +220,7 @@ static void irconf_control_cb(GtkWidget *w, gchar *data)
             ir_close_port();
         irapp_init_port(g_strdup(gtk_entry_get_text(GTK_ENTRY(dev_entry))));
         irconf_is_going = TRUE;
-        gtk_timeout_add(10, irconf_codeentry_routine, NULL);
+        g_timeout_add(10, irconf_codeentry_routine, NULL);
     }
 }
 
@@ -246,21 +245,20 @@ void ir_configure(void)
     irapp_read_config();
     if (!irconf_mainwin) {
 
-        irconf_mainwin = gtk_window_new(GTK_WINDOW_DIALOG);
-        gtk_signal_connect(GTK_OBJECT(irconf_mainwin), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &irconf_mainwin);
+        irconf_mainwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        g_signal_connect(G_OBJECT(irconf_mainwin), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                         &irconf_mainwin);
         gtk_window_set_title(GTK_WINDOW(irconf_mainwin), _("XMMS IRman Configuration"));
-        gtk_window_set_policy(GTK_WINDOW(irconf_mainwin), FALSE, FALSE, FALSE);
         gtk_window_set_position(GTK_WINDOW(irconf_mainwin), GTK_WIN_POS_MOUSE);
-        gtk_container_border_width(GTK_CONTAINER(irconf_mainwin), 10);
+        gtk_container_set_border_width(GTK_CONTAINER(irconf_mainwin), 10);
 
-        vbox = gtk_vbox_new(FALSE, 10);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
         gtk_container_add(GTK_CONTAINER(irconf_mainwin), vbox);
 
         notebook = gtk_notebook_new();
         gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-        box = gtk_vbox_new(FALSE, 5);
+        box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
         gtk_container_set_border_width(GTK_CONTAINER(box), 5);
 
         frame = gtk_frame_new(_("Device:"));
@@ -298,7 +296,7 @@ void ir_configure(void)
         frame = gtk_frame_new(_("Controls:"));
         gtk_box_pack_start(GTK_BOX(box), frame, FALSE, FALSE, 0);
 
-        vbox2 = gtk_vbox_new(FALSE, 0);
+        vbox2 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
         gtk_container_add(GTK_CONTAINER(frame), vbox2);
 
         table = gtk_table_new(5, 3, TRUE);
@@ -309,8 +307,8 @@ void ir_configure(void)
 
         for (i = 0; i < 13; i++) {
             button = gtk_button_new_with_label(_(ir_control[i]));
-            gtk_signal_connect(GTK_OBJECT(button), "clicked", GTK_SIGNAL_FUNC(irconf_control_cb),
-                               ir_control[i]);
+            g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(irconf_control_cb),
+                             ir_control[i]);
             gtk_table_attach_defaults(GTK_TABLE(table), button, i % 3, (i % 3) + 1, i / 3,
                                       (i / 3) + 1);
             gtk_widget_show(button);
@@ -326,8 +324,8 @@ void ir_configure(void)
 
         for (i = 0; i < 10; i++) {
             button = gtk_button_new_with_label(_(ir_playlist[i]));
-            gtk_signal_connect(GTK_OBJECT(button), "clicked", GTK_SIGNAL_FUNC(irconf_control_cb),
-                               ir_playlist[i]);
+            g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(irconf_control_cb),
+                             ir_playlist[i]);
             gtk_table_attach_defaults(GTK_TABLE(table), button, i % 5, (i % 5) + 1, i / 5,
                                       (i / 5) + 1);
             gtk_widget_show(button);
@@ -350,14 +348,14 @@ void ir_configure(void)
         gtk_spin_button_set_update_policy(GTK_SPIN_BUTTON(playlist_spin), GTK_UPDATE_IF_VALID);
         gtk_spin_button_set_wrap(GTK_SPIN_BUTTON(playlist_spin), FALSE);
         gtk_table_attach_defaults(GTK_TABLE(table), playlist_spin, 0, 1, 0, 1);
-        gtk_signal_connect(GTK_OBJECT(adj), "value_changed", GTK_SIGNAL_FUNC(spin_change_cb),
-                           (gpointer)playlist_spin);
+        g_signal_connect(G_OBJECT(adj), "value_changed", G_CALLBACK(spin_change_cb),
+                         (gpointer)playlist_spin);
         gtk_widget_show(playlist_spin);
 
         playlist_entry = gtk_entry_new();
         gtk_entry_set_text(GTK_ENTRY(playlist_entry), ircfg.playlist[0]);
-        gtk_signal_connect(GTK_OBJECT(playlist_entry), "changed",
-                           GTK_SIGNAL_FUNC(pl_entry_change_cb), (gpointer)playlist_spin);
+        g_signal_connect(G_OBJECT(playlist_entry), "changed", G_CALLBACK(pl_entry_change_cb),
+                         (gpointer)playlist_spin);
         gtk_table_attach_defaults(GTK_TABLE(table), playlist_entry, 1, 2, 0, 1);
         gtk_widget_show(playlist_entry);
 
@@ -369,21 +367,21 @@ void ir_configure(void)
         gtk_notebook_append_page(GTK_NOTEBOOK(notebook), box, gtk_label_new(_("General")));
         gtk_widget_show(notebook);
 
-        box = gtk_hbutton_box_new();
+        box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
         gtk_button_box_set_layout(GTK_BUTTON_BOX(box), GTK_BUTTONBOX_END);
-        gtk_button_box_set_spacing(GTK_BUTTON_BOX(box), 5);
+        gtk_box_set_spacing(GTK_BOX(box), 5);
         gtk_box_pack_start(GTK_BOX(vbox), box, FALSE, FALSE, 0);
 
         button = gtk_button_new_with_label(_("OK"));
-        gtk_signal_connect(GTK_OBJECT(button), "clicked", GTK_SIGNAL_FUNC(irconf_ok_cb), NULL);
-        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(irconf_ok_cb), NULL);
+        gtk_widget_set_can_default(button, TRUE);
         gtk_box_pack_start(GTK_BOX(box), button, TRUE, TRUE, 0);
         gtk_widget_grab_default(button);
         gtk_widget_show(button);
 
         button = gtk_button_new_with_label(_("Cancel"));
-        gtk_signal_connect(GTK_OBJECT(button), "clicked", GTK_SIGNAL_FUNC(irconf_cancel_cb), NULL);
-        GTK_WIDGET_SET_FLAGS(button, GTK_CAN_DEFAULT);
+        g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(irconf_cancel_cb), NULL);
+        gtk_widget_set_can_default(button, TRUE);
         gtk_box_pack_start(GTK_BOX(box), button, TRUE, TRUE, 0);
         gtk_widget_show(button);
         gtk_widget_show(box);

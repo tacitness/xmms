@@ -15,16 +15,16 @@ static void configure_ok(GtkWidget *w, gpointer data)
 {
     ConfigFile *cfg;
     gchar *filename;
-    gdouble color[3];
-
+    GdkRGBA rgba;
 
     filename = g_strconcat(g_get_home_dir(), "/.xmms/config", NULL);
     cfg = xmms_cfg_open_file(filename);
     if (!cfg)
         cfg = xmms_cfg_new();
-    gtk_color_selection_get_color(GTK_COLOR_SELECTION(options_colorpicker), color);
-    bscope_cfg.color = ((guint32)(255.0 * color[0]) << 16) | ((guint32)(255.0 * color[1]) << 8) |
-                       ((guint32)(255.0 * color[2]));
+    gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(options_colorpicker), &rgba);
+    bscope_cfg.color = ((guint32)(rgba.red   * 255) << 16) |
+                       ((guint32)(rgba.green * 255) <<  8) |
+                        (guint32)(rgba.blue  * 255);
     xmms_cfg_write_int(cfg, "BlurScope", "color", bscope_cfg.color);
     xmms_cfg_write_file(cfg, filename);
     xmms_cfg_free(cfg);
@@ -40,50 +40,55 @@ static void configure_cancel(GtkWidget *w, gpointer data)
     gtk_widget_destroy(configure_win);
 }
 
-static void color_changed(GtkWidget *w, gpointer data)
+static void color_changed(GtkColorChooser *chooser, GParamSpec *pspec, gpointer data)
 {
-    gdouble color[3];
-    gtk_color_selection_get_color(GTK_COLOR_SELECTION(options_colorpicker), color);
-    bscope_cfg.color = ((guint32)(255.0 * color[0]) << 16) | ((guint32)(255.0 * color[1]) << 8) |
-                       ((guint32)(255.0 * color[2]));
+    GdkRGBA rgba;
+    gtk_color_chooser_get_rgba(chooser, &rgba);
+    bscope_cfg.color = ((guint32)(rgba.red   * 255) << 16) |
+                       ((guint32)(rgba.green * 255) <<  8) |
+                        (guint32)(rgba.blue  * 255);
     generate_cmap();
 }
 
 void bscope_configure(void)
 {
-    gdouble color[3];
+    GdkRGBA rgba;
     if (configure_win)
         return;
 
     bscope_read_config();
-    color[0] = ((gdouble)(bscope_cfg.color / 0x10000)) / 256;
-    color[1] = ((gdouble)((bscope_cfg.color % 0x10000) / 0x100)) / 256;
-    color[2] = ((gdouble)(bscope_cfg.color % 0x100)) / 256;
+    rgba.red   = (bscope_cfg.color >> 16) / 255.0;
+    rgba.green = ((bscope_cfg.color >> 8) & 0xFF) / 255.0;
+    rgba.blue  = (bscope_cfg.color & 0xFF) / 255.0;
+    rgba.alpha = 1.0;
 
-    configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
+    /* GTK3: GTK_WINDOW_DIALOG -> GTK_WINDOW_TOPLEVEL;
+     * gtk_window_set_policy -> gtk_window_set_resizable;
+     * GtkColorSelection -> GtkColorChooserWidget */
+    configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
     gtk_window_set_title(GTK_WINDOW(configure_win), _("Color Entry"));
-    gtk_window_set_policy(GTK_WINDOW(configure_win), FALSE, FALSE, FALSE);
+    gtk_window_set_resizable(GTK_WINDOW(configure_win), FALSE);
     gtk_window_set_position(GTK_WINDOW(configure_win), GTK_WIN_POS_MOUSE);
-    gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &configure_win);
+    g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &configure_win);
 
-    vbox = gtk_vbox_new(FALSE, 5);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
     options_frame = gtk_frame_new(_("Options:"));
     gtk_container_set_border_width(GTK_CONTAINER(options_frame), 5);
 
-    options_vbox = gtk_vbox_new(FALSE, 5);
+    options_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(options_vbox), 5);
 
-    options_colorpicker = gtk_color_selection_new();
-    gtk_color_selection_set_color(GTK_COLOR_SELECTION(options_colorpicker), color);
-    gtk_signal_connect(GTK_OBJECT(options_colorpicker), "color_changed",
-                       GTK_SIGNAL_FUNC(color_changed), NULL);
+    options_colorpicker = gtk_color_chooser_widget_new();
+    gtk_color_chooser_set_use_alpha(GTK_COLOR_CHOOSER(options_colorpicker), FALSE);
+    gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(options_colorpicker), &rgba);
+    g_signal_connect(G_OBJECT(options_colorpicker), "notify::rgba",
+                     G_CALLBACK(color_changed), NULL);
 
     gtk_box_pack_start(GTK_BOX(options_vbox), options_colorpicker, FALSE, FALSE, 0);
     gtk_widget_show(options_colorpicker);
-
 
     gtk_container_add(GTK_CONTAINER(options_frame), options_vbox);
     gtk_widget_show(options_vbox);
@@ -91,22 +96,21 @@ void bscope_configure(void)
     gtk_box_pack_start(GTK_BOX(vbox), options_frame, TRUE, TRUE, 0);
     gtk_widget_show(options_frame);
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(configure_ok), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(configure_ok), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_show(ok);
 
-
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(configure_cancel),
-                       GUINT_TO_POINTER(bscope_cfg.color));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(cancel), "clicked", G_CALLBACK(configure_cancel),
+                     GUINT_TO_POINTER(bscope_cfg.color));
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
     gtk_widget_show(cancel);
     gtk_widget_show(bbox);

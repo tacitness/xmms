@@ -19,7 +19,6 @@ set_target_properties(libxmms PROPERTIES
     OUTPUT_NAME  "xmms"
     VERSION      "${PROJECT_VERSION}"
     SOVERSION    "1"
-    C_VISIBILITY_PRESET hidden
 )
 
 target_compile_options(libxmms PRIVATE ${XMMS_C_WARNINGS})

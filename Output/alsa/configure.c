@@ -35,13 +35,13 @@ static int current_mixer_card;
 static void configure_win_ok_cb(GtkWidget *w, gpointer data)
 {
     g_free(alsa_cfg.pcm_device);
-    alsa_cfg.pcm_device = GET_CHARS(GTK_COMBO(devices_combo)->entry);
+    alsa_cfg.pcm_device = GET_CHARS(gtk_bin_get_child(GTK_BIN(devices_combo)));
     alsa_cfg.buffer_time = GET_SPIN_INT(buffer_time_spin);
     alsa_cfg.period_time = GET_SPIN_INT(period_time_spin);
     alsa_cfg.thread_buffer_time = GET_SPIN_INT(thread_buffer_time_spin);
     alsa_cfg.soft_volume = GET_TOGGLE(softvolume_toggle_button);
     alsa_cfg.mixer_card = current_mixer_card;
-    alsa_cfg.mixer_device = GET_CHARS(GTK_COMBO(mixer_devices_combo)->entry);
+    alsa_cfg.mixer_device = GET_CHARS(gtk_bin_get_child(GTK_BIN(mixer_devices_combo)));
 
     alsa_save_config();
     gtk_widget_destroy(configure_win);
@@ -64,16 +64,19 @@ void alsa_save_config(void)
     xmms_cfg_free(cfgfile);
 }
 
-static int get_cards(GtkOptionMenu *omenu, GtkSignalFunc cb, int active)
+/* GTK3: card number array for combo index mapping */
+static int alsa_mixer_card_list[64];
+static int alsa_mixer_card_count = 0;
+
+static int get_cards(GtkComboBox *omenu, GCallback cb, int active)
 {
-    GtkWidget *menu, *item;
     int card = -1, err, set = 0, curr = -1;
 
-    menu = gtk_menu_new();
+    alsa_mixer_card_count = 0;
     if ((err = snd_card_next(&card)) != 0)
         g_warning("snd_next_card() failed: %s", snd_strerror(-err));
 
-    while (card > -1) {
+    while (card > -1 && alsa_mixer_card_count < 64) {
         char *label;
 
         curr++;
@@ -84,21 +87,21 @@ static int get_cards(GtkOptionMenu *omenu, GtkSignalFunc cb, int active)
             break;
         }
 
-        item = gtk_menu_item_new_with_label(label);
-        gtk_signal_connect(GTK_OBJECT(item), "activate", cb, GINT_TO_POINTER(card));
-        gtk_widget_show(item);
-        gtk_menu_append(GTK_MENU(menu), item);
+        alsa_mixer_card_list[alsa_mixer_card_count++] = card;
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(omenu), label);
+
         if ((err = snd_card_next(&card)) != 0) {
             g_warning("snd_next_card() failed: %s", snd_strerror(-err));
             break;
         }
     }
 
-    gtk_option_menu_set_menu(omenu, menu);
+    if (cb)
+        g_signal_connect(G_OBJECT(omenu), "changed", cb, NULL);
     return set;
 }
 
-static int get_mixer_devices(GtkCombo *combo, int card)
+static int get_mixer_devices(GtkComboBoxText *combo, int card)
 {
     GList *items = NULL;
     int err;
@@ -117,12 +120,20 @@ static int get_mixer_devices(GtkCombo *combo, int card)
         current = snd_mixer_elem_next(current);
     }
 
-    gtk_combo_set_popdown_strings(combo, items);
+    gtk_combo_box_text_remove_all(combo);
+    {
+        GList *l = items;
+        while (l) {
+            gtk_combo_box_text_append_text(combo, (const gchar *)l->data);
+            l = l->next;
+        }
+        g_list_free_full(items, g_free);
+    }
 
     return 0;
 }
 
-static void get_devices_for_card(GtkCombo *combo, int card)
+static void get_devices_for_card(GtkComboBoxText *combo, int card)
 {
     GtkWidget *item;
     int pcm_device = -1, err;
@@ -169,31 +180,23 @@ static void get_devices_for_card(GtkCombo *combo, int card)
         device = g_strdup_printf("hw:%d,%d", card, pcm_device);
         descr =
             g_strconcat(card_name, ": ", snd_pcm_info_get_name(pcm_info), " (", device, ")", NULL);
-        item = gtk_list_item_new_with_label(descr);
-        gtk_widget_show(item);
+        gtk_combo_box_text_append_text(combo, device);
         g_free(descr);
-        gtk_combo_set_item_string(combo, GTK_ITEM(item), device);
         g_free(device);
-        gtk_container_add(GTK_CONTAINER(combo->list), item);
     }
 
     snd_ctl_close(ctl);
 }
 
 
-static void get_devices(GtkCombo *combo)
+static void get_devices(GtkComboBoxText *combo)
 {
     GtkWidget *item;
     int card = -1;
     int err = 0;
     char *descr;
 
-    descr = g_strdup_printf(_("Default PCM device (%s)"), "default");
-    item = gtk_list_item_new_with_label(descr);
-    gtk_widget_show(item);
-    g_free(descr);
-    gtk_combo_set_item_string(combo, GTK_ITEM(item), "default");
-    gtk_container_add(GTK_CONTAINER(combo->list), item);
+    gtk_combo_box_text_append_text(combo, "default");
 
     if ((err = snd_card_next(&card)) != 0) {
         g_warning("snd_next_card() failed: %s", snd_strerror(-err));
@@ -209,12 +212,14 @@ static void get_devices(GtkCombo *combo)
     }
 }
 
-static void mixer_card_cb(GtkWidget *widget, gpointer card)
+static void mixer_card_cb(GtkWidget *widget, gpointer data)
 {
-    if (current_mixer_card == GPOINTER_TO_INT(card))
+    int idx = gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
+    int card = (idx >= 0 && idx < alsa_mixer_card_count) ? alsa_mixer_card_list[idx] : -1;
+    if (current_mixer_card == card)
         return;
-    current_mixer_card = GPOINTER_TO_INT(card);
-    get_mixer_devices(GTK_COMBO(mixer_devices_combo), current_mixer_card);
+    current_mixer_card = card;
+    get_mixer_devices(GTK_COMBO_BOX_TEXT(mixer_devices_combo), current_mixer_card);
 }
 
 static void softvolume_toggle_cb(GtkToggleButton *widget, gpointer data)
@@ -234,48 +239,48 @@ void alsa_configure(void)
     GtkWidget *buffer_frame, *buffer_vbox, *buffer_table;
     GtkWidget *card_frame, *buffer_time_label, *period_time_label;
     GtkWidget *thread_buffer_time_label;
-    GtkObject *buffer_time_adj, *period_time_adj, *thread_buffer_time_adj;
+    GtkAdjustment *buffer_time_adj, *period_time_adj, *thread_buffer_time_adj;
     GtkWidget *bbox, *ok, *cancel;
 
     int mset;
 
     if (configure_win) {
-        gdk_window_raise(configure_win->window);
+        gdk_window_raise(gtk_widget_get_window(configure_win));
         return;
     }
 
-    configure_win = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(configure_win), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &configure_win);
+    configure_win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(configure_win), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &configure_win);
     gtk_window_set_title(GTK_WINDOW(configure_win), _("ALSA Driver configuration"));
-    gtk_window_set_policy(GTK_WINDOW(configure_win), FALSE, TRUE, FALSE);
-    gtk_container_border_width(GTK_CONTAINER(configure_win), 10);
+    gtk_window_set_resizable(GTK_WINDOW(configure_win), TRUE);
+    gtk_container_set_border_width(GTK_CONTAINER(configure_win), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(configure_win), vbox);
 
     notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-    dev_vbox = gtk_vbox_new(FALSE, 5);
+    dev_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(dev_vbox), 5);
 
     adevice_frame = gtk_frame_new(_("Audio device:"));
     gtk_box_pack_start(GTK_BOX(dev_vbox), adevice_frame, FALSE, FALSE, 0);
 
-    adevice_box = gtk_vbox_new(FALSE, 5);
+    adevice_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(adevice_box), 5);
     gtk_container_add(GTK_CONTAINER(adevice_frame), adevice_box);
 
-    devices_combo = gtk_combo_new();
+    devices_combo = gtk_combo_box_text_new_with_entry();
     gtk_box_pack_start(GTK_BOX(adevice_box), devices_combo, FALSE, FALSE, 0);
-    get_devices(GTK_COMBO(devices_combo));
-    gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(devices_combo)->entry), alsa_cfg.pcm_device);
+    get_devices(GTK_COMBO_BOX_TEXT(devices_combo));
+    gtk_entry_set_text(GTK_ENTRY(gtk_bin_get_child(GTK_BIN(devices_combo))), alsa_cfg.pcm_device);
 
     mixer_frame = gtk_frame_new(_("Mixer:"));
     gtk_box_pack_start(GTK_BOX(dev_vbox), mixer_frame, FALSE, FALSE, 0);
 
-    mixer_box = gtk_vbox_new(FALSE, 5);
+    mixer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(mixer_box), 5);
     gtk_container_add(GTK_CONTAINER(mixer_frame), mixer_box);
 
@@ -293,8 +298,8 @@ void alsa_configure(void)
     gtk_misc_set_alignment(GTK_MISC(mixer_card_label), 0, 0.5);
     gtk_table_attach(GTK_TABLE(mixer_table), mixer_card_label, 0, 1, 0, 1, GTK_FILL, 0, 0, 0);
 
-    mixer_card_om = gtk_option_menu_new();
-    mset = get_cards(GTK_OPTION_MENU(mixer_card_om), mixer_card_cb, alsa_cfg.mixer_card);
+    mixer_card_om = GTK_WIDGET(gtk_combo_box_text_new());
+    mset = get_cards(GTK_COMBO_BOX(mixer_card_om), G_CALLBACK(mixer_card_cb), alsa_cfg.mixer_card);
 
     gtk_table_attach(GTK_TABLE(mixer_table), mixer_card_om, 1, 2, 0, 1, GTK_FILL | GTK_EXPAND,
                      GTK_FILL, 0, 0);
@@ -303,28 +308,29 @@ void alsa_configure(void)
     gtk_label_set_justify(GTK_LABEL(mixer_device_label), GTK_JUSTIFY_LEFT);
     gtk_misc_set_alignment(GTK_MISC(mixer_device_label), 0, 0.5);
     gtk_table_attach(GTK_TABLE(mixer_table), mixer_device_label, 0, 1, 1, 2, GTK_FILL, 0, 0, 0);
-    mixer_devices_combo = gtk_combo_new();
-    gtk_option_menu_set_history(GTK_OPTION_MENU(mixer_card_om), mset);
-    get_mixer_devices(GTK_COMBO(mixer_devices_combo), alsa_cfg.mixer_card);
-    gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(mixer_devices_combo)->entry), alsa_cfg.mixer_device);
+    mixer_devices_combo = gtk_combo_box_text_new_with_entry();
+    gtk_combo_box_set_active(GTK_COMBO_BOX(mixer_card_om), mset);
+    get_mixer_devices(GTK_COMBO_BOX_TEXT(mixer_devices_combo), alsa_cfg.mixer_card);
+    gtk_entry_set_text(GTK_ENTRY(gtk_bin_get_child(GTK_BIN(mixer_devices_combo))),
+                       alsa_cfg.mixer_device);
 
     gtk_table_attach(GTK_TABLE(mixer_table), mixer_devices_combo, 1, 2, 1, 2, GTK_FILL | GTK_EXPAND,
                      0, 0, 0);
 
-    gtk_signal_connect(GTK_OBJECT(softvolume_toggle_button), "toggled", softvolume_toggle_cb,
-                       mixer_card_om);
+    g_signal_connect(G_OBJECT(softvolume_toggle_button), "toggled",
+                     G_CALLBACK(softvolume_toggle_cb), mixer_card_om);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(softvolume_toggle_button), alsa_cfg.soft_volume);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), dev_vbox, gtk_label_new(_("Device settings")));
 
 
-    advanced_vbox = gtk_vbox_new(FALSE, 0);
+    advanced_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(advanced_vbox), 5);
 
     card_frame = gtk_frame_new(_("Soundcard:"));
-    gtk_box_pack_start_defaults(GTK_BOX(advanced_vbox), card_frame);
+    gtk_box_pack_start(GTK_BOX(advanced_vbox), card_frame, TRUE, TRUE, 0);
 
-    card_vbox = gtk_vbox_new(FALSE, 0);
+    card_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(card_frame), card_vbox);
 
     gtk_container_set_border_width(GTK_CONTAINER(card_vbox), 5);
@@ -332,7 +338,7 @@ void alsa_configure(void)
     buffer_table = gtk_table_new(2, 2, TRUE);
     gtk_table_set_row_spacings(GTK_TABLE(buffer_table), 5);
     gtk_table_set_col_spacings(GTK_TABLE(buffer_table), 5);
-    gtk_box_pack_start_defaults(GTK_BOX(card_vbox), buffer_table);
+    gtk_box_pack_start(GTK_BOX(card_vbox), buffer_table, TRUE, TRUE, 0);
 
     buffer_time_label = gtk_label_new(_("Buffer time (ms):"));
     gtk_label_set_justify(GTK_LABEL(buffer_time_label), GTK_JUSTIFY_LEFT);
@@ -341,7 +347,7 @@ void alsa_configure(void)
 
     buffer_time_adj = gtk_adjustment_new(alsa_cfg.buffer_time, 200, 10000, 100, 100, 100);
     buffer_time_spin = gtk_spin_button_new(GTK_ADJUSTMENT(buffer_time_adj), 8, 0);
-    gtk_widget_set_usize(buffer_time_spin, 60, -1);
+    gtk_widget_set_size_request(buffer_time_spin, 60, -1);
     gtk_table_attach(GTK_TABLE(buffer_table), buffer_time_spin, 1, 2, 0, 1, 0, 0, 0, 0);
 
     period_time_label = gtk_label_new(_("Period time (ms):"));
@@ -351,14 +357,14 @@ void alsa_configure(void)
     period_time_adj = gtk_adjustment_new(alsa_cfg.period_time, 1, 500, 1, 100, 100);
     period_time_spin = gtk_spin_button_new(GTK_ADJUSTMENT(period_time_adj), 8, 0);
 
-    gtk_widget_set_usize(period_time_spin, 60, -1);
+    gtk_widget_set_size_request(period_time_spin, 60, -1);
     gtk_table_attach(GTK_TABLE(buffer_table), period_time_spin, 1, 2, 1, 2, 0, 0, 0, 0);
 
 
     buffer_frame = gtk_frame_new(_("XMMS:"));
-    gtk_box_pack_start_defaults(GTK_BOX(advanced_vbox), buffer_frame);
+    gtk_box_pack_start(GTK_BOX(advanced_vbox), buffer_frame, TRUE, TRUE, 0);
 
-    buffer_vbox = gtk_vbox_new(FALSE, 0);
+    buffer_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_add(GTK_CONTAINER(buffer_frame), buffer_vbox);
 
     gtk_container_set_border_width(GTK_CONTAINER(buffer_vbox), 5);
@@ -366,7 +372,7 @@ void alsa_configure(void)
     buffer_table = gtk_table_new(1, 2, TRUE);
     gtk_table_set_row_spacings(GTK_TABLE(buffer_table), 5);
     gtk_table_set_col_spacings(GTK_TABLE(buffer_table), 5);
-    gtk_box_pack_start_defaults(GTK_BOX(buffer_vbox), buffer_table);
+    gtk_box_pack_start(GTK_BOX(buffer_vbox), buffer_table, TRUE, TRUE, 0);
 
     thread_buffer_time_label = gtk_label_new(_("Buffer time (ms):"));
     gtk_label_set_justify(GTK_LABEL(thread_buffer_time_label), GTK_JUSTIFY_LEFT);
@@ -377,27 +383,27 @@ void alsa_configure(void)
         gtk_adjustment_new(alsa_cfg.thread_buffer_time, 1000, 10000, 100, 100, 100);
     thread_buffer_time_spin = gtk_spin_button_new(GTK_ADJUSTMENT(thread_buffer_time_adj), 8, 0);
 
-    gtk_widget_set_usize(thread_buffer_time_spin, 60, -1);
+    gtk_widget_set_size_request(thread_buffer_time_spin, 60, -1);
     gtk_table_attach(GTK_TABLE(buffer_table), thread_buffer_time_spin, 1, 2, 0, 1, 0, 0, 0, 0);
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), advanced_vbox,
                              gtk_label_new(_("Advanced settings")));
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", configure_win_ok_cb, NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(configure_win_ok_cb), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(ok);
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", gtk_widget_destroy,
-                              GTK_OBJECT(configure_win));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             configure_win);
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(configure_win);

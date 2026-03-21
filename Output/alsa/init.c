@@ -44,7 +44,8 @@ void alsa_init(void)
         alsa_cfg.pcm_device = g_strdup("default");
     g_message("device: %s", alsa_cfg.pcm_device);
     if (!xmms_cfg_read_string(cfgfile, "ALSA", "mixer_device", &alsa_cfg.mixer_device))
-        alsa_cfg.mixer_device = g_strdup("PCM");
+        alsa_cfg.mixer_device =
+            g_strdup("Master"); /* fix(#12): PCM is absent on most modern ALSA setups */
     xmms_cfg_read_int(cfgfile, "ALSA", "mixer_card", &alsa_cfg.mixer_card);
     xmms_cfg_read_int(cfgfile, "ALSA", "buffer_time", &alsa_cfg.buffer_time);
     xmms_cfg_read_int(cfgfile, "ALSA", "period_time", &alsa_cfg.period_time);

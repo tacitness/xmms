@@ -35,7 +35,8 @@
 
 static guint32 cached_id = 0;
 static GtkWidget *server_dialog, *server_clist;
-static GtkWidget *debug_window, *debug_clist;
+static GtkWidget *debug_window;
+static GtkTextView *debug_textview_widget;
 static GList *debug_messages = NULL;
 static GList *temp_messages = NULL;
 static pthread_mutex_t list_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -639,29 +640,33 @@ static gchar *cddb_position_string(gchar *input)
     deg[3] = '\0';
     strncpy(min, input + 5, 2);
     min[2] = '\0';
-    return g_strdup_printf("%2d°%s'%c", atoi(deg), min, input[0]);
+    return g_strdup_printf("%2dï¿½%s'%c", atoi(deg), min, input[0]);
 }
 
 static void cddb_server_dialog_ok_cb(GtkWidget *w, gpointer data)
 {
-    char *text;
-    int pos;
+    char *text = NULL;
     GtkEntry *entry = GTK_ENTRY(data);
+    GtkTreeSelection *sel;
+    GtkTreeModel *model;
+    GtkTreeIter iter;
 
-    if (!GTK_CLIST(server_clist)->selection)
+    sel = gtk_tree_view_get_selection(GTK_TREE_VIEW(server_clist));
+    if (!gtk_tree_selection_get_selected(sel, &model, &iter))
         return;
-    pos = GPOINTER_TO_INT(GTK_CLIST(server_clist)->selection->data);
-    gtk_clist_get_text(GTK_CLIST(server_clist), pos, 0, &text);
+    gtk_tree_model_get(model, &iter, 0, &text, -1);
+    if (!text)
+        return;
     cdda_cddb_set_server(text);
     gtk_entry_set_text(entry, text);
+    g_free(text);
     gtk_widget_destroy(server_dialog);
 }
 
-static void cddb_server_dialog_select(GtkWidget *w, gint row, gint column, GdkEvent *event,
-                                      gpointer data)
+static void cddb_server_dialog_select(GtkTreeView *treeview, GtkTreePath *path,
+                                      GtkTreeViewColumn *col, gpointer data)
 {
-    if (event->type == GDK_2BUTTON_PRESS)
-        cddb_server_dialog_ok_cb(NULL, data);
+    cddb_server_dialog_ok_cb(NULL, data);
 }
 
 void cdda_cddb_show_server_dialog(GtkWidget *w, gpointer data)
@@ -704,52 +709,72 @@ void cdda_cddb_show_server_dialog(GtkWidget *w, gpointer data)
     }
 
     server_dialog = gtk_dialog_new();
-    gtk_signal_connect(GTK_OBJECT(server_dialog), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &server_dialog);
+    g_signal_connect(G_OBJECT(server_dialog), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &server_dialog);
     gtk_window_set_title(GTK_WINDOW(server_dialog), _("CDDB servers"));
     gtk_window_set_modal(GTK_WINDOW(server_dialog), TRUE);
 
-    vbox = gtk_vbox_new(FALSE, 0);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 15);
-    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(server_dialog)->vbox), vbox, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(server_dialog))), vbox, TRUE,
+                       TRUE, 0);
 
-    server_clist = gtk_clist_new_with_titles(4, titles);
-    gtk_signal_connect(GTK_OBJECT(server_clist), "select-row", cddb_server_dialog_select, data);
+    {
+        GtkListStore *_store =
+            gtk_list_store_new(4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+        const char *_col_names[] = {titles[0], titles[1], titles[2], titles[3]};
+        int _ci;
+        server_clist = gtk_tree_view_new_with_model(GTK_TREE_MODEL(_store));
+        g_object_unref(_store);
+        for (_ci = 0; _ci < 4; _ci++) {
+            GtkCellRenderer *_r = gtk_cell_renderer_text_new();
+            GtkTreeViewColumn *_c =
+                gtk_tree_view_column_new_with_attributes(_col_names[_ci], _r, "text", _ci, NULL);
+            gtk_tree_view_column_set_resizable(_c, TRUE);
+            gtk_tree_view_append_column(GTK_TREE_VIEW(server_clist), _c);
+        }
+        g_signal_connect(G_OBJECT(server_clist), "row-activated",
+                         G_CALLBACK(cddb_server_dialog_select), data);
+    }
     gtk_box_pack_start(GTK_BOX(vbox), server_clist, TRUE, TRUE, 0);
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
-    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(server_dialog)->action_area), bbox, TRUE, TRUE, 0);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
+    gtk_box_pack_start(GTK_BOX(gtk_dialog_get_action_area(GTK_DIALOG(server_dialog))), bbox, TRUE,
+                       TRUE, 0);
 
     okbutton = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(okbutton), "clicked", GTK_SIGNAL_FUNC(cddb_server_dialog_ok_cb),
-                       data);
+    g_signal_connect(G_OBJECT(okbutton), "clicked", G_CALLBACK(cddb_server_dialog_ok_cb), data);
     gtk_box_pack_start(GTK_BOX(bbox), okbutton, TRUE, TRUE, 0);
     cancelbutton = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancelbutton), "clicked",
-                              GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(server_dialog));
+    g_signal_connect_swapped(G_OBJECT(cancelbutton), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(server_dialog));
     gtk_box_pack_start(GTK_BOX(bbox), cancelbutton, TRUE, TRUE, 0);
-    GTK_WIDGET_SET_FLAGS(okbutton, GTK_CAN_DEFAULT);
-    GTK_WIDGET_SET_FLAGS(cancelbutton, GTK_CAN_DEFAULT);
+    gtk_widget_set_can_default(okbutton, TRUE);
+    gtk_widget_set_can_default(cancelbutton, TRUE);
     gtk_widget_grab_default(okbutton);
 
-    while (servers) {
-        char *row[4];
-        int i;
-
-        row[0] = g_strdup(((char **)servers->data)[0]);
-        row[1] = cddb_position_string(((char **)servers->data)[4]);
-        row[2] = cddb_position_string(((char **)servers->data)[5]);
-        row[3] = g_strdup(((char **)servers->data)[6]);
-        gtk_clist_append(GTK_CLIST(server_clist), row);
-        for (i = 0; i < 4; i++)
-            g_free(row[i]);
-        g_strfreev(servers->data);
-        servers = g_list_next(servers);
+    {
+        GtkListStore *_store2 =
+            GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(server_clist)));
+        while (servers) {
+            GtkTreeIter _iter;
+            char *_r0 = g_strdup(((char **)servers->data)[0]);
+            char *_r1 = cddb_position_string(((char **)servers->data)[4]);
+            char *_r2 = cddb_position_string(((char **)servers->data)[5]);
+            char *_r3 = g_strdup(((char **)servers->data)[6]);
+            gtk_list_store_append(_store2, &_iter);
+            gtk_list_store_set(_store2, &_iter, 0, _r0, 1, _r1, 2, _r2, 3, _r3, -1);
+            g_free(_r0);
+            g_free(_r1);
+            g_free(_r2);
+            g_free(_r3);
+            g_strfreev(servers->data);
+            servers = g_list_next(servers);
+        }
+        g_list_free(servers);
     }
-    g_list_free(servers);
-    gtk_clist_columns_autosize(GTK_CLIST(server_clist));
     gtk_widget_show_all(server_dialog);
 }
 
@@ -764,15 +789,19 @@ static gboolean cddb_update_log_window(gpointer data)
     if (temp_messages != NULL) {
         GList *temp;
         GDK_THREADS_ENTER();
-        gtk_clist_freeze(GTK_CLIST(debug_clist));
-        for (temp = temp_messages; temp; temp = temp->next) {
-            char *text = temp->data;
-            gtk_clist_append(GTK_CLIST(debug_clist), &text);
-            g_free(text);
+        {
+            GtkTextBuffer *_buf = gtk_text_view_get_buffer(debug_textview_widget);
+            GtkTextIter _end;
+            for (temp = temp_messages; temp; temp = temp->next) {
+                char *text = temp->data;
+                gtk_text_buffer_get_end_iter(_buf, &_end);
+                gtk_text_buffer_insert(_buf, &_end, text, -1);
+                gtk_text_buffer_insert(_buf, &_end, "\n", -1);
+                g_free(text);
+            }
+            gtk_text_buffer_get_end_iter(_buf, &_end);
+            gtk_text_view_scroll_to_iter(debug_textview_widget, &_end, 0.0, FALSE, 0.0, 1.0);
         }
-        gtk_clist_columns_autosize(GTK_CLIST(debug_clist));
-        gtk_clist_thaw(GTK_CLIST(debug_clist));
-        gtk_clist_moveto(GTK_CLIST(debug_clist), GTK_CLIST(debug_clist)->rows - 1, -1, 0.5, 0);
         GDK_THREADS_LEAVE();
         g_list_free(temp_messages);
         temp_messages = NULL;
@@ -790,53 +819,59 @@ void cdda_cddb_show_network_window(GtkWidget *w, gpointer data)
     if (debug_window)
         return;
 
-    debug_window = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(debug_window), "destroy", GTK_SIGNAL_FUNC(gtk_widget_destroyed),
-                       &debug_window);
+    debug_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(debug_window), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &debug_window);
     gtk_window_set_title(GTK_WINDOW(debug_window), "CDDB networkdebug");
-    gtk_window_set_policy(GTK_WINDOW(debug_window), FALSE, TRUE, FALSE);
     gtk_window_set_default_size(GTK_WINDOW(debug_window), 400, 150);
-    gtk_container_border_width(GTK_CONTAINER(debug_window), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(debug_window), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(debug_window), vbox);
 
     scroll_win = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_ALWAYS);
-    debug_clist = gtk_clist_new(1);
-    gtk_container_add(GTK_CONTAINER(scroll_win), debug_clist);
+    {
+        GtkWidget *_tv = gtk_text_view_new();
+        gtk_text_view_set_editable(GTK_TEXT_VIEW(_tv), FALSE);
+        gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(_tv), FALSE);
+        debug_textview_widget = GTK_TEXT_VIEW(_tv);
+        gtk_container_add(GTK_CONTAINER(scroll_win), _tv);
+    }
     gtk_box_pack_start(GTK_BOX(vbox), scroll_win, TRUE, TRUE, 0);
 
     temp = debug_messages;
-    while (temp) {
-        gtk_clist_prepend(GTK_CLIST(debug_clist), (gchar **)&temp->data);
-        temp = g_list_next(temp);
+    {
+        GtkTextBuffer *_buf2 = gtk_text_view_get_buffer(debug_textview_widget);
+        GtkTextIter _end2;
+        while (temp) {
+            gtk_text_buffer_get_end_iter(_buf2, &_end2);
+            gtk_text_buffer_insert(_buf2, &_end2, (gchar *)temp->data, -1);
+            gtk_text_buffer_insert(_buf2, &_end2, "\n", -1);
+            temp = g_list_next(temp);
+        }
     }
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_SPREAD);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     close = gtk_button_new_with_label(_("Close"));
-    gtk_signal_connect_object(GTK_OBJECT(close), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(debug_window));
-    GTK_WIDGET_SET_FLAGS(close, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(close), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             G_OBJECT(debug_window));
+    gtk_widget_set_can_default(close, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), close, TRUE, TRUE, 0);
     gtk_widget_grab_default(close);
 
-    gtk_clist_columns_autosize(GTK_CLIST(debug_clist));
-    gtk_clist_set_button_actions(GTK_CLIST(debug_clist), 0, GTK_BUTTON_IGNORED);
-    gtk_clist_moveto(GTK_CLIST(debug_clist), GTK_CLIST(debug_clist)->rows - 1, -1, 0, 0);
-
-    cddb_timeout_id = gtk_timeout_add(500, cddb_update_log_window, NULL);
+    cddb_timeout_id = g_timeout_add(500, cddb_update_log_window, NULL);
     gtk_widget_show_all(debug_window);
 }
 
 void cddb_quit(void)
 {
     if (cddb_timeout_id)
-        gtk_timeout_remove(cddb_timeout_id);
+        g_source_remove(cddb_timeout_id);
     cddb_timeout_id = 0;
 }

@@ -89,6 +89,27 @@ void vis_timeout_func(Vis *vis, guchar *data)
     }
 }
 
+/* GTK3: helper to blit an indexed-color image buffer to a cairo_t */
+static void vis_draw_indexed(cairo_t *cr, gint dx, gint dy, gint w, gint h, const guchar *data,
+                             gint rowstride, const guint32 *colors)
+{
+    cairo_surface_t *surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    guint32 *dst = (guint32 *)cairo_image_surface_get_data(surf);
+    gint stride = cairo_image_surface_get_stride(surf) / 4;
+    gint row, col;
+
+    for (row = 0; row < h; row++) {
+        for (col = 0; col < w; col++) {
+            guchar idx = data[row * rowstride + col];
+            dst[row * stride + col] = 0xff000000u | colors[idx];
+        }
+    }
+    cairo_surface_mark_dirty(surf);
+    cairo_set_source_surface(cr, surf, dx, dy);
+    cairo_paint(cr);
+    cairo_surface_destroy(surf);
+}
+
 void vis_draw(Widget *w)
 {
     Vis *vis = (Vis *)w;
@@ -96,7 +117,6 @@ void vis_draw(Widget *w)
     guchar vis_color[24][3];
     guchar rgb_data[152 * 32], *ptr, c;
     guint32 colors[24];
-    GdkRgbCmap *cmap;
 
     if (!vis->vs_widget.visible)
         return;
@@ -105,9 +125,9 @@ void vis_draw(Widget *w)
 
     get_skin_viscolor(vis_color);
     for (y = 0; y < 24; y++) {
-        colors[y] = vis_color[y][0] << 16 | vis_color[y][1] << 8 | vis_color[y][2];
+        colors[y] = (guint32)vis_color[y][0] << 16 | (guint32)vis_color[y][1] << 8 |
+                    (guint32)vis_color[y][2];
     }
-    cmap = gdk_rgb_cmap_new(colors, 24);
 
     if (!vis->vs_doublesize) {
         memset(rgb_data, 0, 76 * 16);
@@ -194,9 +214,9 @@ void vis_draw(Widget *w)
             }
         }
 
-        gdk_draw_indexed_image(vis->vs_window, vis->vs_widget.gc, vis->vs_widget.x,
-                               vis->vs_widget.y, vis->vs_widget.width, vis->vs_widget.height,
-                               GDK_RGB_DITHER_NORMAL, (guchar *)rgb_data, 76, cmap);
+        /* GTK3: replace gdk_draw_indexed_image with cairo */
+        vis_draw_indexed(vis->vs_widget.cr, vis->vs_widget.x, vis->vs_widget.y,
+                         vis->vs_widget.width, vis->vs_widget.height, rgb_data, 76, colors);
     } else {
         memset(rgb_data, 0, 152 * 32);
         for (y = 1; y < 16; y += 2) {
@@ -319,12 +339,11 @@ void vis_draw(Widget *w)
             }
         }
 
-        gdk_draw_indexed_image(vis->vs_window, vis->vs_widget.gc, vis->vs_widget.x << 1,
-                               vis->vs_widget.y << 1, vis->vs_widget.width << 1,
-                               vis->vs_widget.height << 1, GDK_RGB_DITHER_NONE, (guchar *)rgb_data,
-                               152, cmap);
+        /* GTK3: replace gdk_draw_indexed_image with cairo */
+        vis_draw_indexed(vis->vs_widget.cr, vis->vs_widget.x << 1, vis->vs_widget.y << 1,
+                         vis->vs_widget.width << 1, vis->vs_widget.height << 1, rgb_data, 152,
+                         colors);
     }
-    gdk_rgb_cmap_free(cmap);
     GDK_THREADS_LEAVE();
 }
 
@@ -345,12 +364,8 @@ void vis_set_doublesize(Vis *vis, gboolean doublesize)
 
 void vis_clear(Vis *vis)
 {
-    if (!vis->vs_doublesize)
-        gdk_window_clear_area(vis->vs_window, vis->vs_widget.x, vis->vs_widget.y,
-                              vis->vs_widget.width, vis->vs_widget.height);
-    else
-        gdk_window_clear_area(vis->vs_window, vis->vs_widget.x << 1, vis->vs_widget.y << 1,
-                              vis->vs_widget.width << 1, vis->vs_widget.height << 1);
+    /* GTK3: gdk_window_clear_area removed; next vis_draw call will repaint with background */
+    vis_draw((Widget *)vis);
 }
 
 void vis_set_window(Vis *vis, GdkWindow *window)
@@ -358,15 +373,15 @@ void vis_set_window(Vis *vis, GdkWindow *window)
     vis->vs_window = window;
 }
 
-Vis *create_vis(GList **wlist, GdkPixmap *parent, GdkWindow *window, GdkGC *gc, gint x, gint y,
-                gint width, gboolean doublesize)
+Vis *create_vis(GList **wlist, cairo_surface_t *parent, GdkWindow *window, cairo_t *cr, gint x,
+                gint y, gint width, gboolean doublesize)
 {
     Vis *vis;
 
     vis = (Vis *)g_malloc0(sizeof(Vis));
     vis->vs_widget.parent = parent;
     vis->vs_window = window;
-    vis->vs_widget.gc = gc;
+    vis->vs_widget.cr = cr;
     vis->vs_widget.x = x;
     vis->vs_widget.y = y;
     vis->vs_widget.width = width;

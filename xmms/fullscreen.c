@@ -17,6 +17,7 @@
  */
 #include <X11/Xatom.h>
 #include <X11/Xmd.h>
+#include <gdk/gdkx.h>
 
 #include <config.h>
 
@@ -156,7 +157,7 @@ static fullscreen_window_t *getwindow(GtkWidget *win)
     windows[i]->oy = 0;
     windows[i]->owidth = 0;
     windows[i]->oheight = 0;
-    windows[i]->display = getdisplay(GDK_WINDOW_XDISPLAY(win->window));
+    windows[i]->display = getdisplay(GDK_WINDOW_XDISPLAY(gtk_widget_get_window(win)));
     windows[i]->is_full = 0;
     return windows[i];
 }
@@ -206,7 +207,8 @@ gboolean xmms_fullscreen_init(GtkWidget *win)
 
 gboolean xmms_fullscreen_enter(GtkWidget *win, gint *w, gint *h)
 {
-    gint i, close, how_close = -1, t, dummy;
+    gint i, close, how_close = -1, t;
+    GdkGrabStatus grab_status;
     gboolean retval = FALSE;
     fullscreen_window_t *fwin;
 
@@ -237,18 +239,22 @@ gboolean xmms_fullscreen_enter(GtkWidget *win, gint *w, gint *h)
             *h = fwin->display->modes[close]->vdisplay;
 
             /* Save the old position/size */
-            gdk_window_get_root_origin(fwin->window->window, &fwin->ox, &fwin->oy);
-            gdk_window_get_size(fwin->window->window, &fwin->owidth, &fwin->oheight);
+            {
+                GdkWindow *gdkwin = gtk_widget_get_window(fwin->window);
+                gdk_window_get_root_origin(gdkwin, &fwin->ox, &fwin->oy);
+                /* GTK3: gdk_window_get_size removed — use width/height directly */
+                fwin->owidth = gdk_window_get_width(gdkwin);
+                fwin->oheight = gdk_window_get_height(gdkwin);
 
-            /* Move it. */
-            gdk_window_move_resize(fwin->window->window, 0, 0,
-                                   fwin->display->modes[close]->hdisplay,
-                                   fwin->display->modes[close]->vdisplay);
+                /* Move it. */
+                gdk_window_move_resize(gdkwin, 0, 0, fwin->display->modes[close]->hdisplay,
+                                       fwin->display->modes[close]->vdisplay);
 
-            /* Tell the WM not to mess with this window (no more decor) */
-            gdk_window_hide(fwin->window->window);
-            gdk_window_set_override_redirect(fwin->window->window, TRUE);
-            gdk_window_show(fwin->window->window);
+                /* Tell the WM not to mess with this window (no more decor) */
+                gdk_window_hide(gdkwin);
+                gdk_window_set_override_redirect(gdkwin, TRUE);
+                gdk_window_show(gdkwin);
+            }
 
             /*
              * XXX: HACK
@@ -260,19 +266,21 @@ gboolean xmms_fullscreen_enter(GtkWidget *win, gint *w, gint *h)
             gdk_flush();
             xmms_usleep(50000);
 
-            /* Steal the keyboard/mouse */
+            /* Steal the keyboard/mouse — GTK3: single gdk_seat_grab() covers both */
             /* XXX: FIXME, use timeouts.. */
-            for (t = 0; t < 10; t++) {
-                dummy = gdk_pointer_grab(fwin->window->window, TRUE, 0, fwin->window->window, NULL,
-                                         GDK_CURRENT_TIME);
-
-                if (dummy == GrabSuccess)
-                    break;
-
-                gtk_main_iteration_do(FALSE);
-                xmms_usleep(10000);
+            {
+                GdkDisplay *disp = gtk_widget_get_display(fwin->window);
+                GdkSeat *seat = gdk_display_get_default_seat(disp);
+                for (t = 0; t < 10; t++) {
+                    grab_status =
+                        gdk_seat_grab(seat, gtk_widget_get_window(fwin->window),
+                                      GDK_SEAT_CAPABILITY_ALL, TRUE, NULL, NULL, NULL, NULL);
+                    if (grab_status == GDK_GRAB_SUCCESS)
+                        break;
+                    gtk_main_iteration_do(FALSE);
+                    xmms_usleep(10000);
+                }
             }
-            gdk_keyboard_grab(fwin->window->window, TRUE, GDK_CURRENT_TIME);
 
             /* Do the video mode switch.. */
             XF86VidModeSwitchToMode(fwin->display->display, DefaultScreen(fwin->display->display),
@@ -301,18 +309,20 @@ void xmms_fullscreen_leave(GtkWidget *win)
     fwin = getwindow(win);
 
     if (fwin->is_full && fwin->display->is_full) {
-        /* Release our grabs */
-        gdk_pointer_ungrab(GDK_CURRENT_TIME);
-        gdk_keyboard_ungrab(GDK_CURRENT_TIME);
+        /* Release our grabs — GTK3: gdk_seat_ungrab() releases both pointer and keyboard */
+        {
+            GdkDisplay *disp = gtk_widget_get_display(fwin->window);
+            gdk_seat_ungrab(gdk_display_get_default_seat(disp));
+        }
 
         /* Let the WM manage this window again */
-        gdk_window_hide(fwin->window->window);
-        gdk_window_set_override_redirect(fwin->window->window, FALSE);
-        gdk_window_show(fwin->window->window);
+        gdk_window_hide(gtk_widget_get_window(fwin->window));
+        gdk_window_set_override_redirect(gtk_widget_get_window(fwin->window), FALSE);
+        gdk_window_show(gtk_widget_get_window(fwin->window));
 
         /* Restore size/position */
-        gdk_window_move_resize(fwin->window->window, fwin->ox, fwin->oy, fwin->owidth,
-                               fwin->oheight);
+        gdk_window_move_resize(gtk_widget_get_window(fwin->window), fwin->ox, fwin->oy,
+                               fwin->owidth, fwin->oheight);
 
         XF86VidModeSwitchToMode(fwin->display->display, DefaultScreen(fwin->display->display),
                                 fwin->display->origmode);

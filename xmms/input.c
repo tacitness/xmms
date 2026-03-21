@@ -311,9 +311,25 @@ gint input_get_time(void)
 
 void input_set_eq(int on, float preamp, float *bands)
 {
+    float adjusted_preamp = preamp;
+
+    /* #14 fixed: when cfg.eq_auto_level is set, reduce preamp so that
+     * (preamp + max_band) never exceeds 0 dB, preventing int16 overflow
+     * in the subband synthesis output stage. */
+    if (cfg.eq_auto_level && on) {
+        float max_band = bands[0];
+        int i;
+        for (i = 1; i < 10; i++)
+            if (bands[i] > max_band)
+                max_band = bands[i];
+        float headroom = preamp + max_band;
+        if (headroom > 0.0f)
+            adjusted_preamp = preamp - headroom;
+    }
+
     if (ip_data->playing)
         if (get_current_input_plugin() && get_current_input_plugin()->set_eq)
-            get_current_input_plugin()->set_eq(on, preamp, bands);
+            get_current_input_plugin()->set_eq(on, adjusted_preamp, bands);
 }
 
 void input_get_song_info(gchar *filename, gchar **title, gint *length)
@@ -360,8 +376,8 @@ static void input_general_file_info_box(char *filename, InputPlugin *ip)
 
     char *title, *iplugin;
 
-    window = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_window_set_policy(GTK_WINDOW(window), FALSE, TRUE, FALSE);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);       /* GTK3: GTK_WINDOW_DIALOG removed */
+    gtk_window_set_resizable(GTK_WINDOW(window), TRUE); /* GTK3: gtk_window_set_policy removed */
     title = g_strdup_printf(_("File Info - %s"), g_basename(filename));
     gtk_window_set_title(GTK_WINDOW(window), title);
     g_free(title);
@@ -401,11 +417,14 @@ static void input_general_file_info_box(char *filename, InputPlugin *ip)
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     cancel = gtk_button_new_with_label(_("Close"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(window));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    /* GTK3: GTK_OBJECT→G_OBJECT, gtk_signal_connect_object→g_signal_connect_swapped,
+     *        GTK_SIGNAL_FUNC→G_CALLBACK, GTK_WIDGET_SET_FLAGS→gtk_widget_set_can_default,
+     *        gtk_signal_connect→g_signal_connect */
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy), window);
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
-    gtk_signal_connect(GTK_OBJECT(window), "key_press_event", util_dialog_keypress_cb, NULL);
+    g_signal_connect(G_OBJECT(window), "key-press-event", G_CALLBACK(util_dialog_keypress_cb),
+                     NULL);
 
     gtk_widget_show_all(window);
 }

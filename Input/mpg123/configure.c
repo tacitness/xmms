@@ -18,7 +18,7 @@ static GtkWidget *auto_select, *decoder_3dnow, *decoder_mmx, *decoder_fpu;
 static void auto_select_cb(GtkWidget *w, gpointer data);
 #endif
 
-static GtkObject *streaming_size_adj, *streaming_pre_adj;
+static GtkAdjustment *streaming_size_adj, *streaming_pre_adj;
 static GtkWidget *streaming_proxy_use, *streaming_proxy_host_entry;
 static GtkWidget *streaming_proxy_port_entry, *streaming_save_use, *streaming_save_entry;
 static GtkWidget *streaming_proxy_auth_use;
@@ -36,45 +36,46 @@ static void mpg123_configurewin_ok(GtkWidget *widget, gpointer data)
     ConfigFile *cfg;
     gchar *filename;
 
-    if (GTK_TOGGLE_BUTTON(decode_res_16)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_res_16)))
         mpg123_cfg.resolution = 16;
-    else if (GTK_TOGGLE_BUTTON(decode_res_8)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_res_8)))
         mpg123_cfg.resolution = 8;
 
-    if (GTK_TOGGLE_BUTTON(decode_ch_stereo)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_ch_stereo)))
         mpg123_cfg.channels = 2;
-    else if (GTK_TOGGLE_BUTTON(decode_ch_mono)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_ch_mono)))
         mpg123_cfg.channels = 1;
 
-    if (GTK_TOGGLE_BUTTON(decode_freq_1to1)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_freq_1to1)))
         mpg123_cfg.downsample = 0;
-    else if (GTK_TOGGLE_BUTTON(decode_freq_1to2)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_freq_1to2)))
         mpg123_cfg.downsample = 1;
-    if (GTK_TOGGLE_BUTTON(decode_freq_1to4)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decode_freq_1to4)))
         mpg123_cfg.downsample = 2;
 
-    if (GTK_TOGGLE_BUTTON(detect_by_content)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(detect_by_content)))
         mpg123_cfg.detect_by = DETECT_CONTENT;
-    else if (GTK_TOGGLE_BUTTON(detect_by_extension)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(detect_by_extension)))
         mpg123_cfg.detect_by = DETECT_EXTENSION;
-    else if (GTK_TOGGLE_BUTTON(detect_by_both)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(detect_by_both)))
         mpg123_cfg.detect_by = DETECT_BOTH;
     else
         mpg123_cfg.detect_by = DETECT_EXTENSION;
 
 #ifdef USE_SIMD
-    if (GTK_TOGGLE_BUTTON(auto_select)->active)
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(auto_select)))
         mpg123_cfg.default_synth = SYNTH_AUTO;
-    else if (GTK_TOGGLE_BUTTON(decoder_fpu)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decoder_fpu)))
         mpg123_cfg.default_synth = SYNTH_FPU;
-    else if (GTK_TOGGLE_BUTTON(decoder_mmx)->active)
+    else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(decoder_mmx)))
         mpg123_cfg.default_synth = SYNTH_MMX;
     else
         mpg123_cfg.default_synth = SYNTH_3DNOW;
 
 #endif
-    mpg123_cfg.http_buffer_size = (gint)GTK_ADJUSTMENT(streaming_size_adj)->value;
-    mpg123_cfg.http_prebuffer = (gint)GTK_ADJUSTMENT(streaming_pre_adj)->value;
+    mpg123_cfg.http_buffer_size =
+        (gint)gtk_adjustment_get_value(GTK_ADJUSTMENT(streaming_size_adj));
+    mpg123_cfg.http_prebuffer = (gint)gtk_adjustment_get_value(GTK_ADJUSTMENT(streaming_pre_adj));
 
     mpg123_cfg.use_proxy = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(streaming_proxy_use));
     g_free(mpg123_cfg.proxy_host);
@@ -198,8 +199,8 @@ static void streaming_save_browse_cb(GtkWidget *w, gpointer data)
         streaming_save_dirbrowser = xmms_create_dir_browser(
             _("Select the directory where you want to store the MPEG streams:"),
             mpg123_cfg.save_http_path, GTK_SELECTION_SINGLE, streaming_save_dirbrowser_cb);
-        gtk_signal_connect(GTK_OBJECT(streaming_save_dirbrowser), "destroy",
-                           GTK_SIGNAL_FUNC(gtk_widget_destroyed), &streaming_save_dirbrowser);
+        g_signal_connect(G_OBJECT(streaming_save_dirbrowser), "destroy",
+                         G_CALLBACK(gtk_widget_destroyed), &streaming_save_dirbrowser);
         gtk_window_set_transient_for(GTK_WINDOW(streaming_save_dirbrowser),
                                      GTK_WINDOW(mpg123_configurewin));
         gtk_widget_show(streaming_save_dirbrowser);
@@ -246,35 +247,35 @@ void mpg123_configure(void)
     char *temp;
 
     if (mpg123_configurewin != NULL) {
-        gdk_window_raise(mpg123_configurewin->window);
+        gdk_window_raise(gtk_widget_get_window(mpg123_configurewin));
         return;
     }
-    mpg123_configurewin = gtk_window_new(GTK_WINDOW_DIALOG);
-    gtk_signal_connect(GTK_OBJECT(mpg123_configurewin), "destroy",
-                       GTK_SIGNAL_FUNC(gtk_widget_destroyed), &mpg123_configurewin);
-    gtk_signal_connect(GTK_OBJECT(mpg123_configurewin), "destroy",
-                       GTK_SIGNAL_FUNC(configure_destroy), &mpg123_configurewin);
+    mpg123_configurewin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_signal_connect(G_OBJECT(mpg123_configurewin), "destroy", G_CALLBACK(gtk_widget_destroyed),
+                     &mpg123_configurewin);
+    g_signal_connect(G_OBJECT(mpg123_configurewin), "destroy", G_CALLBACK(configure_destroy),
+                     &mpg123_configurewin);
     gtk_window_set_title(GTK_WINDOW(mpg123_configurewin), _("MPG123 Configuration"));
-    gtk_window_set_policy(GTK_WINDOW(mpg123_configurewin), FALSE, FALSE, FALSE);
+    /* TODO(#gtk3): gtk_window_set_policy removed */
     /*  gtk_window_set_position(GTK_WINDOW(mpg123_configurewin), GTK_WIN_POS_MOUSE); */
-    gtk_container_border_width(GTK_CONTAINER(mpg123_configurewin), 10);
+    gtk_container_set_border_width(GTK_CONTAINER(mpg123_configurewin), 10);
 
-    vbox = gtk_vbox_new(FALSE, 10);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(mpg123_configurewin), vbox);
 
     notebook = gtk_notebook_new();
     gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-    decode_vbox = gtk_vbox_new(FALSE, 5);
+    decode_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(decode_vbox), 5);
 
-    decode_hbox1 = gtk_hbox_new(TRUE, 5);
+    decode_hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(decode_vbox), decode_hbox1, FALSE, FALSE, 0);
 
     decode_res_frame = gtk_frame_new(_("Resolution:"));
     gtk_box_pack_start(GTK_BOX(decode_hbox1), decode_res_frame, TRUE, TRUE, 0);
 
-    decode_res_vbox = gtk_vbox_new(FALSE, 5);
+    decode_res_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(decode_res_vbox), 5);
     gtk_container_add(GTK_CONTAINER(decode_res_frame), decode_res_vbox);
 
@@ -284,7 +285,7 @@ void mpg123_configure(void)
     gtk_box_pack_start(GTK_BOX(decode_res_vbox), decode_res_16, FALSE, FALSE, 0);
 
     decode_res_8 =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(decode_res_16)),
+        gtk_radio_button_new_with_label(gtk_radio_button_get_group(GTK_RADIO_BUTTON(decode_res_16)),
                                         _("8 bit"));
     if (mpg123_cfg.resolution == 8)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(decode_res_8), TRUE);
@@ -294,7 +295,7 @@ void mpg123_configure(void)
     decode_ch_frame = gtk_frame_new(_("Channels:"));
     gtk_box_pack_start(GTK_BOX(decode_hbox1), decode_ch_frame, TRUE, TRUE, 0);
 
-    decode_ch_vbox = gtk_vbox_new(FALSE, 5);
+    decode_ch_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(decode_ch_vbox), 5);
     gtk_container_add(GTK_CONTAINER(decode_ch_frame), decode_ch_vbox);
 
@@ -304,9 +305,9 @@ void mpg123_configure(void)
 
     gtk_box_pack_start(GTK_BOX(decode_ch_vbox), decode_ch_stereo, FALSE, FALSE, 0);
 
-    decode_ch_mono =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(decode_ch_stereo)),
-                                        _("Mono"));
+    decode_ch_mono = gtk_radio_button_new_with_label(gtk_radio_button_get_group(
+                                                         GTK_RADIO_BUTTON(decode_ch_stereo)),
+                                                     _("Mono"));
     if (mpg123_cfg.channels == 1)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(decode_ch_mono), TRUE);
 
@@ -315,7 +316,7 @@ void mpg123_configure(void)
     decode_freq_frame = gtk_frame_new(_("Down sample:"));
     gtk_box_pack_start(GTK_BOX(decode_vbox), decode_freq_frame, FALSE, FALSE, 0);
 
-    decode_freq_vbox = gtk_vbox_new(FALSE, 5);
+    decode_freq_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(decode_freq_vbox), 5);
     gtk_container_add(GTK_CONTAINER(decode_freq_frame), decode_freq_vbox);
 
@@ -324,16 +325,16 @@ void mpg123_configure(void)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(decode_freq_1to1), TRUE);
     gtk_box_pack_start(GTK_BOX(decode_freq_vbox), decode_freq_1to1, FALSE, FALSE, 0);
 
-    decode_freq_1to2 =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(decode_freq_1to1)),
-                                        _("1:2 (22 kHz)"));
+    decode_freq_1to2 = gtk_radio_button_new_with_label(gtk_radio_button_get_group(
+                                                           GTK_RADIO_BUTTON(decode_freq_1to1)),
+                                                       _("1:2 (22 kHz)"));
     if (mpg123_cfg.downsample == 1)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(decode_freq_1to2), TRUE);
     gtk_box_pack_start(GTK_BOX(decode_freq_vbox), decode_freq_1to2, FALSE, FALSE, 0);
 
-    decode_freq_1to4 =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(decode_freq_1to1)),
-                                        _("1:4 (11 kHz)"));
+    decode_freq_1to4 = gtk_radio_button_new_with_label(gtk_radio_button_get_group(
+                                                           GTK_RADIO_BUTTON(decode_freq_1to1)),
+                                                       _("1:4 (11 kHz)"));
     if (mpg123_cfg.downsample == 2)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(decode_freq_1to4), TRUE);
 
@@ -347,14 +348,13 @@ void mpg123_configure(void)
         decoder_frame = gtk_frame_new(_("Decoder:"));
         gtk_box_pack_start(GTK_BOX(decode_vbox), decoder_frame, FALSE, FALSE, 0);
 
-        decoder_vbox = gtk_vbox_new(FALSE, 5);
+        decoder_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
         gtk_container_set_border_width(GTK_CONTAINER(decoder_vbox), 5);
         gtk_container_add(GTK_CONTAINER(decoder_frame), decoder_vbox);
 
         auto_select = gtk_check_button_new_with_label(_("Automatic detection"));
         gtk_box_pack_start(GTK_BOX(decoder_vbox), auto_select, FALSE, FALSE, 0);
-        gtk_signal_connect(GTK_OBJECT(auto_select), "clicked", GTK_SIGNAL_FUNC(auto_select_cb),
-                           NULL);
+        g_signal_connect(G_OBJECT(auto_select), "clicked", G_CALLBACK(auto_select_cb), NULL);
 
         decoder_3dnow = gtk_radio_button_new_with_label(NULL, _("3DNow! optimized decoder"));
         gtk_box_pack_start(GTK_BOX(decoder_vbox), decoder_3dnow, FALSE, FALSE, 0);
@@ -387,19 +387,19 @@ void mpg123_configure(void)
     option_frame = gtk_frame_new(_("Options"));
     gtk_box_pack_start(GTK_BOX(decode_vbox), option_frame, FALSE, FALSE, 0);
 
-    option_vbox = gtk_vbox_new(FALSE, 5);
+    option_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(option_vbox), 5);
     gtk_container_add(GTK_CONTAINER(option_frame), option_vbox);
 
     detect_by_content = gtk_radio_button_new_with_label(NULL, _("Content"));
 
-    detect_by_extension =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(detect_by_content)),
-                                        _("Extension"));
+    detect_by_extension = gtk_radio_button_new_with_label(gtk_radio_button_get_group(
+                                                              GTK_RADIO_BUTTON(detect_by_content)),
+                                                          _("Extension"));
 
-    detect_by_both =
-        gtk_radio_button_new_with_label(gtk_radio_button_group(GTK_RADIO_BUTTON(detect_by_content)),
-                                        _("Extension and content"));
+    detect_by_both = gtk_radio_button_new_with_label(gtk_radio_button_get_group(
+                                                         GTK_RADIO_BUTTON(detect_by_content)),
+                                                     _("Extension and content"));
 
     switch (mpg123_cfg.detect_by) {
     case DETECT_CONTENT:
@@ -420,34 +420,34 @@ void mpg123_configure(void)
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), decode_vbox, gtk_label_new(_("Decoder")));
 
-    streaming_vbox = gtk_vbox_new(FALSE, 0);
+    streaming_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
     streaming_buf_frame = gtk_frame_new(_("Buffering:"));
     gtk_container_set_border_width(GTK_CONTAINER(streaming_buf_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_buf_frame, FALSE, FALSE, 0);
 
-    streaming_buf_hbox = gtk_hbox_new(TRUE, 5);
+    streaming_buf_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_buf_hbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_buf_frame), streaming_buf_hbox);
 
-    streaming_size_box = gtk_hbox_new(FALSE, 5);
+    streaming_size_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     /*gtk_table_attach_defaults(GTK_TABLE(streaming_buf_table),streaming_size_box,0,1,0,1); */
     gtk_box_pack_start(GTK_BOX(streaming_buf_hbox), streaming_size_box, TRUE, TRUE, 0);
     streaming_size_label = gtk_label_new(_("Buffer size (kb):"));
     gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_size_label, FALSE, FALSE, 0);
     streaming_size_adj = gtk_adjustment_new(mpg123_cfg.http_buffer_size, 4, 4096, 4, 4, 4);
     streaming_size_spin = gtk_spin_button_new(GTK_ADJUSTMENT(streaming_size_adj), 8, 0);
-    gtk_widget_set_usize(streaming_size_spin, 60, -1);
+    gtk_widget_set_size_request(streaming_size_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(streaming_size_box), streaming_size_spin, FALSE, FALSE, 0);
 
-    streaming_pre_box = gtk_hbox_new(FALSE, 5);
+    streaming_pre_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     /*gtk_table_attach_defaults(GTK_TABLE(streaming_buf_table),streaming_pre_box,1,2,0,1); */
     gtk_box_pack_start(GTK_BOX(streaming_buf_hbox), streaming_pre_box, TRUE, TRUE, 0);
     streaming_pre_label = gtk_label_new(_("Pre-buffer (percent):"));
     gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_pre_label, FALSE, FALSE, 0);
     streaming_pre_adj = gtk_adjustment_new(mpg123_cfg.http_prebuffer, 0, 90, 1, 1, 1);
     streaming_pre_spin = gtk_spin_button_new(GTK_ADJUSTMENT(streaming_pre_adj), 1, 0);
-    gtk_widget_set_usize(streaming_pre_spin, 60, -1);
+    gtk_widget_set_size_request(streaming_pre_spin, 60, -1);
     gtk_box_pack_start(GTK_BOX(streaming_pre_box), streaming_pre_spin, FALSE, FALSE, 0);
 
     /*
@@ -457,17 +457,16 @@ void mpg123_configure(void)
     gtk_container_set_border_width(GTK_CONTAINER(streaming_proxy_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_proxy_frame, FALSE, FALSE, 0);
 
-    streaming_proxy_vbox = gtk_vbox_new(FALSE, 5);
+    streaming_proxy_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_proxy_vbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_proxy_frame), streaming_proxy_vbox);
 
     streaming_proxy_use = gtk_check_button_new_with_label(_("Use proxy"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_use), mpg123_cfg.use_proxy);
-    gtk_signal_connect(GTK_OBJECT(streaming_proxy_use), "clicked", GTK_SIGNAL_FUNC(proxy_use_cb),
-                       NULL);
+    g_signal_connect(G_OBJECT(streaming_proxy_use), "clicked", G_CALLBACK(proxy_use_cb), NULL);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_use, FALSE, FALSE, 0);
 
-    streaming_proxy_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_proxy_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_proxy_hbox, mpg123_cfg.use_proxy);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_hbox, FALSE, FALSE, 0);
 
@@ -482,7 +481,7 @@ void mpg123_configure(void)
     gtk_box_pack_start(GTK_BOX(streaming_proxy_hbox), streaming_proxy_port_label, FALSE, FALSE, 0);
 
     streaming_proxy_port_entry = gtk_entry_new();
-    gtk_widget_set_usize(streaming_proxy_port_entry, 50, -1);
+    gtk_widget_set_size_request(streaming_proxy_port_entry, 50, -1);
     temp = g_strdup_printf("%d", mpg123_cfg.proxy_port);
     gtk_entry_set_text(GTK_ENTRY(streaming_proxy_port_entry), temp);
     g_free(temp);
@@ -492,11 +491,11 @@ void mpg123_configure(void)
     gtk_widget_set_sensitive(streaming_proxy_auth_use, mpg123_cfg.use_proxy);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_proxy_auth_use),
                                  mpg123_cfg.proxy_use_auth);
-    gtk_signal_connect(GTK_OBJECT(streaming_proxy_auth_use), "clicked",
-                       GTK_SIGNAL_FUNC(proxy_auth_use_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_proxy_auth_use), "clicked", G_CALLBACK(proxy_auth_use_cb),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_use, FALSE, FALSE, 0);
 
-    streaming_proxy_auth_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_proxy_auth_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_proxy_auth_hbox,
                              mpg123_cfg.use_proxy && mpg123_cfg.proxy_use_auth);
     gtk_box_pack_start(GTK_BOX(streaming_proxy_vbox), streaming_proxy_auth_hbox, FALSE, FALSE, 0);
@@ -530,18 +529,18 @@ void mpg123_configure(void)
     gtk_container_set_border_width(GTK_CONTAINER(streaming_save_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_save_frame, FALSE, FALSE, 0);
 
-    streaming_save_vbox = gtk_vbox_new(FALSE, 5);
+    streaming_save_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_set_border_width(GTK_CONTAINER(streaming_save_vbox), 5);
     gtk_container_add(GTK_CONTAINER(streaming_save_frame), streaming_save_vbox);
 
     streaming_save_use = gtk_check_button_new_with_label(_("Save stream to disk"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(streaming_save_use),
                                  mpg123_cfg.save_http_stream);
-    gtk_signal_connect(GTK_OBJECT(streaming_save_use), "clicked",
-                       GTK_SIGNAL_FUNC(streaming_save_use_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_save_use), "clicked", G_CALLBACK(streaming_save_use_cb),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(streaming_save_vbox), streaming_save_use, FALSE, FALSE, 0);
 
-    streaming_save_hbox = gtk_hbox_new(FALSE, 5);
+    streaming_save_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(streaming_save_hbox, mpg123_cfg.save_http_stream);
     gtk_box_pack_start(GTK_BOX(streaming_save_vbox), streaming_save_hbox, FALSE, FALSE, 0);
 
@@ -553,15 +552,15 @@ void mpg123_configure(void)
     gtk_box_pack_start(GTK_BOX(streaming_save_hbox), streaming_save_entry, TRUE, TRUE, 0);
 
     streaming_save_browse = gtk_button_new_with_label(_("Browse"));
-    gtk_signal_connect(GTK_OBJECT(streaming_save_browse), "clicked",
-                       GTK_SIGNAL_FUNC(streaming_save_browse_cb), NULL);
+    g_signal_connect(G_OBJECT(streaming_save_browse), "clicked",
+                     G_CALLBACK(streaming_save_browse_cb), NULL);
     gtk_box_pack_start(GTK_BOX(streaming_save_hbox), streaming_save_browse, FALSE, FALSE, 0);
 
     streaming_cast_frame = gtk_frame_new(_("SHOUT/Icecast:"));
     gtk_container_set_border_width(GTK_CONTAINER(streaming_cast_frame), 5);
     gtk_box_pack_start(GTK_BOX(streaming_vbox), streaming_cast_frame, FALSE, FALSE, 0);
 
-    streaming_cast_vbox = gtk_vbox_new(5, FALSE);
+    streaming_cast_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(streaming_cast_frame), streaming_cast_vbox);
 
     streaming_cast_title =
@@ -578,10 +577,10 @@ void mpg123_configure(void)
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), streaming_vbox, gtk_label_new(_("Streaming")));
 
     title_frame = gtk_frame_new(_("ID3 Tags:"));
-    gtk_container_border_width(GTK_CONTAINER(title_frame), 5);
+    gtk_container_set_border_width(GTK_CONTAINER(title_frame), 5);
 
-    title_id3_vbox = gtk_vbox_new(FALSE, 10);
-    gtk_container_border_width(GTK_CONTAINER(title_id3_vbox), 5);
+    title_id3_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_set_border_width(GTK_CONTAINER(title_id3_vbox), 5);
     gtk_container_add(GTK_CONTAINER(title_frame), title_id3_vbox);
 
     title_id3v2_disable = gtk_check_button_new_with_label(_("Disable ID3V2 tags"));
@@ -590,10 +589,10 @@ void mpg123_configure(void)
 
     title_override = gtk_check_button_new_with_label(_("Override generic titles"));
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(title_override), mpg123_cfg.title_override);
-    gtk_signal_connect(GTK_OBJECT(title_override), "clicked", title_override_cb, NULL);
+    g_signal_connect(G_OBJECT(title_override), "clicked", G_CALLBACK(title_override_cb), NULL);
     gtk_box_pack_start(GTK_BOX(title_id3_vbox), title_override, FALSE, FALSE, 0);
 
-    title_id3_box = gtk_hbox_new(FALSE, 5);
+    title_id3_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_sensitive(title_id3_box, mpg123_cfg.title_override);
     gtk_box_pack_start(GTK_BOX(title_id3_vbox), title_id3_box, FALSE, FALSE, 0);
 
@@ -609,21 +608,21 @@ void mpg123_configure(void)
     gtk_box_pack_start(GTK_BOX(title_id3_vbox), title_tag_desc, FALSE, FALSE, 0);
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), title_frame, gtk_label_new(_("Title")));
 
-    bbox = gtk_hbutton_box_new();
+    bbox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
     gtk_button_box_set_layout(GTK_BUTTON_BOX(bbox), GTK_BUTTONBOX_END);
-    gtk_button_box_set_spacing(GTK_BUTTON_BOX(bbox), 5);
+    gtk_box_set_spacing(GTK_BOX(bbox), 5);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ok = gtk_button_new_with_label(_("OK"));
-    gtk_signal_connect(GTK_OBJECT(ok), "clicked", GTK_SIGNAL_FUNC(mpg123_configurewin_ok), NULL);
-    GTK_WIDGET_SET_FLAGS(ok, GTK_CAN_DEFAULT);
+    g_signal_connect(G_OBJECT(ok), "clicked", G_CALLBACK(mpg123_configurewin_ok), NULL);
+    gtk_widget_set_can_default(ok, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), ok, TRUE, TRUE, 0);
     gtk_widget_grab_default(ok);
 
     cancel = gtk_button_new_with_label(_("Cancel"));
-    gtk_signal_connect_object(GTK_OBJECT(cancel), "clicked", GTK_SIGNAL_FUNC(gtk_widget_destroy),
-                              GTK_OBJECT(mpg123_configurewin));
-    GTK_WIDGET_SET_FLAGS(cancel, GTK_CAN_DEFAULT);
+    g_signal_connect_swapped(G_OBJECT(cancel), "clicked", G_CALLBACK(gtk_widget_destroy),
+                             mpg123_configurewin);
+    gtk_widget_set_can_default(cancel, TRUE);
     gtk_box_pack_start(GTK_BOX(bbox), cancel, TRUE, TRUE, 0);
 
     gtk_widget_show_all(mpg123_configurewin);

@@ -35,7 +35,7 @@ struct bitfieldmask {
 #define BI_RLE4 2L
 #define BI_BITFIELDS 3L
 
-static GdkGC *bmp_gc = NULL;
+/* GTK3: GdkGC removed — no longer needed, cairo handles drawing */
 
 static int read_le_short(FILE *file, guint16 *ret)
 {
@@ -108,7 +108,7 @@ static void read_32b_rgb(guint8 *input, int input_size, guint8 *output, guint32 
                          struct bitfieldmask *mask);
 
 
-GdkPixmap *read_bmp(gchar *filename)
+cairo_surface_t *read_bmp(gchar *filename)
 {
     FILE *file;
     gchar type[2];
@@ -119,7 +119,7 @@ GdkPixmap *read_bmp(gchar *filename)
 
     struct rgb_quad rgb_quads[256];
     struct bitfieldmask mask = {0};
-    GdkPixmap *ret = NULL;
+    cairo_surface_t *ret = NULL;
 
     if (stat(filename, &statbuf) == -1)
         return NULL;
@@ -216,12 +216,26 @@ GdkPixmap *read_bmp(gchar *filename)
     else
         g_warning("read_bmp(): Unsupported bitdepth: %d", bitcount);
 
-    ret = gdk_pixmap_new(mainwin->window, w, h, gdk_rgb_get_visual()->depth);
+    /* GTK3: create cairo image surface from RGB pixel data */
+    ret = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, (gint)w, (gint)h);
+    cairo_surface_flush(ret);
+    {
+        guchar *sdata = cairo_image_surface_get_data(ret);
+        gint stride = cairo_image_surface_get_stride(ret);
+        guint32 row, col;
 
-    if (!bmp_gc)
-        bmp_gc = gdk_gc_new(mainwin->window);
+        for (row = 0; row < h; row++) {
+            guchar *src = data + row * w * 3;
+            guint32 *dst = (guint32 *)(void *)(sdata + row * stride);
 
-    gdk_draw_rgb_image(ret, bmp_gc, 0, 0, w, h, GDK_RGB_DITHER_MAX, data, w * 3);
+            for (col = 0; col < w; col++, src += 3) {
+                /* RGB → ARGB32 (native endian: A=0xff, R, G, B) */
+                dst[col] = (0xffu << 24) | ((guint32)src[0] << 16) | ((guint32)src[1] << 8) |
+                           (guint32)src[2];
+            }
+        }
+        cairo_surface_mark_dirty(ret);
+    }
 
     g_free(data);
     g_free(buffer);

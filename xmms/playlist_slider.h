@@ -25,11 +25,11 @@ typedef struct {
     PlayList_List *ps_list;
     gboolean ps_is_draging;
     gint ps_drag_y, ps_prev_y, ps_prev_height;
-    GdkImage *ps_back_image;
+    cairo_surface_t *ps_back_surface; /* GTK3: was GdkImage *ps_back_image */
     int ps_skin_id;
 } PlaylistSlider;
 
-PlaylistSlider *create_playlistslider(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y,
-                                      gint h, PlayList_List *list);
+PlaylistSlider *create_playlistslider(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x,
+                                      gint y, gint h, PlayList_List *list);
 
 #endif

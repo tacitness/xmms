@@ -268,7 +268,7 @@ if test "x$enable_vorbis" = "xyes"; then
 		 float **pcm;
 		 ov_read_float(&vf, &pcm, 1024, 0);],
 		[AC_MSG_RESULT([yes])],
-		[AC_MSG_RESULT([no (need atleast 1.0)])
+		[AC_MSG_RESULT([no (need at least 1.0)])
 		 have_vorbis=no])
 	  CFLAGS=$CFLAGS_save
 	  LIBS=$LIBS_save
@@ -524,7 +524,7 @@ AC_CHECK_SIZEOF([long])
 
 if test -n "$GCC"
 then
-  CFLAGS="$CFLAGS -Wall -Wpointer-arith -finline-functions"
+  CFLAGS="$CFLAGS -Wall -Wpointer-arith -finline-functions -D_DEFAULT_SOURCE"
   case "$CFLAGS" in
     -g*) ;;
     *\ -g*) ;;

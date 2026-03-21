@@ -79,6 +79,27 @@ void svis_timeout_func(SVis *svis, guchar *data)
     }
 }
 
+/* GTK3: helper to blit an indexed-color image buffer to a cairo_t */
+static void svis_draw_indexed(cairo_t *cr, gint dx, gint dy, gint w, gint h, const guchar *data,
+                              gint rowstride, const guint32 *colors)
+{
+    cairo_surface_t *surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    guint32 *dst = (guint32 *)cairo_image_surface_get_data(surf);
+    gint stride = cairo_image_surface_get_stride(surf) / 4;
+    gint row, col;
+
+    for (row = 0; row < h; row++) {
+        for (col = 0; col < w; col++) {
+            guchar idx = data[row * rowstride + col];
+            dst[row * stride + col] = 0xff000000u | colors[idx];
+        }
+    }
+    cairo_surface_mark_dirty(surf);
+    cairo_set_source_surface(cr, surf, dx, dy);
+    cairo_paint(cr);
+    cairo_surface_destroy(surf);
+}
+
 void svis_draw(Widget *w)
 {
     SVis *svis = (SVis *)w;
@@ -86,15 +107,14 @@ void svis_draw(Widget *w)
     guchar svis_color[24][3];
     guchar rgb_data[SVIS_WIDTH * 2 * SVIS_HEIGHT * 2], *ptr, c;
     guint32 colors[24];
-    GdkRgbCmap *cmap;
 
     GDK_THREADS_ENTER();
 
     get_skin_viscolor(svis_color);
     for (y = 0; y < 24; y++) {
-        colors[y] = svis_color[y][0] << 16 | svis_color[y][1] << 8 | svis_color[y][2];
+        colors[y] = (guint32)svis_color[y][0] << 16 | (guint32)svis_color[y][1] << 8 |
+                    (guint32)svis_color[y][2];
     }
-    cmap = gdk_rgb_cmap_new(colors, 24);
 
     if (!cfg.doublesize) {
         memset(rgb_data, 0, SVIS_WIDTH * SVIS_HEIGHT);
@@ -134,9 +154,9 @@ void svis_draw(Widget *w)
             }
         }
 
-        gdk_draw_indexed_image(mainwin->window, mainwin_gc, svis->vs_widget.x, svis->vs_widget.y,
-                               svis->vs_widget.width, svis->vs_widget.height, GDK_RGB_DITHER_NORMAL,
-                               (guchar *)rgb_data, 38, cmap);
+        /* GTK3: replace gdk_draw_indexed_image with cairo */
+        svis_draw_indexed(mainwin_cr, svis->vs_widget.x, svis->vs_widget.y, svis->vs_widget.width,
+                          svis->vs_widget.height, rgb_data, 38, colors);
     } else /* doublesize */
     {
         memset(rgb_data, 0, SVIS_WIDTH * 2 * SVIS_HEIGHT * 2);
@@ -179,12 +199,11 @@ void svis_draw(Widget *w)
             }
         }
 
-        gdk_draw_indexed_image(mainwin->window, mainwin_gc, svis->vs_widget.x << 1,
-                               svis->vs_widget.y << 1, svis->vs_widget.width << 1,
-                               svis->vs_widget.height << 1, GDK_RGB_DITHER_NONE, (guchar *)rgb_data,
-                               76, cmap);
+        /* GTK3: replace gdk_draw_indexed_image with cairo */
+        svis_draw_indexed(mainwin_cr, svis->vs_widget.x << 1, svis->vs_widget.y << 1,
+                          svis->vs_widget.width << 1, svis->vs_widget.height << 1, rgb_data, 76,
+                          colors);
     }
-    gdk_rgb_cmap_free(cmap);
     GDK_THREADS_LEAVE();
 }
 
@@ -199,21 +218,17 @@ void svis_clear_data(SVis *svis)
 
 void svis_clear(SVis *svis)
 {
-    if (!cfg.doublesize)
-        gdk_window_clear_area(mainwin->window, svis->vs_widget.x, svis->vs_widget.y,
-                              svis->vs_widget.width, svis->vs_widget.height);
-    else
-        gdk_window_clear_area(mainwin->window, svis->vs_widget.x << 1, svis->vs_widget.y << 1,
-                              svis->vs_widget.width << 1, svis->vs_widget.height << 1);
+    /* GTK3: gdk_window_clear_area removed; next svis_draw call will repaint with background */
+    svis_draw((Widget *)svis);
 }
 
-SVis *create_svis(GList **wlist, GdkPixmap *parent, GdkGC *gc, gint x, gint y)
+SVis *create_svis(GList **wlist, cairo_surface_t *parent, cairo_t *cr, gint x, gint y)
 {
     SVis *svis;
 
     svis = (SVis *)g_malloc0(sizeof(SVis));
     svis->vs_widget.parent = parent;
-    svis->vs_widget.gc = gc;
+    svis->vs_widget.cr = cr;
     svis->vs_widget.x = x;
     svis->vs_widget.y = y;
     svis->vs_widget.width = SVIS_WIDTH;

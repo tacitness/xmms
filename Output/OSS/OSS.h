@@ -44,6 +44,14 @@
 #    define IS_BIG_ENDIAN FALSE
 #endif
 
+/* GTK3: fallback device name constants (OSS API) */
+#ifndef DEV_DSP
+#    define DEV_DSP "/dev/dsp"
+#endif
+#ifndef DEV_MIXER
+#    define DEV_MIXER "/dev/mixer"
+#endif
+
 extern OutputPlugin op;
 
 typedef struct {

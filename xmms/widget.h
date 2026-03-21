@@ -19,9 +19,15 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+/* GTK3: widget.h is included standalone by widget.c (own-header-first rule);
+ * pull in the GTK/Cairo/pthread types it needs so the header is self-contained. */
+#include <gtk/gtk.h>
+
+#include <pthread.h>
+
 typedef struct _Widget {
-    GdkPixmap *parent;
-    GdkGC *gc;
+    cairo_surface_t *parent; /* GTK3: was GdkPixmap */
+    cairo_t *cr;             /* GTK3: was GdkGC */
     gint x, y, width, height, visible;
     void (*button_press_cb)(GtkWidget *, GdkEventButton *, gpointer);
     void (*button_release_cb)(GtkWidget *, GdkEventButton *, gpointer);
@@ -42,7 +48,8 @@ void handle_press_cb(GList *wlist, GtkWidget *widget, GdkEventButton *event);
 void handle_release_cb(GList *wlist, GtkWidget *widget, GdkEventButton *event);
 void handle_motion_cb(GList *wlist, GtkWidget *widget, GdkEventMotion *event);
 void draw_widget_list(GList *wlist, gboolean *redraw, gboolean force);
-void widget_list_change_pixmap(GList *wlist, GdkPixmap *pixmap);
+void widget_list_change_surface(GList *wlist, cairo_surface_t *surface); /* GTK3: was GdkPixmap */
+void widget_list_change_cr(GList *wlist, cairo_t *cr); /* GTK3: refresh cairo_t after resize */
 void clear_widget_list_redraw(GList *wlist);
 void lock_widget(void *w);
 void unlock_widget(void *w);

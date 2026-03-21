@@ -22,25 +22,33 @@
 
 #include "i18n.h"
 
+/* System / library headers required by the declarations below */
+#include <cairo/cairo.h>
+#include <glib.h>
+#include <gtk/gtk.h>
+
 gchar *find_file_recursively(const char *dirname, const char *file);
 void del_directory(const char *dirname);
-GdkImage *create_dblsize_image(GdkImage *img);
+/* GTK3: GdkImage removed — use cairo_surface_t for pixel surfaces */
+cairo_surface_t *create_dblsize_surface(cairo_surface_t *src);
 char *read_ini_string(const char *filename, const char *section, const char *key);
 char *read_ini_string_no_comment(const char *filename, const char *section, const char *key);
 GArray *read_ini_array(const gchar *filename, const gchar *section, const gchar *key);
 GArray *string_to_garray(const gchar *str);
 void glist_movedown(GList *list);
 void glist_moveup(GList *list);
-void util_item_factory_popup(GtkItemFactory *ifactory, guint x, guint y, guint mouse_button,
-                             guint32 time);
-void util_item_factory_popup_with_data(GtkItemFactory *ifactory, gpointer data,
-                                       GtkDestroyNotify destroy, guint x, guint y,
-                                       guint mouse_button, guint32 time);
-GtkWidget *util_create_add_url_window(gchar *caption, GtkSignalFunc ok_func,
-                                      GtkSignalFunc enqueue_func);
+/* GTK3: GtkItemFactory removed — TODO(#3): migrate to GMenuModel/GtkPopoverMenu */
+void util_item_factory_popup(GtkWidget *menu, guint x, guint y, guint mouse_button, guint32 time);
+void util_item_factory_popup_with_data(GtkWidget *menu, gpointer data, GDestroyNotify destroy,
+                                       guint x, guint y, guint mouse_button, guint32 time);
+/* GTK3: gdk_window_get_pointer(NULL) replacement */
+void util_get_root_pointer(gint *x, gint *y);
+/* GTK3: GtkSignalFunc → GCallback; GtkFileSelection → GtkFileChooser */
+GtkWidget *util_create_add_url_window(gchar *caption, GCallback ok_func, GCallback enqueue_func);
 GtkWidget *util_create_filebrowser(gboolean clear_pl_on_ok);
-gboolean util_filebrowser_is_dir(GtkFileSelection *filesel);
-GdkFont *util_font_load(gchar *name);
+gboolean util_filebrowser_is_dir(GtkFileChooser *filesel);
+/* GTK3: GdkFont removed — use PangoFontDescription */
+PangoFontDescription *util_font_load(gchar *name);
 void util_set_cursor(GtkWidget *window);
 void util_dump_menu_rc(void);
 void util_read_menu_rc(void);
