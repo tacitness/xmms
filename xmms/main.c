@@ -42,6 +42,7 @@ static void on_widget_destroyed(GtkWidget *w, gpointer data)
 #endif
 #include "libxmms/configfile.h"
 #include "libxmms/dirbrowser.h"
+#include "libxmms/snap.h"
 #include "libxmms/util.h"
 #include "libxmms/xmmsctrl.h"
 #include "xmms_mini.xpm"
@@ -1405,6 +1406,19 @@ void mainwin_focus_in(GtkWidget *widget, GdkEvent *event, gpointer callback_data
     /* Raise all visible sibling skin windows together — Refs #25 */
     playlistwin_raise();
     equalizerwin_raise();
+    /* Raise any visible visualization plugin windows — Refs #34 */
+    {
+        GList *toplevels = gtk_window_list_toplevels();
+        GList *l;
+        for (l = toplevels; l != NULL; l = l->next) {
+            GtkWindow *w = GTK_WINDOW(l->data);
+            if (g_object_get_data(G_OBJECT(w), "vis-chrome-bar") != NULL &&
+                gtk_widget_is_visible(GTK_WIDGET(w))) {
+                gtk_window_present(w);
+            }
+        }
+        g_list_free(toplevels);
+    }
     mainwin_menubtn->pb_allow_draw = TRUE;
     mainwin_minimize->pb_allow_draw = TRUE;
     mainwin_shade->pb_allow_draw = TRUE;
@@ -3647,6 +3661,49 @@ static void mainwin_create_widgets(void)
 }
 
 /* GTK3: blit backing surface to window on every expose/draw */
+/* -------------------------------------------------------------------------
+ * Snap vtable implementation — allows vis plugin DSOs (which cannot link
+ * directly against main) to join the XMMS dock/snap group via libxmms.
+ *
+ * Five thin wrappers forward into dock_move_press / motion / release and
+ * manage the shared dock_window_list.  Registered once in mainwin_create_gtk()
+ * so the vtable is live before any vis plugin window can be created.
+ * Refs #34
+ * ----------------------------------------------------------------------- */
+static void snap_register_impl(GtkWidget *w)
+{
+    dock_window_list = dock_add_window(dock_window_list, w);
+}
+
+static void snap_unregister_impl(GtkWidget *w)
+{
+    dock_window_list = g_list_remove(dock_window_list, w);
+}
+
+static void snap_move_press_impl(GtkWidget *w, GdkEventButton *ev)
+{
+    dock_move_press(dock_window_list, w, ev, FALSE);
+}
+
+static void snap_move_motion_impl(GtkWidget *w, GdkEventMotion *ev)
+{
+    dock_move_motion(w, ev);
+}
+
+static void snap_move_release_impl(GtkWidget *w)
+{
+    dock_move_release(w);
+}
+
+static void vis_snap_init(void)
+{
+    xmms_snap.register_window = snap_register_impl;
+    xmms_snap.unregister_window = snap_unregister_impl;
+    xmms_snap.move_press = snap_move_press_impl;
+    xmms_snap.move_motion = snap_move_motion_impl;
+    xmms_snap.move_release = snap_move_release_impl;
+}
+
 static gboolean mainwin_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
     (void)widget;
@@ -3662,6 +3719,8 @@ static void mainwin_create_gtk(void)
 {
     mainwin = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     dock_window_list = dock_add_window(dock_window_list, mainwin);
+    /* Register snap vtable for vis plugin DSOs — Refs #34 */
+    vis_snap_init();
     gtk_widget_set_app_paintable(mainwin, TRUE);
     gtk_window_set_title(GTK_WINDOW(mainwin), "XMMS");
     gtk_window_set_resizable(GTK_WINDOW(mainwin), FALSE); /* TODO(#gtk3): was set_policy */

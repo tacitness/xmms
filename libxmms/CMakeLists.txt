@@ -10,6 +10,7 @@ set(LIBXMMS_SOURCES
     xentry.c      xentry.h
     xconvert.c    xconvert.h
     charset.c     charset.h
+    snap.c        snap.h
 )
 
 add_library(libxmms SHARED ${LIBXMMS_SOURCES})
