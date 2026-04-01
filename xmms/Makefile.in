@@ -121,8 +121,8 @@ am_xmms_OBJECTS = bmp.$(OBJEXT) skin.$(OBJEXT) util.$(OBJEXT) \
 	eq_graph.$(OBJEXT) eq_slider.$(OBJEXT) main.$(OBJEXT) \
 	skinwin.$(OBJEXT) prefswin.$(OBJEXT) playlistwin.$(OBJEXT) \
 	equalizer.$(OBJEXT) hints.$(OBJEXT) about.$(OBJEXT) \
-	sm.$(OBJEXT) getopt.$(OBJEXT) getopt1.$(OBJEXT) \
-	urldecode.$(OBJEXT) mkdtemp.$(OBJEXT)
+	sm.$(OBJEXT) mpris2.$(OBJEXT) getopt.$(OBJEXT) \
+	getopt1.$(OBJEXT) urldecode.$(OBJEXT) mkdtemp.$(OBJEXT)
 xmms_OBJECTS = $(am_xmms_OBJECTS)
 xmms_DEPENDENCIES = $(top_builddir)/libxmms/libxmms.la
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -157,17 +157,18 @@ am__depfiles_remade = ./$(DEPDIR)/about.Po ./$(DEPDIR)/bmp.Po \
 	./$(DEPDIR)/hslider.Po ./$(DEPDIR)/input.Po \
 	./$(DEPDIR)/main.Po ./$(DEPDIR)/menurow.Po \
 	./$(DEPDIR)/mkdtemp.Po ./$(DEPDIR)/monostereo.Po \
-	./$(DEPDIR)/number.Po ./$(DEPDIR)/output.Po \
-	./$(DEPDIR)/pbutton.Po ./$(DEPDIR)/playlist.Po \
-	./$(DEPDIR)/playlist_list.Po ./$(DEPDIR)/playlist_popup.Po \
-	./$(DEPDIR)/playlist_slider.Po ./$(DEPDIR)/playlistwin.Po \
-	./$(DEPDIR)/playstatus.Po ./$(DEPDIR)/pluginenum.Po \
-	./$(DEPDIR)/prefswin.Po ./$(DEPDIR)/sbutton.Po \
-	./$(DEPDIR)/skin.Po ./$(DEPDIR)/skinwin.Po ./$(DEPDIR)/sm.Po \
-	./$(DEPDIR)/svis.Po ./$(DEPDIR)/tbutton.Po \
-	./$(DEPDIR)/textbox.Po ./$(DEPDIR)/urldecode.Po \
-	./$(DEPDIR)/util.Po ./$(DEPDIR)/vis.Po \
-	./$(DEPDIR)/visualization.Po ./$(DEPDIR)/widget.Po
+	./$(DEPDIR)/mpris2.Po ./$(DEPDIR)/number.Po \
+	./$(DEPDIR)/output.Po ./$(DEPDIR)/pbutton.Po \
+	./$(DEPDIR)/playlist.Po ./$(DEPDIR)/playlist_list.Po \
+	./$(DEPDIR)/playlist_popup.Po ./$(DEPDIR)/playlist_slider.Po \
+	./$(DEPDIR)/playlistwin.Po ./$(DEPDIR)/playstatus.Po \
+	./$(DEPDIR)/pluginenum.Po ./$(DEPDIR)/prefswin.Po \
+	./$(DEPDIR)/sbutton.Po ./$(DEPDIR)/skin.Po \
+	./$(DEPDIR)/skinwin.Po ./$(DEPDIR)/sm.Po ./$(DEPDIR)/svis.Po \
+	./$(DEPDIR)/tbutton.Po ./$(DEPDIR)/textbox.Po \
+	./$(DEPDIR)/urldecode.Po ./$(DEPDIR)/util.Po \
+	./$(DEPDIR)/vis.Po ./$(DEPDIR)/visualization.Po \
+	./$(DEPDIR)/widget.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -521,6 +522,7 @@ equalizer.c equalizer.h \
 hints.c hints.h \
 about.c about.h \
 sm.c sm.h \
+mpris2.c mpris2.h \
 plugin.h \
 xmms.h \
 getopt.c getopt1.c getopt.h \
@@ -650,6 +652,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/menurow.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mkdtemp.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/monostereo.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpris2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/number.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/output.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbutton.Po@am__quote@ # am--include-marker
@@ -947,6 +950,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/menurow.Po
 	-rm -f ./$(DEPDIR)/mkdtemp.Po
 	-rm -f ./$(DEPDIR)/monostereo.Po
+	-rm -f ./$(DEPDIR)/mpris2.Po
 	-rm -f ./$(DEPDIR)/number.Po
 	-rm -f ./$(DEPDIR)/output.Po
 	-rm -f ./$(DEPDIR)/pbutton.Po
@@ -1035,6 +1039,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/menurow.Po
 	-rm -f ./$(DEPDIR)/mkdtemp.Po
 	-rm -f ./$(DEPDIR)/monostereo.Po
+	-rm -f ./$(DEPDIR)/mpris2.Po
 	-rm -f ./$(DEPDIR)/number.Po
 	-rm -f ./$(DEPDIR)/output.Po
 	-rm -f ./$(DEPDIR)/pbutton.Po

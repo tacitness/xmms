@@ -137,7 +137,7 @@ libsanalyzer_la_OBJECTS = $(am_libsanalyzer_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libsanalyzer_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libsanalyzer_la_LDFLAGS) $(LDFLAGS) \
@@ -149,11 +149,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/xmms
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
@@ -168,7 +168,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -176,7 +176,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(libsanalyzer_la_SOURCES)
 DIST_SOURCES = $(libsanalyzer_la_SOURCES)
 am__can_run_installinfo = \
@@ -396,7 +396,7 @@ lib_LTLIBRARIES = libsanalyzer.la
 libsanalyzer_la_LDFLAGS = @PLUGIN_LDFLAGS@
 libsanalyzer_la_LIBADD = @GTK_LIBS@
 libsanalyzer_la_SOURCES = spectrum.c
-INCLUDES = @GTK_CFLAGS@ -I$(top_builddir)/intl -I$(top_srcdir)
+INCLUDES = @GTK_CFLAGS@ -I$(top_builddir)/intl -I$(top_srcdir) -I$(top_srcdir)/Visualization/common
 EXTRA_DIST = xmms_logo.xpm
 all: all-am
 
@@ -465,7 +465,7 @@ clean-libLTLIBRARIES:
 	echo rm -f $${locs}; \
 	$(am__rm_f) $${locs}
 
-libsanalyzer.la: $(libsanalyzer_la_OBJECTS) $(libsanalyzer_la_DEPENDENCIES) $(EXTRA_libsanalyzer_la_DEPENDENCIES) 
+libsanalyzer.la: $(libsanalyzer_la_OBJECTS) $(libsanalyzer_la_DEPENDENCIES) $(EXTRA_libsanalyzer_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libsanalyzer_la_LINK) -rpath $(libdir) $(libsanalyzer_la_OBJECTS) $(libsanalyzer_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:

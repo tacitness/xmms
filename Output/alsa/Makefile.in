@@ -141,7 +141,7 @@ libALSA_la_OBJECTS = $(am_libALSA_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 libALSA_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libALSA_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -153,11 +153,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/xmms
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
@@ -174,7 +174,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -182,7 +182,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(libALSA_la_SOURCES)
 DIST_SOURCES = $(am__libALSA_la_SOURCES_DIST)
 am__can_run_installinfo = \
@@ -405,9 +405,9 @@ audio.c \
 configure.c \
 init.c
 
-@HAVE_ALSA_FALSE@alsaltlibs = 
+@HAVE_ALSA_FALSE@alsaltlibs =
 @HAVE_ALSA_TRUE@alsaltlibs = libALSA.la
-@HAVE_ALSA_FALSE@alsabuildsources = 
+@HAVE_ALSA_FALSE@alsabuildsources =
 @HAVE_ALSA_TRUE@alsabuildsources = $(alsasources)
 EXTRA_DIST = $(alsasources)
 lib_LTLIBRARIES = $(alsaltlibs)
@@ -415,6 +415,9 @@ libALSA_la_LDFLAGS = @PLUGIN_LDFLAGS@
 libALSA_la_LIBADD = @GTK_LIBS@ @PTHREAD_LIBS@ @ALSA_LIBS@
 libALSA_la_SOURCES = $(alsabuildsources)
 INCLUDES = @GTK_CFLAGS@ @ALSA_CFLAGS@ -I$(top_builddir)/intl -I$(top_srcdir)
+# Work around GCC ICE in vectorizable_simd_clone_call (tree-vect-stmts.cc:3998)
+# triggered by the alsa_loop SIMD clone path on this GCC version.
+AM_CFLAGS = -fno-tree-vectorize
 all: all-am
 
 .SUFFIXES:
@@ -482,7 +485,7 @@ clean-libLTLIBRARIES:
 	echo rm -f $${locs}; \
 	$(am__rm_f) $${locs}
 
-libALSA.la: $(libALSA_la_OBJECTS) $(libALSA_la_DEPENDENCIES) $(EXTRA_libALSA_la_DEPENDENCIES) 
+libALSA.la: $(libALSA_la_OBJECTS) $(libALSA_la_DEPENDENCIES) $(EXTRA_libALSA_la_DEPENDENCIES)
 	$(AM_V_CCLD)$(libALSA_la_LINK) $(am_libALSA_la_rpath) $(libALSA_la_OBJECTS) $(libALSA_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
