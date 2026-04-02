@@ -8,4 +8,5 @@ usr/lib/*/xmms/Input/
 usr/lib/*/xmms/Output/
 usr/lib/*/xmms/Visualization/
 usr/share/applications/xmms.desktop
+usr/share/icons/
 usr/share/xmms/
