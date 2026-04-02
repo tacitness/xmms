@@ -118,6 +118,32 @@ enum { VOLSET_STARTUP, VOLSET_UPDATE, VOLUME_ADJUSTED, VOLUME_SET };
 
 void read_volume(gint when);
 
+static cairo_region_t *mainwin_create_opaque_region(gint width, gint height,
+                                                    cairo_surface_t **surface_out)
+{
+    cairo_region_t *region;
+    cairo_surface_t *surface;
+    cairo_t *cr;
+
+    g_return_val_if_fail(width > 0, NULL);
+    g_return_val_if_fail(height > 0, NULL);
+
+    /* GTK3: replace 1-bit GdkBitmap masks with an opaque cairo A1 surface. */
+    surface = cairo_image_surface_create(CAIRO_FORMAT_A1, width, height);
+    cr = cairo_create(surface);
+    cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+
+    region = gdk_cairo_region_create_from_surface(surface);
+    if (surface_out)
+        *surface_out = surface;
+    else
+        cairo_surface_destroy(surface);
+
+    return region;
+}
+
 const GtkTargetEntry _xmms_drop_types[] = {{"text/plain", 0, XMMS_DROP_PLAINTEXT},
                                            {"text/uri-list", 0, XMMS_DROP_URLENCODED},
                                            {"STRING", 0, XMMS_DROP_STRING}};
@@ -799,10 +825,14 @@ void mainwin_set_always_on_top(gboolean always)
 
 void mainwin_set_shape_mask(void)
 {
+    cairo_region_t *region;
+
     if (!cfg.player_visible || cfg.show_wm_decorations)
         return;
 
-    /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
+    /* GTK3: apply the skin mask via cairo_region_t. */
+    region = skin_get_mask(SKIN_MASK_MAIN, cfg.doublesize, cfg.player_shaded);
+    gtk_widget_shape_combine_region(mainwin, region);
 }
 
 
@@ -1050,6 +1080,16 @@ void draw_main_window(gboolean force)
                     w->redraw = FALSE;
                 wl = wl->next;
             }
+        }
+        if (cfg.doublesize && mainwin_bg_dblsize) {
+            cairo_t *cr = cairo_create(mainwin_bg_dblsize);
+
+            cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+            cairo_paint(cr);
+            cairo_scale(cr, 2.0, 2.0);
+            cairo_set_source_surface(cr, mainwin_bg, 0, 0);
+            cairo_paint(cr);
+            cairo_destroy(cr);
         }
         gtk_widget_queue_draw(mainwin);
     }
@@ -2801,8 +2841,8 @@ void mainwin_real_show(void)
 
 void mainwin_real_hide(void)
 {
-    cairo_t *gc;
-    GdkColor pattern;
+    cairo_region_t *region;
+    gint width, height;
 
     /*  	if (!cfg.player_visible) */
     /*  		return; */
@@ -2814,13 +2854,15 @@ void mainwin_real_hide(void)
     if (cfg.show_wm_decorations)
         gtk_widget_hide(mainwin);
     else {
-        nullmask = NULL; /* TODO(#gtk3): cairo_image_surface_create */
-        gc = NULL /* TODO(#gtk3): gdk_gc_new removed */;
-        pattern.pixel = 0;
-        /* TODO(#gtk3): gdk_gc_set_foreground removed */
-        /* TODO(#gtk3): gdk_draw_rectangle removed */
-        /* TODO(#gtk3): gdk_gc_destroy removed */
-        /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
+        if (nullmask) {
+            cairo_surface_destroy(nullmask);
+            nullmask = NULL;
+        }
+        width = PLAYER_WIDTH;
+        height = PLAYER_HEIGHT;
+        region = mainwin_create_opaque_region(width, height, &nullmask);
+        gtk_widget_shape_combine_region(mainwin, region);
+        cairo_region_destroy(region);
 
         /* TODO(#gtk3): gdk_window_set_hints → gdk_window_set_geometry_hints */
         gdk_window_resize(gtk_widget_get_window(mainwin), 0, 0);
@@ -3713,10 +3755,13 @@ static void vis_snap_init(void)
 
 static gboolean mainwin_draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
+    cairo_surface_t *surface;
+
     (void)widget;
     (void)data;
-    if (mainwin_bg) {
-        cairo_set_source_surface(cr, mainwin_bg, 0, 0);
+    surface = (cfg.doublesize && mainwin_bg_dblsize) ? mainwin_bg_dblsize : mainwin_bg;
+    if (surface) {
+        cairo_set_source_surface(cr, surface, 0, 0);
         cairo_paint(cr);
     }
     return FALSE;
@@ -3778,7 +3823,7 @@ void mainwin_create(void)
     gint win_h = cfg.player_shaded ? 14 : 116;
     mainwin_bg = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 275, win_h);
     mainwin_cr = cairo_create(mainwin_bg);
-    mainwin_bg_dblsize = NULL; /* TODO(#gtk3): doublesize surface */
+    mainwin_bg_dblsize = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 550, 232);
     mainwin_create_gtk();
     mainwin_create_widgets();
 }
@@ -4337,9 +4382,7 @@ static gboolean pposition_configure(GtkWidget *w, GdkEventConfigure *event, gpoi
 void check_pposition(void)
 {
     GtkWidget *window;
-    cairo_surface_t *mask;
-    cairo_t *gc;
-    GdkColor pattern;
+    cairo_region_t *region;
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_wmclass(GTK_WINDOW(window), "XMMS_Player", "xmms");
@@ -4350,13 +4393,9 @@ void check_pposition(void)
     gtk_widget_set_size_request(window, 1, 1);
     gdk_window_set_decorations(gtk_widget_get_window(window), 0);
 
-    mask = NULL; /* TODO(#gtk3): cairo_image_surface_create */
-    gc = NULL /* TODO(#gtk3): gdk_gc_new removed */;
-    pattern.pixel = 0;
-    /* TODO(#gtk3): gdk_gc_set_foreground removed */
-    /* TODO(#gtk3): gdk_draw_rectangle removed */
-    /* TODO(#gtk3): gdk_gc_destroy removed */
-    /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
+    region = mainwin_create_opaque_region(1, 1, NULL);
+    gtk_widget_shape_combine_region(window, region);
+    cairo_region_destroy(region);
 
     gtk_widget_show(window);
 
