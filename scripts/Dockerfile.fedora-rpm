@@ -24,18 +24,18 @@ WORKDIR /build
 COPY . /build/src/
 
 # ── Create source tarball from git archive ───────────────────────────────────
-# (git archive works even without a tag — uses HEAD)
+# grep anchors to lines starting with optional whitespace + VERSION (not cmake_minimum_required)
 RUN cd /build/src && \
-    VERSION=$(grep -m1 'VERSION [0-9]' CMakeLists.txt | awk '{print $2}') && \
+    VERSION=$(grep -m1 '^\s*VERSION [0-9]' CMakeLists.txt | awk '{print $2}') && \
     echo "Packaging XMMS $VERSION for RPM" && \
     git archive --format=tar.gz --prefix=xmms-${VERSION}/ HEAD \
-        > /tmp/xmms-${VERSION}.tar.gz && \
-    echo "Tarball: /tmp/xmms-${VERSION}.tar.gz"
+        > /build/xmms-${VERSION}.tar.gz && \
+    echo "Tarball: /build/xmms-${VERSION}.tar.gz ($(du -sh /build/xmms-${VERSION}.tar.gz | cut -f1))"
 
 # ── Set up rpmbuild tree and build ───────────────────────────────────────────
 RUN rpmdev-setuptree && \
-    VERSION=$(grep -m1 'VERSION [0-9]' /build/src/CMakeLists.txt | awk '{print $2}') && \
-    cp /tmp/xmms-${VERSION}.tar.gz ~/rpmbuild/SOURCES/ && \
+    VERSION=$(grep -m1 '^\s*VERSION [0-9]' /build/src/CMakeLists.txt | awk '{print $2}') && \
+    cp /build/xmms-${VERSION}.tar.gz ~/rpmbuild/SOURCES/ && \
     rpmbuild -ba /build/src/xmms.spec \
         --define "_topdir ${HOME}/rpmbuild" \
         2>&1 | tee /tmp/rpmbuild.log

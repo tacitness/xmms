@@ -129,38 +129,32 @@ find %{buildroot} -name '*.a' -delete
 %{_bindir}/wmxmms
 %{_libdir}/libxmms.so.*
 # Core input plugins
-%{_libdir}/xmms/Input/libmpg123*
-%{_libdir}/xmms/Input/libvorbis*
-%{_libdir}/xmms/Input/libxmms_flac*
-%{_libdir}/xmms/Input/libwav*
-%{_libdir}/xmms/Input/libcdaudio*
-%{_libdir}/xmms/Input/libtonegen*
-# OSS output (built in, no extra deps)
-%{_libdir}/xmms/Output/libOSS*
-%{_libdir}/xmms/Output/libdisk_writer*
+%{_libdir}/xmms/Input/mpg123.so
+%{_libdir}/xmms/Input/vorbis.so
+%{_libdir}/xmms/Input/wav.so
+%{_libdir}/xmms/Input/cdaudio.so
+%{_libdir}/xmms/Input/tonegen.so
+# OSS output (no extra deps)
+%{_libdir}/xmms/Output/OSS.so
+%{_libdir}/xmms/Output/disk_writer.so
 # Effect + general + vis plugins
 %{_libdir}/xmms/Effect/
 %{_libdir}/xmms/General/
 %{_libdir}/xmms/Visualization/
 # Data
 %{_datadir}/xmms/
-%{_datadir}/locale/*/LC_MESSAGES/xmms.mo
 %{_datadir}/applications/xmms.desktop
 %{_datadir}/icons/hicolor/*/apps/xmms.png
-# Man pages
-%{_mandir}/man1/xmms.1*
-%{_mandir}/man1/wmxmms.1*
 
 %files devel
 %{_libdir}/libxmms.so
 %{_includedir}/xmms/
-%{_datadir}/aclocal/xmms.m4
 
 %files alsa
-%{_libdir}/xmms/Output/libALSA*
+%{_libdir}/xmms/Output/ALSA.so
 
 %files pulse
-%{_libdir}/xmms/Output/libpulse*
+%{_libdir}/xmms/Output/Pulse.so
 
 # ─────────────────────────────────────────────────────────────────────────────
 %changelog

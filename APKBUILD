@@ -19,7 +19,7 @@ cmake
 ninja
 pkgconf
 gtk+3.0-dev
-glib2-dev
+glib-dev
 cairo-dev
 alsa-lib-dev
 pulseaudio-dev
@@ -74,7 +74,6 @@ post_upgrade() {
 
 dev() {
 	default_dev
-	amove usr/share/aclocal/xmms.m4
 }
 
 doc() {
@@ -84,11 +83,11 @@ doc() {
 alsa() {
 	pkgdesc="XMMS — ALSA output plugin"
 	depends="$pkgname=$pkgver-r$pkgrel alsa-lib"
-	amove usr/lib/xmms/Output/libALSA*
+	amove usr/lib/xmms/Output/ALSA.so
 }
 
 pulse() {
 	pkgdesc="XMMS — PulseAudio output plugin"
 	depends="$pkgname=$pkgver-r$pkgrel pulseaudio-libs"
-	amove usr/lib/xmms/Output/libpulse*
+	amove usr/lib/xmms/Output/Pulse.so
 }

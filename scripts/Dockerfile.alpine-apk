@@ -33,15 +33,16 @@ WORKDIR /home/builder/packages/xmms
 COPY --chown=builder:abuild . /home/builder/src/
 
 # ── Create source tarball (abuild fetches Sources locally via file://) ─────────
-RUN VERSION=$(grep -m1 'VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
+RUN VERSION=$(grep -m1 '^\s*VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
     echo "Packaging XMMS $VERSION for APK" && \
+    git config --global --add safe.directory /home/builder/src && \
     cd /home/builder/src && \
     git archive --format=tar.gz --prefix=xmms-${VERSION}/ HEAD \
         > /home/builder/xmms-${VERSION}.tar.gz && \
     chown builder:abuild /home/builder/xmms-${VERSION}.tar.gz
 
 # ── Patch APKBUILD to use local tarball + regenerate checksum ─────────────────
-RUN VERSION=$(grep -m1 'VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
+RUN VERSION=$(grep -m1 '^\s*VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
     cp /home/builder/src/APKBUILD /home/builder/packages/xmms/APKBUILD && \
     # Point source at the local tarball we created
     sed -i "s|source=.*|source=\"xmms-${VERSION}.tar.gz\"|" \
