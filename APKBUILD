@@ -34,7 +34,7 @@ gettext-dev
 desktop-file-utils
 "
 
-subpackages="$pkgname-dev:dev $pkgname-doc:doc $pkgname-alsa $pkgname-pulse"
+subpackages="$pkgname-dev:dev $pkgname-alsa $pkgname-pulse"
 
 source="$pkgname-$pkgver.tar.gz::https://github.com/tacitness/xmms/archive/refs/tags/v$pkgver.tar.gz"
 builddir="$srcdir/xmms-$pkgver"
@@ -77,10 +77,6 @@ post_upgrade() {
 
 dev() {
 	default_dev
-}
-
-doc() {
-	default_doc
 }
 
 alsa() {
