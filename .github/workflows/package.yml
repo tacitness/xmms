@@ -261,86 +261,55 @@ jobs:
           apk update
           apk add --no-cache \
             alpine-sdk abuild git sudo \
-            gcc make autoconf automake libtool pkgconf \
-            gtk+3.0-dev glib2-dev \
+            gcc cmake ninja pkgconf \
+            gtk+3.0-dev glib2-dev cairo-dev \
             alsa-lib-dev pulseaudio-dev \
             libvorbis-dev libogg-dev mpg123-dev flac-dev \
-            libx11-dev libxext-dev
+            libx11-dev libxext-dev libxxf86vm-dev \
+            gettext-dev
 
-      - name: Set up abuild
+      - name: Set up abuild user
         run: |
           adduser -D builder || true
           addgroup builder abuild || true
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          mkdir -p /var/cache/distfiles
+          mkdir -p /var/cache/distfiles /home/builder/packages/xmms
           chmod 777 /var/cache/distfiles
 
-      - name: Create APKBUILD
+      - name: Prepare APKBUILD and source tarball
         run: |
           VERSION="${{ needs.version.outputs.version }}"
-          mkdir -p /home/builder/packages/xmms
+          # Alpine pkgver uses underscores, not hyphens
+          ALPINE_VER="${VERSION//-/_}"
 
-          cat > /home/builder/packages/xmms/APKBUILD << APKB
-          # Maintainer: XMMS Resurrection Team
-          pkgname=xmms
-          pkgver=${VERSION//-/_}
-          pkgrel=0
-          pkgdesc="XMMS X Multimedia System — GTK3 Resurrection"
-          url="https://github.com/xmms-resurrection/xmms"
-          arch="all"
-          license="GPL-2.0-or-later"
-          depends="gtk+3.0 glib alsa-lib pulseaudio-libs libvorbis libogg mpg123 flac"
-          makedepends="gcc make autoconf automake libtool pkgconf
-            gtk+3.0-dev glib2-dev alsa-lib-dev pulseaudio-dev
-            libvorbis-dev libogg-dev mpg123-dev flac-dev
-            libx11-dev libxext-dev"
-          source="xmms-${VERSION}.tar.gz::file:///src.tar.gz"
-          builddir="\$srcdir/xmms-${VERSION}"
+          # Copy checked-in APKBUILD and inject correct pkgver
+          sed "s/^pkgver=.*/pkgver=${ALPINE_VER}/" APKBUILD \
+            > /home/builder/packages/xmms/APKBUILD
 
-          prepare() {
-            cd "\$builddir"
-            autoreconf -fi || libtoolize && aclocal && autoheader && automake --add-missing && autoconf
-          }
+          # Create source tarball matching the source= URL filename
+          SRCDEST=/var/cache/distfiles
+          git archive \
+            --format=tar.gz \
+            --prefix="xmms-${ALPINE_VER}/" \
+            HEAD \
+            > "${SRCDEST}/xmms-${ALPINE_VER}.tar.gz"
 
-          build() {
-            cd "\$builddir"
-            ./configure \
-              --prefix=/usr \
-              --sysconfdir=/etc \
-              --mandir=/usr/share/man \
-              --infodir=/usr/share/info \
-              --enable-alsa \
-              --disable-esd \
-              CFLAGS="\$CFLAGS -std=c11"
-            make -j\$(nproc)
-          }
-
-          package() {
-            cd "\$builddir"
-            make DESTDIR="\$pkgdir" install
-          }
-          APKB
-
-          # Create source tarball
-          git archive --format=tar.gz --prefix="xmms-${VERSION}/" HEAD > /src.tar.gz
-
-          # Set correct ownership
           chown -R builder:builder /home/builder/packages/xmms
 
       - name: Build APK
         run: |
-          VERSION="${{ needs.version.outputs.version }}"
           su builder -c "
+            set -e
             cd /home/builder/packages/xmms
             abuild-keygen -a -n 2>/dev/null || true
-            abuild -F 2>&1
+            SRCDEST=/var/cache/distfiles abuild checksum
+            SRCDEST=/var/cache/distfiles abuild -F pkg 2>&1
           "
 
       - name: Collect APK artefacts
         run: |
           find /home/builder/packages -name '*.apk' -exec ls -la {} \; || \
-          find /root/packages -name '*.apk' -exec ls -la {} \; || \
-          echo "APK artefacts in expected location"
+          echo "No APK artefacts found in expected location"
 
       - name: Upload APK artefact
         uses: actions/upload-artifact@v4
@@ -348,7 +317,6 @@ jobs:
           name: apk-alpine-${{ matrix.alpine }}
           path: |
             /home/builder/packages/**/*.apk
-            /root/packages/**/*.apk
           retention-days: 30
 
   # ── Create / Update GitHub Release ─────────────────────────────────────────
