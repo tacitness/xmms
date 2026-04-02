@@ -126,6 +126,7 @@ find %{buildroot} -name '*.a' -delete
 %license COPYING
 %doc AUTHORS ChangeLog README NEWS FAQ
 %{_bindir}/xmms
+%{_bindir}/wmxmms
 %{_libdir}/libxmms.so.*
 # Core input plugins
 %{_libdir}/xmms/Input/libmpg123*
@@ -148,6 +149,7 @@ find %{buildroot} -name '*.a' -delete
 %{_datadir}/icons/hicolor/*/apps/xmms.png
 # Man pages
 %{_mandir}/man1/xmms.1*
+%{_mandir}/man1/wmxmms.1*
 
 %files devel
 %{_libdir}/libxmms.so
