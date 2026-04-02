@@ -114,7 +114,7 @@ wmxmms_DEPENDENCIES = $(top_builddir)/libxmms/libxmms.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
+am__v_lt_1 =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -122,11 +122,11 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
+am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/xmms
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
@@ -142,7 +142,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -150,7 +150,7 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
+am__v_CCLD_1 =
 SOURCES = $(wmxmms_SOURCES)
 DIST_SOURCES = $(wmxmms_SOURCES)
 am__can_run_installinfo = \
@@ -393,7 +393,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xmmsdir = @xmmsdir@
-wmxmms_LDADD = @GTK_LIBS@ $(top_builddir)/libxmms/libxmms.la @LTLIBINTL@
+wmxmms_LDADD = @GTK_LIBS@ $(top_builddir)/libxmms/libxmms.la @LTLIBINTL@ -lX11
 wmxmms_SOURCES = \
 getopt.c \
 getopt1.c \
@@ -482,7 +482,7 @@ clean-binPROGRAMS:
 	$(am__rm_f) $(bin_PROGRAMS)
 	test -z "$(EXEEXT)" || $(am__rm_f) $(bin_PROGRAMS:$(EXEEXT)=)
 
-wmxmms$(EXEEXT): $(wmxmms_OBJECTS) $(wmxmms_DEPENDENCIES) $(EXTRA_wmxmms_DEPENDENCIES) 
+wmxmms$(EXEEXT): $(wmxmms_OBJECTS) $(wmxmms_DEPENDENCIES) $(EXTRA_wmxmms_DEPENDENCIES)
 	@rm -f wmxmms$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(wmxmms_OBJECTS) $(wmxmms_LDADD) $(LIBS)
 

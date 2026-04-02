@@ -135,5 +135,13 @@ coverage/
 # libtool in-tree wrapper script (build artifact, not installed binary)
 xmms/xmms
 
+# Compiled wmxmms dockapp binary
+wmxmms/wmxmms
+
+# ---------------------------------------------------------------------------
+# gettext binary message catalogs (generated from .po sources at build time)
+# ---------------------------------------------------------------------------
+po/*.gmo
+
 # AI-generated placeholder images
 Gemini_Generated_Image_*.png
