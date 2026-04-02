@@ -86,11 +86,8 @@ install(FILES plugin.h fullscreen.h
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/xmms"
 )
 
-# Desktop / icon data
-install(FILES xmms.desktop
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
-    OPTIONAL
-)
+# Desktop entry is installed from data/xmms.desktop via the root CMakeLists.txt
+# (issue #38 — that file has Categories=, Keywords=, and StartupWMClass= required by GNOME)
 
 # Skin subdirectory
 add_subdirectory(defskin EXCLUDE_FROM_ALL)
