@@ -7,6 +7,10 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@ --buildsystem=cmake
 
+# Skip autoreconf — we use CMake, not the legacy autotools tree
+override_dh_autoreconf:
+	@echo "Skipping autoreconf: CMake is the primary build system"
+
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
