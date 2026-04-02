@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(xmms
-    VERSION 1.2.11
-    DESCRIPTION "XMMS — X Multimedia System (GTK3/GTK4 resurrection)"
+    VERSION 1.3.0
+    DESCRIPTION "XMMS Resurrection — X Multimedia System (GTK3 Edition)"
     LANGUAGES C
 )
+
+# Release codename — appears in About dialog
+set(XMMS_RELEASE_NAME   "Resurrection")
+set(XMMS_RELEASE_AUTHOR "Joel Hanger · TacitSoft.dev")
 
 enable_testing()
 

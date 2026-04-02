@@ -44,7 +44,9 @@
 #define LOCALEDIR   "@XMMS_LOCALE_DIR@"
 
 /* Package metadata */
-#define PACKAGE "@PROJECT_NAME@"
-#define VERSION "@PROJECT_VERSION@"
+#define PACKAGE          "@PROJECT_NAME@"
+#define VERSION          "@PROJECT_VERSION@"
+#define RELEASE_NAME     "@XMMS_RELEASE_NAME@"
+#define RELEASE_AUTHOR   "@XMMS_RELEASE_AUTHOR@"
 
 #endif /* XMMS_CONFIG_H */

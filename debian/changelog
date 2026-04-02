@@ -6,4 +6,4 @@ xmms (1.3.0-1) unstable; urgency=medium
   * Supports ALSA and PulseAudio output plugins.
   * Supports MP3 (mpg123), OGG Vorbis, FLAC, WAV, AIFF input plugins.
 
- -- XMMS Resurrection Team <xmms-dev@example.com>  Mon, 28 Apr 2025 00:00:00 +0000
+ -- Joel Hanger <joel@tacitsoft.dev>  Mon, 28 Apr 2025 00:00:00 +0000

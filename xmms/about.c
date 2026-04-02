@@ -25,7 +25,16 @@
  */
 
 static const char *credit_text[] =
-    {N_("Main Programming:"), N_("Peter Alm"), NULL, N_("Additional Programming:"),
+    {/* ---------------------------------------------------------------
+      * XMMS Resurrection — GTK3 Edition (v1.3.0)
+      * Ported from GTK+2 (XMMS 1.2.11) to GTK3 by Joel Hanger,
+      * TacitSoft.dev, using AI-assisted engineering.  Full parity:
+      * window shaping, cairo rendering, GtkTreeView, vis plugin menu,
+      * skin test corpus, CMake build system, freedesktop packaging.
+      * --------------------------------------------------------------- */
+     N_("XMMS Resurrection v1.3.0:"), N_("GTK3 Port — AI-Assisted Engineering"),
+     N_("Joel Hanger · TacitSoft.dev"), NULL, N_("Main Programming:"), N_("Peter Alm"), NULL,
+     N_("Additional Programming:"),
      /* I18N: UTF-8 Translation: "H\303\245vard Kv\303\245len" */
      N_("Haavard Kvaalen"), N_("Derrik Pates"), NULL, N_("With Additional Help:"),
      N_("Tony Arcieri"), N_("Sean Atkinson"), N_("Jorn Baayen"), N_("James M. Cape"),
@@ -197,14 +206,14 @@ void show_about_window(void)
     about_credits_logo = gtk_image_new_from_pixbuf(xmms_logo_pixbuf);
     gtk_container_add(GTK_CONTAINER(about_credits_logo_frame), about_credits_logo);
 
-    text = g_strdup_printf(_("XMMS %s - Cross platform multimedia player"), VERSION);
+    text = g_strdup_printf(_("%s %s — %s"), PACKAGE, VERSION, RELEASE_NAME);
     label = gtk_label_new(text);
     g_free(text);
 
     gtk_box_pack_start(GTK_BOX(about_vbox), label, FALSE, FALSE, 0);
 
-    label = gtk_label_new(_("Copyright (C) 1997-2004 4Front Technologies "
-                            "and The XMMS Team"));
+    label = gtk_label_new(_("Copyright (C) 1997-2004 4Front Technologies and The XMMS Team\n"
+                            "Resurrection Edition (C) 2025-2026 " RELEASE_AUTHOR));
     gtk_box_pack_start(GTK_BOX(about_vbox), label, FALSE, FALSE, 0);
 
     about_notebook = gtk_notebook_new();
