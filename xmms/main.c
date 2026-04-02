@@ -53,6 +53,9 @@ GtkWidget *mainwin, *mainwin_url_window = NULL, *mainwin_dir_browser = NULL;
 GtkWidget *mainwin_jtt = NULL, *mainwin_jtf = NULL, *mainwin_qm = NULL;
 GtkWidget *mainwin_options_menu, *mainwin_songname_menu, *mainwin_vis_menu;
 GtkWidget *mainwin_general_menu;
+static GtkWidget *mainwin_vis_plugins_sep = NULL;
+static GtkWidget *mainwin_vis_plugins_manage_item = NULL;
+static GList *mainwin_vis_plugin_items = NULL;
 
 /* Globally stored menu item widgets for programmatic toggling */
 static GtkWidget *mi_opt_shuffle = NULL, *mi_opt_repeat = NULL, *mi_opt_npa = NULL;
@@ -206,6 +209,8 @@ GtkItemFactoryEntry mainwin_songname_menu_entries[] = {
 static gint mainwin_songname_menu_entries_num = 0; /* GTK3: entries disabled */
 
 void mainwin_vis_menu_callback(gpointer cb_data, guint action, GtkWidget *w);
+static void mainwin_vis_plugin_menu_cb(GtkCheckMenuItem *item, gpointer data);
+static void mainwin_clear_vis_plugin_menu_items(void);
 
 enum {
     MAINWIN_VIS_ANALYZER,
@@ -2972,6 +2977,74 @@ void mainwin_vis_menu_callback(gpointer cb_data, guint action, GtkWidget *w)
     }
 }
 
+static void mainwin_vis_plugin_menu_cb(GtkCheckMenuItem *item, gpointer data)
+{
+    enable_vis_plugin(GPOINTER_TO_INT(data), gtk_check_menu_item_get_active(item));
+}
+
+static void mainwin_clear_vis_plugin_menu_items(void)
+{
+    GList *node;
+
+    for (node = mainwin_vis_plugin_items; node != NULL; node = node->next)
+        gtk_widget_destroy(GTK_WIDGET(node->data));
+
+    g_list_free(mainwin_vis_plugin_items);
+    mainwin_vis_plugin_items = NULL;
+
+    if (mainwin_vis_plugins_sep) {
+        gtk_widget_destroy(mainwin_vis_plugins_sep);
+        mainwin_vis_plugins_sep = NULL;
+    }
+}
+
+void mainwin_vis_plugins_rescan(void)
+{
+    GList *plugins, *node;
+    GList *children;
+    gint i;
+    gint insert_pos = -1;
+
+    if (mainwin_vis_menu == NULL)
+        return;
+
+    mainwin_clear_vis_plugin_menu_items();
+
+    plugins = get_vis_list();
+    if (plugins == NULL)
+        return;
+
+    children = gtk_container_get_children(GTK_CONTAINER(mainwin_vis_menu));
+    if (mainwin_vis_plugins_manage_item != NULL)
+        insert_pos = g_list_index(children, mainwin_vis_plugins_manage_item);
+    g_list_free(children);
+
+    mainwin_vis_plugins_sep = gtk_separator_menu_item_new();
+    if (insert_pos >= 0)
+        gtk_menu_shell_insert(GTK_MENU_SHELL(mainwin_vis_menu), mainwin_vis_plugins_sep,
+                              insert_pos++);
+    else
+        gtk_menu_shell_append(GTK_MENU_SHELL(mainwin_vis_menu), mainwin_vis_plugins_sep);
+    gtk_widget_show(mainwin_vis_plugins_sep);
+
+    for (node = plugins, i = 0; node != NULL; node = node->next, i++) {
+        VisPlugin *plugin = node->data;
+        GtkWidget *item;
+
+        item = gtk_check_menu_item_new_with_label(plugin->description ? plugin->description : "");
+        gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), vis_enabled(i));
+        gtk_widget_set_sensitive(item, !vis_plugin_failed(i));
+        g_signal_connect(item, "toggled", G_CALLBACK(mainwin_vis_plugin_menu_cb),
+                         GINT_TO_POINTER(i));
+        if (insert_pos >= 0)
+            gtk_menu_shell_insert(GTK_MENU_SHELL(mainwin_vis_menu), item, insert_pos++);
+        else
+            gtk_menu_shell_append(GTK_MENU_SHELL(mainwin_vis_menu), item);
+        gtk_widget_show(item);
+        mainwin_vis_plugin_items = g_list_append(mainwin_vis_plugin_items, item);
+    }
+}
+
 void mainwin_general_menu_callback(gpointer cb_data, guint action, GtkWidget *w)
 {
     switch (action) {
@@ -3449,8 +3522,10 @@ void create_popups(void)
     menu_radio_new(sub, "Fastest", &grp, cfg.peaks_falloff == FALLOFF_FASTEST,
                    G_CALLBACK(mainwin_vis_menu_callback), MAINWIN_VIS_PFALLOFF_FASTEST);
 
-    menu_item_new(mainwin_vis_menu, "Visualization Plugins", G_CALLBACK(mainwin_vis_menu_callback),
-                  MAINWIN_VIS_PLUGINS);
+    mainwin_vis_plugins_rescan();
+    mainwin_vis_plugins_manage_item =
+        menu_item_new(mainwin_vis_menu, "Visualization Plugins",
+                      G_CALLBACK(mainwin_vis_menu_callback), MAINWIN_VIS_PLUGINS);
 
     /* ---- General menu ---- */
     mainwin_general_menu = gtk_menu_new();
