@@ -1,227 +1,173 @@
-%define	name	xmms
-%define	version	1.2.11
-%define	release	1
-%define	epoch	1
-%define	prefix	/usr
+# XMMS Resurrection — RPM spec for GTK3 + CMake build
+#
+# Version is injected by CI via:
+#   sed "s/^Version:.*/Version:  $PKG_VER/" xmms.spec
+# Or pass  --define "_version X.Y.Z"  to rpmbuild directly.
+#
+# Sub-packages:
+#   xmms          — core player binary, libxmms, all built-in plugins
+#   xmms-devel    — headers, pkg-config, m4 macro
+#   xmms-alsa     — ALSA output plugin (optional, needs alsa-lib)
+#   xmms-pulse    — PulseAudio output plugin (optional, needs pulseaudio-libs)
 
-## Check to see if libGL is installed. Build xmms-gl if it is.
-%define withGL	%(if [ -z "`rpm -q --whatprovides libGL.so.1 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
+%global _hardened_build 1
 
-## Check to see if libmikmod is installed. Build xmms-mikmod if it is.
-%define withmm	%(if [ -z "`rpm -q --whatprovides libmikmod.so.2 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
-%define wmmdev	%(if [ -z "`rpm -q --whatprovides $(/usr/bin/which libmikmod-config 2>/dev/null) 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
+Name:           xmms
+Version:        1.3.0
+Release:        1%{?dist}
+Summary:        X Multimedia System — classic Winamp-style audio player (GTK3 resurrection)
 
-## Check to see if libvorbisfile is installed.  Build xmms-vorbis if it is.
-%define withvorbis %(if [ -z "`rpm -q --whatprovides libvorbisfile.so.3 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
+License:        GPL-2.0-or-later
+URL:            https://github.com/tacitness/xmms
+Source0:        %{name}-%{version}.tar.gz
 
-## Check to see if libalsa is installed.  Build xmms-alsa if it is.
-%define withalsa %(if [ -z "`rpm -q --whatprovides libasound.so.2 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
+BuildRequires:  cmake >= 3.20
+BuildRequires:  ninja-build
+BuildRequires:  gcc
+BuildRequires:  pkg-config
+BuildRequires:  gtk3-devel
+BuildRequires:  glib2-devel
+BuildRequires:  cairo-devel
+BuildRequires:  alsa-lib-devel
+BuildRequires:  pulseaudio-libs-devel
+BuildRequires:  libvorbis-devel
+BuildRequires:  libogg-devel
+BuildRequires:  mpg123-devel
+BuildRequires:  flac-devel
+BuildRequires:  libX11-devel
+BuildRequires:  libXext-devel
+BuildRequires:  libXxf86vm-devel
+BuildRequires:  gettext-devel
+BuildRequires:  desktop-file-utils
 
-## Check to see if libesd is installed.  Build xmms-esd if it is.
-%define withesd %(if [ -z "`rpm -q --whatprovides /usr/bin/esd-config 2>/dev/null | grep -v '^no package provides'`" ]; then echo 0; else echo 1; fi)
-
-## Funky hack to get package names that provide libmikmod and libmikmod-config
-## Becuase of the differing package names between redhat, mandrake, etc.
-%if %{withmm} == 1
-%define mikmod	%(rpm -q --qf '%{NAME}' --whatprovides libmikmod.so.2)
-%endif
-%if %{withmm} && %{wmmdev}
-%define mmdev   %(rpm -q --qf '%{NAME}' --whatprovides $(/usr/bin/which libmikmod-config))
-%endif
-%if %{withmm} && ! %{wmmdev}
-%define mmdev   /usr/bin/libmikmod-config
-%endif
-
-Summary:	XMMS - Multimedia player for the X Window System.
-Name:		%{name}
-Version:	%{version}
-Release:	%{release}
-Epoch:		%{epoch}
-License:	GPL
-Group:		Applications/Multimedia
-Vendor:		XMMS Development Team <bugs@xmms.org>
-Url:		http://www.xmms.org/
-Source:		%{name}-%{version}.tar.gz
-BuildRoot:	%{_tmppath}/%{name}-%{version}-root
-Obsoletes:	x11amp, x11amp0.7-1-1, xmms-mpg123, xmms-mp3
-Requires:	gtk+ >= 1:1.2.2
-BuildPrereq:	gtk+-devel
+Requires:       hicolor-icon-theme
 
 %description
-X MultiMedia System is a sound player written from scratch. Since it
-uses the WinAmp GUI, it can use WinAmp skins. It can play mp3s, mods, s3ms,
-and other formats. It now has support for input, output, general, and
-visualization plugins.
+XMMS (X Multimedia System) is a classic Winamp-style audio player resurrected
+with GTK3, faithfully reproducing the original Winamp 2.x skin-based interface
+while adding PulseAudio, ALSA, MP3 (mpg123), OGG Vorbis, and FLAC support.
 
-%package	devel
-Summary:	XMMS - Static libraries and header files.
-Group:		Applications/Multimedia
-Obsoletes:	x11amp-devel
-Requires:	%{name} = %{epoch}:%{version}, glib-devel >= 1:1.2.2, gtk+-devel >= 1:1.2.2
+Features:
+  - Winamp 2.x skin support (ZIP-based .wsz skins)
+  - 10-band graphic equalizer
+  - Scrolling playlist editor
+  - Visualization plugins (blurscope, spectrum analyser)
+  - Extensible plugin architecture (input, output, effect, general, vis)
+  - MPRIS2 D-Bus interface for desktop integration
 
-%description	devel
-Static libraries and header files required for compiling xmms plugins.
+%package        devel
+Summary:        X Multimedia System — development headers and pkg-config
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       glib2-devel
 
-%if %{withesd} == 1
-%package	esd
-Summary:	XMMS - Output plugin for use with the esound package.
-Group:		Applications/Multimedia
-Requires:	%{name} >= %{epoch}:%{version}
-Obsoletes:	x11amp-esd
-Requires:	esound >= 0.2.8
+%description    devel
+Header files, pkg-config data, and the xmms.m4 Autoconf macro required
+for compiling XMMS input, output, effect, general, and visualization plugins.
 
-%description	esd
-Output plugin for xmms for use with the esound package
-%endif
+%package        alsa
+Summary:        X Multimedia System — ALSA output plugin
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       alsa-lib
 
-%if %{withmm} == 1
-%package	mikmod
-Summary:	XMMS - Input plugin to play MODs.
-Group:		Applications/Multimedia
-Obsoletes:	x11amp-mikmod
-Requires:	%{name} >= %{epoch}:%{version}
-Requires:	%{mikmod} >= 3.1.6
-BuildPrereq:	%{mmdev}
+%description    alsa
+ALSA (Advanced Linux Sound Architecture) output plugin for XMMS.
+Install this package to use ALSA directly for audio playback.
 
-%description	mikmod
-Input plugin for XMMS to play MODs (.MOD,.XM,.S3M, etc)
-%endif
+%package        pulse
+Summary:        X Multimedia System — PulseAudio output plugin
+Requires:       %{name}%{?_isa} = %{version}-%{release}
+Requires:       pulseaudio-libs
 
-%if %{withvorbis} == 1
-%package	vorbis
-Summary:	XMMS - Input plugin to play OGGs
-Group:		Applications/Multimedia
-Requires:	%{name} >= %{epoch}:%{version}
-Requires:	libogg >= 1.0
-Requires:	libvorbis >= 1.0
-BuildPrereq:	libogg-devel
-BuildPrereq:	libvorbis-devel
+%description    pulse
+PulseAudio output plugin for XMMS.
+Install this package to use PulseAudio for audio playback.
 
-%description	vorbis
-Input plugin for XMMS to play Ogg Vorbis files (.ogg).
-%endif
-
-%if %{withGL} == 1
-%package 	gl
-Summary:	XMMS - Visualization plugins that use the Mesa3d library.
-Group:		Applications/Multimedia
-Requires:	%{name} = %{epoch}:%{version}
-Obsoletes:	xmms-mesa
-
-%description	gl
-Visualization plugins that use the Mesa3d library.
-%endif
-
-%if %{withalsa} == 1
-%package	alsa
-Summary:	XMMS - ALSA output plugin
-Group:		Applications/Multimedia
-Requires:	%{name} >= %{epoch}:%{version}
-Requires:	alsa-lib >= 0.9.0
-
-%description	alsa
-Output plugin for XMMS to use with the Advanced Linux Sound
-Architecture (ALSA).
-%endif
-
+# ─────────────────────────────────────────────────────────────────────────────
 %prep
-%setup -q
+%autosetup
 
+# ─────────────────────────────────────────────────────────────────────────────
 %build
-unset LINGUAS || :;
+cmake -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+    -DCMAKE_INSTALL_LIBDIR=%{_libdir} \
+    -DXMMS_GTK_VERSION=3 \
+    -DXMMS_ENABLE_ALSA=ON \
+    -DXMMS_ENABLE_PULSE=ON \
+    %{nil}
 
-%configure
-make
+cmake --build build -j%{_smp_build_ncpus}
 
+# ─────────────────────────────────────────────────────────────────────────────
 %install
-[ "${RPM_BUILD_ROOT}" != "/" ] && [ -d ${RPM_BUILD_ROOT} ] && rm -rf ${RPM_BUILD_ROOT};
-mkdir -p ${RPM_BUILD_ROOT}
-make install DESTDIR=$RPM_BUILD_ROOT
+DESTDIR=%{buildroot} cmake --install build
 
-# Install icons.
-mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/pixmaps/mini
-install -m 644 xmms/xmms_logo.xpm \
-	${RPM_BUILD_ROOT}%{_datadir}/pixmaps/xmms_logo.xpm
-install -m 644 xmms/xmms_mini.xpm \
-	${RPM_BUILD_ROOT}%{_datadir}/pixmaps/mini/xmms_mini.xpm
+# Validate .desktop file
+desktop-file-validate \
+    %{buildroot}%{_datadir}/applications/xmms.desktop || :
 
-# Install wmconfig file
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/X11/wmconfig
-install -m 644 xmms/xmms.wmconfig \
-	${RPM_BUILD_ROOT}%{_sysconfdir}/X11/wmconfig/xmms
+# Remove static libs (not installed by cmake, safety guard)
+find %{buildroot} -name '*.a' -delete
 
-# Install applnk file
-mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/
-install -m 644 xmms/xmms.desktop \
-	${RPM_BUILD_ROOT}%{_sysconfdir}/X11/applnk/Multimedia/
+# ─────────────────────────────────────────────────────────────────────────────
+%post
+/sbin/ldconfig
+/usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+/usr/bin/update-desktop-database -q %{_datadir}/applications &>/dev/null || :
 
-%post	-p /sbin/ldconfig
-%postun -p /sbin/ldconfig
+%postun
+/sbin/ldconfig
+/usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+/usr/bin/update-desktop-database -q %{_datadir}/applications &>/dev/null || :
 
-%clean
-[ "${RPM_BUILD_ROOT}" != "/" ] && [ -d ${RPM_BUILD_ROOT} ] && rm -rf ${RPM_BUILD_ROOT};
-
+# ─────────────────────────────────────────────────────────────────────────────
 %files
-%defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README
-%{_sysconfdir}/X11/wmconfig/xmms
-%{_sysconfdir}/X11/applnk/Multimedia/xmms.desktop
+%license COPYING
+%doc AUTHORS ChangeLog README NEWS FAQ
 %{_bindir}/xmms
-%{_bindir}/wmxmms
-%{_libdir}/libxmms.*
-%{_libdir}/xmms/Input/libcdaudio*
+%{_libdir}/libxmms.so.*
+# Core input plugins
 %{_libdir}/xmms/Input/libmpg123*
-%{_libdir}/xmms/Input/libtonegen*
+%{_libdir}/xmms/Input/libvorbis*
+%{_libdir}/xmms/Input/libxmms_flac*
 %{_libdir}/xmms/Input/libwav*
+%{_libdir}/xmms/Input/libcdaudio*
+%{_libdir}/xmms/Input/libtonegen*
+# OSS output (built in, no extra deps)
 %{_libdir}/xmms/Output/libOSS*
 %{_libdir}/xmms/Output/libdisk_writer*
-%{_libdir}/xmms/General/*
-%{_libdir}/xmms/Effect/*
-%{_libdir}/xmms/Visualization/libbscope*
-%{_libdir}/xmms/Visualization/libsanalyzer*
-%{_mandir}/man1/xmms.*
-%{_mandir}/man1/wmxmms.*
-%{_datadir}/xmms/*
+# Effect + general + vis plugins
+%{_libdir}/xmms/Effect/
+%{_libdir}/xmms/General/
+%{_libdir}/xmms/Visualization/
+# Data
+%{_datadir}/xmms/
 %{_datadir}/locale/*/LC_MESSAGES/xmms.mo
-%{_datadir}/pixmaps/xmms_logo.xpm
-%{_datadir}/pixmaps/mini/xmms_mini.xpm
+%{_datadir}/applications/xmms.desktop
+%{_datadir}/icons/hicolor/*/apps/xmms.png
+# Man pages
+%{_mandir}/man1/xmms.1*
 
 %files devel
-%defattr(-, root, root)
-%{_bindir}/xmms-config
-%{_libdir}/lib*.so
-%{_libdir}/lib*.a
-%{_includedir}/*
+%{_libdir}/libxmms.so
+%{_includedir}/xmms/
 %{_datadir}/aclocal/xmms.m4
 
-%if %{withesd} == 1
-%files esd
-%defattr(-, root, root)
-%{_libdir}/xmms/Output/libesdout*
-%endif
-
-%if %{withmm} == 1
-%files mikmod
-%defattr(-, root, root)
-%{_libdir}/xmms/Input/libmikmod*
-%endif
-
-%if %{withvorbis} == 1
-%files vorbis
-%defattr(-, root, root)
-%{_libdir}/xmms/Input/libvorbis*
-%endif
-
-%if %{withGL} == 1
-%files gl
-%defattr(-, root, root)
-%{_libdir}/xmms/Visualization/libogl_spectrum*
-%endif
-
-%if %{withalsa} == 1
 %files alsa
-%defattr(-, root, root)
 %{_libdir}/xmms/Output/libALSA*
-%endif
 
+%files pulse
+%{_libdir}/xmms/Output/libpulse*
+
+# ─────────────────────────────────────────────────────────────────────────────
 %changelog
+* Mon Apr 28 2025 XMMS Resurrection Team <xmms-dev@example.com> - 1.3.0-1
+- Rewrite spec for GTK3 + CMake build system (replaces GTK+1/2 + autotools)
+- Remove ESD sub-package (dead dependency)
+- Add PulseAudio output plugin sub-package
+- Update BuildRequires: cmake >= 3.20, ninja-build, gtk3-devel, cairo-devel,
+  pulseaudio-libs-devel, mpg123-devel, flac-devel
+- Add freedesktop icon set and .desktop entry to files
+- Use autosetup and license macros
+- Set global _hardened_build 1

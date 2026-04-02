@@ -118,16 +118,14 @@ jobs:
       - name: Install RPM build tools + dependencies
         run: |
           dnf install -y \
-            rpm-build rpmdevtools rpmlint \
-            gcc make autoconf automake libtool pkgconfig \
-            gtk3-devel glib2-devel \
+            rpm-build rpmdevtools rpmlint desktop-file-utils \
+            gcc cmake ninja-build pkgconfig \
+            gtk3-devel glib2-devel cairo-devel \
             alsa-lib-devel pulseaudio-libs-devel \
             libvorbis-devel libogg-devel mpg123-devel flac-devel \
             libX11-devel libXext-devel libXxf86vm-devel \
             gettext-devel \
           || true
-          # GTK4 extra on newer Fedora
-          dnf install -y gtk4-devel 2>/dev/null || true
 
       - name: Prepare rpmbuild tree
         run: |
