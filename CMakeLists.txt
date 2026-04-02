@@ -277,6 +277,32 @@ if(XMMS_ENABLE_WMXMMS)
 endif()
 
 # ---------------------------------------------------------------------------
+# Freedesktop icon set + .desktop entry (issue #38)
+# ---------------------------------------------------------------------------
+foreach(ICON_SIZE 16 24 32 48 64 128 256)
+    install(FILES
+        "data/icons/hicolor/${ICON_SIZE}x${ICON_SIZE}/apps/xmms.png"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${ICON_SIZE}x${ICON_SIZE}/apps"
+    )
+endforeach()
+
+install(FILES data/xmms.desktop
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+)
+
+# Refresh the icon cache after install (best-effort — gtk-update-icon-cache may not be present)
+install(CODE "
+    find_program(_gtk_update_icon_cache gtk-update-icon-cache)
+    if(_gtk_update_icon_cache)
+        execute_process(
+            COMMAND \${_gtk_update_icon_cache} -f -t
+                    \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons/hicolor\"
+            OUTPUT_QUIET ERROR_QUIET
+        )
+    endif()
+" COMPONENT Runtime)
+
+# ---------------------------------------------------------------------------
 # Print summary
 # ---------------------------------------------------------------------------
 message(STATUS "")
