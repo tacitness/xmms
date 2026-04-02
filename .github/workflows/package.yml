@@ -189,9 +189,10 @@ jobs:
       - name: Install DEB build tools + dependencies
         run: |
           apt-get update -qq
+          # Try modern package names first (Ubuntu 24.04 / Debian 12)
           apt-get install -y --no-install-recommends \
             build-essential devscripts debhelper lintian \
-            gcc make autoconf automake libtool pkg-config \
+            cmake ninja-build pkg-config \
             libgtk-3-dev libglib2.0-dev \
             libasound2-dev libpulse-dev \
             libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
@@ -199,74 +200,25 @@ jobs:
             gettext dpkg-dev \
           || apt-get install -y --no-install-recommends \
             build-essential devscripts debhelper lintian \
-            gcc make autoconf automake libtool pkg-config \
+            cmake ninja-build pkg-config \
             libgtk-3-dev libglib2.0-dev \
             libasound-dev libpulse-dev \
             libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
             libx11-dev libxext-dev libxxf86vm-dev \
             gettext dpkg-dev
 
-      - name: Setup debian/ package directory
+      - name: Ensure debian/rules is executable
+        run: chmod +x debian/rules
+
+      - name: Inject build version into debian/changelog
         run: |
           DEB_VER="${{ needs.version.outputs.deb_version }}"
           SUITE="${{ matrix.suite }}"
-
-          mkdir -p debian/source
-
-          # source compat
-          echo "native" > debian/source/format
-
-          # control file
-          cat > debian/control << 'CTRL'
-          Source: xmms
-          Section: sound
-          Priority: optional
-          Maintainer: XMMS Resurrection Team <xmms-dev@example.com>
-          Build-Depends: debhelper-compat (= 13),
-                         libgtk-3-dev | libgtk-4-dev,
-                         libglib2.0-dev,
-                         libasound2-dev | libasound-dev,
-                         libpulse-dev,
-                         libvorbis-dev,
-                         libogg-dev,
-                         libmpg123-dev,
-                         libflac-dev,
-                         libx11-dev,
-                         libxext-dev,
-                         libxxf86vm-dev,
-                         autoconf, automake, libtool, pkg-config
-          Package: xmms
-          Architecture: any
-          Depends: ${shlibs:Depends}, ${misc:Depends}
-          Description: XMMS — X Multimedia System (GTK3/4 Resurrection)
-           XMMS is a classic Winamp-style audio player resurrected with GTK3/GTK4
-           support, preserving the beloved skin-based interface and plugin system.
-          CTRL
-
-          # rules file
-          cat > debian/rules << 'RULES'
-          #!/usr/bin/make -f
-          export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-          %:
-          	dh $@
-          override_dh_auto_configure:
-          	autoreconf -fi
-          	./configure --prefix=/usr --enable-alsa --disable-esd \
-          		CFLAGS="$(CFLAGS) -std=c11"
-          RULES
-          chmod +x debian/rules
-
-          # compat
-          echo "13" > debian/compat
-
-          # changelog
-          cat > debian/changelog << CHNG
-          xmms ($DEB_VER-1) $SUITE; urgency=medium
-
-            * XMMS Resurrection $DEB_VER release — GTK3/GTK4 migration.
-
-           -- XMMS Resurrection Team <xmms-dev@example.com>  $(date -R)
-          CHNG
+          # Prepend a new versioned entry so lintian sees correct version
+          dch --newversion "${DEB_VER}-1" \
+              --distribution "${SUITE}" \
+              --force-distribution \
+              "Automated CI build for ${DEB_VER}."
 
       - name: Build DEB package
         run: |
@@ -421,12 +373,23 @@ jobs:
       - name: List artefacts
         run: find dist/ -type f | sort
 
+      - name: Compute prerelease flag
+        id: flags
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          if [[ "${{ inputs.prerelease }}" == "true" ]] || \
+             [[ "$VER" == *rc* ]] || [[ "$VER" == *beta* ]] || [[ "$VER" == *alpha* ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "XMMS ${{ needs.version.outputs.version }}"
           draft: false
-          prerelease: ${{ inputs.prerelease || contains(needs.version.outputs.version, 'rc') || contains(needs.version.outputs.version, 'beta') || contains(needs.version.outputs.version, 'alpha') }}
+          prerelease: ${{ steps.flags.outputs.is_prerelease }}
           generate_release_notes: true
           files: |
             dist/**/*.rpm

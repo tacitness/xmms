@@ -1,0 +1,44 @@
+Source: xmms
+Section: sound
+Priority: optional
+Maintainer: XMMS Resurrection Team <xmms-dev@example.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.20),
+               ninja-build,
+               pkg-config,
+               libgtk-3-dev,
+               libglib2.0-dev,
+               libasound2-dev | libasound-dev,
+               libpulse-dev,
+               libvorbis-dev,
+               libogg-dev,
+               libmpg123-dev,
+               libflac-dev,
+               libx11-dev,
+               libxext-dev,
+               libxxf86vm-dev,
+               gettext
+Standards-Version: 4.6.2
+Homepage: https://github.com/tacitness/xmms
+Vcs-Git: https://github.com/tacitness/xmms.git
+Vcs-Browser: https://github.com/tacitness/xmms
+
+Package: xmms
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: xmms-alsa | xmms-pulse
+Description: X Multimedia System — GTK3 resurrection
+ XMMS (X Multimedia System) is a classic Winamp-style audio player
+ resurrected with GTK3, faithfully reproducing the original Winamp 2.x
+ skin-based interface with a modern audio backend.
+ .
+ Supports ALSA and PulseAudio output, and can play MP3, OGG Vorbis,
+ FLAC, WAV, AIFF, and MOD files via its plugin architecture.
+
+Package: xmms-dev
+Architecture: any
+Section: libdevel
+Depends: xmms (= ${binary:Version}), ${misc:Depends}
+Description: X Multimedia System — development headers
+ Header files and pkg-config data for compiling XMMS input, output,
+ effect, general, and visualization plugins.
