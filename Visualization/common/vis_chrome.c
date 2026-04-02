@@ -14,6 +14,8 @@
 
 #include <gtk/gtk.h>
 
+#include "libxmms/snap.h"
+
 /* ---------------------------------------------------------------------------
  * CSS — colours taken from the Winamp default skin PLEDIT titlebar palette:
  *   bg active   #0e2030   very dark navy
@@ -63,14 +65,22 @@ static const char VIS_CHROME_CSS[] =
     "}";
 
 /* ---------------------------------------------------------------------------
- * Titlebar mouse-button handler — begin_move_drag on left-button press
+ * Titlebar mouse-button handler.
+ *
+ * If the main binary has registered a snap-aware press handler via xmms_snap,
+ * use it so the vis window joins the XMMS dock/snap group (like EQ and PL).
+ * Otherwise fall back to the WM's native move-drag (no snap).
  * --------------------------------------------------------------------------- */
 static gboolean on_bar_press(GtkWidget *widget, GdkEventButton *ev, gpointer data)
 {
     (void)widget;
     if (ev->button == 1 && ev->type == GDK_BUTTON_PRESS) {
-        gtk_window_begin_move_drag(GTK_WINDOW(data), (gint)ev->button, (gint)ev->x_root,
-                                   (gint)ev->y_root, ev->time);
+        if (xmms_snap.move_press) {
+            xmms_snap.move_press(GTK_WIDGET(data), ev);
+        } else {
+            gtk_window_begin_move_drag(GTK_WINDOW(data), (gint)ev->button, (gint)ev->x_root,
+                                       (gint)ev->y_root, ev->time);
+        }
         return TRUE;
     }
     return FALSE;
@@ -112,6 +122,37 @@ static gboolean on_content_double_click(GtkWidget *widget, GdkEventButton *ev, g
 }
 
 /* ---------------------------------------------------------------------------
+ * Dock/snap motion + release + destroy callbacks.
+ *
+ * Connected on the window (not the bar) so the pointer grab that
+ * dock_move_press sets up can deliver events across the full window surface.
+ * Forwards to the xmms_snap vtable, populated by the main binary at startup.
+ * --------------------------------------------------------------------------- */
+static gboolean on_window_motion(GtkWidget *widget, GdkEventMotion *ev, gpointer data)
+{
+    (void)data;
+    if (xmms_snap.move_motion)
+        xmms_snap.move_motion(widget, ev);
+    return FALSE;
+}
+
+static gboolean on_window_release(GtkWidget *widget, GdkEventButton *ev, gpointer data)
+{
+    (void)data;
+    (void)ev;
+    if (xmms_snap.move_release)
+        xmms_snap.move_release(widget);
+    return FALSE;
+}
+
+static void on_window_destroy(GtkWidget *widget, gpointer data)
+{
+    (void)data;
+    if (xmms_snap.unregister_window)
+        xmms_snap.unregister_window(widget);
+}
+
+/* ---------------------------------------------------------------------------
  * Public API
  * --------------------------------------------------------------------------- */
 void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
@@ -132,8 +173,9 @@ void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
 
     /* Remove WM titlebar — must be called before gtk_widget_show() */
     gtk_window_set_decorated(window, FALSE);
-    /* Borderless windows still need a frame for re-stacking; skip resizable here
-     * — each plugin controls that independently via gtk_window_set_resizable(). */
+    /* Allow the user to resize the vis window; each plugin's canvas will
+     * scale to fill via size-allocate — Refs #34 */
+    gtk_window_set_resizable(window, TRUE);
 
     /* ------------------------------------------------------------------
      * Layout:
@@ -183,6 +225,18 @@ void vis_chrome_apply(GtkWindow *window, GtkWidget *content, const char *title)
     g_signal_connect(content, "button-press-event", G_CALLBACK(on_content_double_click), window);
 
     gtk_container_add(GTK_CONTAINER(window), vbox);
+
+    /* Dock/snap integration — connect motion, release, and destroy on the
+     * window so vis windows snap to mainwin/EQ/PL the same way those windows
+     * snap to each other.  Screen-edge snapping is handled by the dock system
+     * inside dock_move_motion().  Refs #34 */
+    gtk_widget_add_events(GTK_WIDGET(window), GDK_BUTTON_MOTION_MASK | GDK_BUTTON_RELEASE_MASK);
+    g_signal_connect(GTK_WIDGET(window), "motion-notify-event", G_CALLBACK(on_window_motion), NULL);
+    g_signal_connect(GTK_WIDGET(window), "button-release-event", G_CALLBACK(on_window_release),
+                     NULL);
+    g_signal_connect(GTK_WIDGET(window), "destroy", G_CALLBACK(on_window_destroy), NULL);
+    if (xmms_snap.register_window)
+        xmms_snap.register_window(GTK_WIDGET(window));
 
     /* Show all internal chrome widgets (bar, label, close button).
      * The window itself is shown by the caller after this returns. */
