@@ -6,6 +6,8 @@ project(xmms
     LANGUAGES C
 )
 
+enable_testing()
+
 # ---------------------------------------------------------------------------
 # Build options
 # ---------------------------------------------------------------------------
@@ -275,6 +277,9 @@ add_subdirectory(General)
 add_subdirectory(Visualization)
 if(XMMS_ENABLE_WMXMMS)
     add_subdirectory(wmxmms)
+endif()
+if(EXISTS "${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt")
+    add_subdirectory(tests)
 endif()
 
 # ---------------------------------------------------------------------------
