@@ -23,6 +23,7 @@
 struct VisPluginData *vp_data;
 extern Vis *active_vis;
 extern SVis *mainwin_svis;
+static GList *vis_failed_list;
 
 GList *get_vis_list(void)
 {
@@ -38,7 +39,6 @@ void vis_disable_plugin(VisPlugin *vp)
 {
     gint i = g_list_index(vp_data->vis_list, vp);
     enable_vis_plugin(i, FALSE);
-    prefswin_vplugins_rescan();
 }
 
 void vis_about(int i)
@@ -96,6 +96,7 @@ void enable_vis_plugin(int i, gboolean enable)
 {
     GList *node = g_list_nth(vp_data->vis_list, i);
     VisPlugin *vp;
+    gboolean changed = FALSE;
 
     if (!node || !(node->data))
         return;
@@ -103,24 +104,50 @@ void enable_vis_plugin(int i, gboolean enable)
 
     if (enable && !g_list_find(vp_data->enabled_list, vp)) {
         vp_data->enabled_list = g_list_append(vp_data->enabled_list, vp);
+        vis_failed_list = g_list_remove(vis_failed_list, vp);
         if (vp->init)
             vp->init();
-        if (get_input_playing() && vp->playback_start)
-            vp->playback_start();
+        if (g_list_find(vp_data->enabled_list, vp)) {
+            if (get_input_playing() && vp->playback_start)
+                vp->playback_start();
+        } else if (!g_list_find(vis_failed_list, vp)) {
+            vis_failed_list = g_list_append(vis_failed_list, vp);
+        }
+        changed = TRUE;
     } else if (!enable && g_list_find(vp_data->enabled_list, vp)) {
+        vis_failed_list = g_list_remove(vis_failed_list, vp);
         vp_data->enabled_list = g_list_remove(vp_data->enabled_list, vp);
         if (get_input_playing() && vp->playback_stop)
             vp->playback_stop();
         if (vp->cleanup)
             vp->cleanup();
+        changed = TRUE;
+    } else if (!enable) {
+        vis_failed_list = g_list_remove(vis_failed_list, vp);
     }
+
+    if (changed)
+        prefswin_vplugins_rescan();
 }
 
 gboolean vis_enabled(int i)
 {
-    return (g_list_find(vp_data->enabled_list, (VisPlugin *)g_list_nth(vp_data->vis_list, i)->data)
-                ? TRUE
-                : FALSE);
+    GList *node = g_list_nth(vp_data->vis_list, i);
+
+    if (!node || !(node->data))
+        return FALSE;
+
+    return g_list_find(vp_data->enabled_list, node->data) != NULL;
+}
+
+gboolean vis_plugin_failed(int i)
+{
+    GList *node = g_list_nth(vp_data->vis_list, i);
+
+    if (!node || !(node->data))
+        return FALSE;
+
+    return g_list_find(vis_failed_list, node->data) != NULL;
 }
 
 gchar *vis_stringify_enabled_list(void)
@@ -164,24 +191,22 @@ void vis_enable_from_stringified_list(gchar *list)
     gchar **plugins, *base;
     GList *node;
     gint i;
-    VisPlugin *vp;
 
     if (!list || !strcmp(list, ""))
         return;
     plugins = g_strsplit(list, ",", 0);
     for (i = 0; plugins[i]; i++) {
+        gint idx = 0;
+
         node = vp_data->vis_list;
         while (node) {
             base = g_basename(((VisPlugin *)node->data)->filename);
             if (!strcmp(plugins[i], base)) {
-                vp = node->data;
-                vp_data->enabled_list = g_list_append(vp_data->enabled_list, (VisPlugin *)vp);
-                if (vp->init)
-                    vp->init();
-                if (get_input_playing() && vp->playback_start)
-                    vp->playback_start();
+                enable_vis_plugin(idx, TRUE);
+                break;
             }
             node = node->next;
+            idx++;
         }
     }
     g_strfreev(plugins);

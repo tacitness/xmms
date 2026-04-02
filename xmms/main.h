@@ -101,6 +101,7 @@ void mainwin_clear_song_info(void);
 void mainwin_set_always_on_top(gboolean always);
 void mainwin_set_volume_diff(gint diff);
 void mainwin_set_balance_diff(gint diff);
+void mainwin_vis_plugins_rescan(void);
 
 void mainwin_show(gboolean);
 void mainwin_real_show(void);

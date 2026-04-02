@@ -1426,6 +1426,8 @@ void prefswin_vplugins_rescan(void)
     gdouble pos;
     gint sel;
 
+    mainwin_vis_plugins_rescan();
+
     if (prefswin == NULL || prefswin_vplugins_list == NULL)
         return;
 
