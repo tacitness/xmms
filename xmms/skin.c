@@ -32,11 +32,8 @@
 #include "defskin/text.xpm"
 #include "defskin/titlebar.xpm"
 #include "defskin/volume.xpm"
+#include "skin_archive.h"
 #include "xmms.h"
-
-#ifndef HAVE_MKDTEMP
-char *mkdtemp(char *path);
-#endif
 
 Skin *skin;
 static int skin_current_num;
@@ -528,74 +525,18 @@ static void skin_load_pixmaps(const char *path)
     load_skin_viscolor(path, "viscolor.txt");
 }
 
-/*
- * escape_shell_chars()
- *
- * Escapes characters that are special to the shell inside double quotes.
- */
-
-static char *escape_shell_chars(const char *string)
-{
-    const char *special = "$`\"\\"; /* Characters to escape */
-    const char *in = string;
-    char *out, *escaped;
-    int num = 0;
-
-    while (*in != '\0')
-        if (strchr(special, *in++))
-            num++;
-
-    escaped = g_malloc(strlen(string) + num + 1);
-
-    in = string;
-    out = escaped;
-
-    while (*in != '\0') {
-        if (strchr(special, *in))
-            *out++ = '\\';
-        *out++ = *in++;
-    }
-    *out = '\0';
-
-    return escaped;
-}
-
 static char *skin_decompress_skin(const char *path)
 {
-    char *tmp = NULL, *tempdir, *unzip, *tar, *ending, *escaped;
+    GError *error = NULL;
+    gchar *tempdir;
 
-    unzip = getenv("UNZIPCMD");
-    if (!unzip)
-        unzip = "unzip";
-    tar = getenv("TARCMD");
-    if (!tar)
-        tar = "tar";
-
-    if ((ending = strrchr(path, '.')) == NULL)
-        return NULL;
-
-    tempdir = g_strconcat(g_get_tmp_dir(), "/xmmsskin.XXXXXXXX", NULL);
-    if (!mkdtemp(tempdir)) {
-        g_free(tempdir);
-        g_message("Failed to create temporary directory: %s.  Unable to load skin.",
-                  strerror(errno));
-        return NULL;
+    tempdir = skin_archive_extract_to_tempdir(path, &error);
+    if (tempdir == NULL) {
+        g_message("Failed to extract skin archive %s: %s", path,
+                  error != NULL ? error->message : "unknown error");
+        g_clear_error(&error);
     }
 
-    escaped = escape_shell_chars(path);
-
-    if (!strcasecmp(ending, ".zip") || !strcasecmp(ending, ".wsz"))
-        tmp = g_strdup_printf("%s >/dev/null -o -j \"%s\" -d %s", unzip, escaped, tempdir);
-    if (!strcasecmp(ending, ".tgz") || !strcasecmp(ending, ".gz"))
-        tmp = g_strdup_printf("%s >/dev/null xzf \"%s\" -C %s", tar, escaped, tempdir);
-    if (!strcasecmp(ending, ".bz2"))
-        tmp = g_strdup_printf("bzip2 -dc \"%s\" | %s >/dev/null xf - -C %s", escaped, tar, tempdir);
-    if (!strcasecmp(ending, ".tar"))
-        tmp = g_strdup_printf("%s >/dev/null xf \"%s\" -C %s", tar, escaped, tempdir);
-
-    system(tmp);
-    g_free(escaped);
-    g_free(tmp);
     return tempdir;
 }
 

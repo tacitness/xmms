@@ -2,6 +2,7 @@
 
 set(XMMS_SOURCES
     bmp.c           bmp.h
+    skin_archive.c  skin_archive.h
     skin.c          skin.h
     util.c          util.h
     output.c        output.h
