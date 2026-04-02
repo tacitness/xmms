@@ -31,6 +31,7 @@ libx11-dev
 libxext-dev
 libxxf86vm-dev
 gettext-dev
+desktop-file-utils
 "
 
 subpackages="$pkgname-dev:dev $pkgname-doc:doc $pkgname-alsa $pkgname-pulse"
@@ -59,6 +60,16 @@ check() {
 
 package() {
 	DESTDIR="$pkgdir" cmake --install build
+}
+
+post_install() {
+	# Refresh icon cache and desktop db so the app appears in launchers
+	/usr/bin/gtk-update-icon-cache -f -t /usr/share/icons/hicolor || true
+	/usr/bin/update-desktop-database -q /usr/share/applications || true
+}
+
+post_upgrade() {
+	post_install
 }
 
 dev() {
