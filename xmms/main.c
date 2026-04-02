@@ -114,6 +114,20 @@ static pthread_mutex_t title_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern gchar *plugin_dir_list[];
 
+enum {
+    MAINWIN_JTF_COL_QUEUE,
+    MAINWIN_JTF_COL_FILE,
+    MAINWIN_JTF_COL_PLAYLIST_POS,
+    MAINWIN_JTF_N_COLUMNS
+};
+
+enum {
+    MAINWIN_QM_COL_QUEUE,
+    MAINWIN_QM_COL_FILE,
+    MAINWIN_QM_COL_QUEUE_POS,
+    MAINWIN_QM_N_COLUMNS
+};
+
 enum { VOLSET_STARTUP, VOLSET_UPDATE, VOLUME_ADJUSTED, VOLUME_SET };
 
 void read_volume(gint when);
@@ -126,6 +140,145 @@ void mainwin_options_menu_callback(gpointer cb_data, guint action, GtkWidget *w)
 void mainwin_volume_motioncb(gint pos);
 static void set_timer_mode_menu_cb(TimerMode mode);
 static void mainwin_queue_manager_queue_refresh(GtkWidget *widget, gpointer userdata);
+
+static gboolean mainwin_tree_view_get_selected_int(GtkTreeView *view, gint column, gint *value)
+{
+    GtkTreeSelection *selection;
+    GtkTreeModel *model;
+    GtkTreeIter iter;
+
+    g_return_val_if_fail(view != NULL, FALSE);
+    g_return_val_if_fail(value != NULL, FALSE);
+
+    selection = gtk_tree_view_get_selection(view);
+    if (!gtk_tree_selection_get_selected(selection, &model, &iter))
+        return FALSE;
+
+    gtk_tree_model_get(model, &iter, column, value, -1);
+    return TRUE;
+}
+
+static gint mainwin_tree_view_get_cursor_int(GtkTreeView *view, gint column)
+{
+    GtkTreeModel *model;
+    GtkTreePath *path = NULL;
+    GtkTreeIter iter;
+    gint value = -1;
+
+    g_return_val_if_fail(view != NULL, -1);
+
+    model = gtk_tree_view_get_model(view);
+    gtk_tree_view_get_cursor(view, &path, NULL);
+    if (path == NULL)
+        return -1;
+
+    if (gtk_tree_model_get_iter(model, &iter, path))
+        gtk_tree_model_get(model, &iter, column, &value, -1);
+    gtk_tree_path_free(path);
+
+    return value;
+}
+
+static void mainwin_tree_view_select_int(GtkTreeView *view, gint column, gint value)
+{
+    GtkTreeModel *model;
+    GtkTreeSelection *selection;
+    GtkTreeIter iter;
+
+    g_return_if_fail(view != NULL);
+
+    model = gtk_tree_view_get_model(view);
+    selection = gtk_tree_view_get_selection(view);
+
+    if (!gtk_tree_model_get_iter_first(model, &iter))
+        return;
+
+    do {
+        gint row_value = -1;
+        gtk_tree_model_get(model, &iter, column, &row_value, -1);
+        if (row_value == value) {
+            GtkTreePath *path = gtk_tree_model_get_path(model, &iter);
+            gtk_tree_selection_select_iter(selection, &iter);
+            gtk_tree_view_set_cursor(view, path, NULL, FALSE);
+            gtk_tree_view_scroll_to_cell(view, path, NULL, TRUE, 0.5f, 0.0f);
+            gtk_tree_path_free(path);
+            return;
+        }
+    } while (gtk_tree_model_iter_next(model, &iter));
+}
+
+static void mainwin_tree_view_select_first(GtkTreeView *view)
+{
+    GtkTreeModel *model;
+    GtkTreeSelection *selection;
+    GtkTreeIter iter;
+    GtkTreePath *path;
+
+    g_return_if_fail(view != NULL);
+
+    model = gtk_tree_view_get_model(view);
+    if (!gtk_tree_model_get_iter_first(model, &iter))
+        return;
+
+    selection = gtk_tree_view_get_selection(view);
+    path = gtk_tree_model_get_path(model, &iter);
+    gtk_tree_selection_select_iter(selection, &iter);
+    gtk_tree_view_set_cursor(view, path, NULL, FALSE);
+    gtk_tree_view_scroll_to_cell(view, path, NULL, TRUE, 0.0f, 0.0f);
+    gtk_tree_path_free(path);
+}
+
+static GtkWidget *mainwin_create_jump_tree_view(void)
+{
+    GtkListStore *store;
+    GtkWidget *view;
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+
+    store = gtk_list_store_new(MAINWIN_JTF_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+    view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    g_object_unref(store);
+
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Q"), renderer, "text",
+                                                      MAINWIN_JTF_COL_QUEUE, NULL);
+    gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_AUTOSIZE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Files"), renderer, "text",
+                                                      MAINWIN_JTF_COL_FILE, NULL);
+    gtk_tree_view_column_set_expand(column, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+
+    return view;
+}
+
+static GtkWidget *mainwin_create_queue_tree_view(void)
+{
+    GtkListStore *store;
+    GtkWidget *view;
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+
+    store = gtk_list_store_new(MAINWIN_QM_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+    view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    g_object_unref(store);
+
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Q"), renderer, "text",
+                                                      MAINWIN_QM_COL_QUEUE, NULL);
+    gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_AUTOSIZE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+
+    renderer = gtk_cell_renderer_text_new();
+    column = gtk_tree_view_column_new_with_attributes(_("Files"), renderer, "text",
+                                                      MAINWIN_QM_COL_FILE, NULL);
+    gtk_tree_view_column_set_expand(column, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(view), column);
+
+    return view;
+}
 
 enum {
     MAINWIN_OPT_PREFS,
@@ -1593,13 +1746,12 @@ void mainwin_jump_to_time(void)
 
 static void mainwin_jump_to_file_real_cb(GtkTreeView *clist)
 {
-    if (NULL /* TODO(#gtk3): clist->selection */) {
-        int *pos;
+    gint pos;
 
+    if (mainwin_tree_view_get_selected_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, &pos)) {
         if (get_input_playing())
             input_stop();
-        pos = NULL /* TODO(#gtk3) */;
-        playlist_set_position(*pos);
+        playlist_set_position(pos);
         playlist_play();
         gtk_widget_destroy(mainwin_jtf);
     }
@@ -1608,15 +1760,11 @@ static void mainwin_jump_to_file_real_cb(GtkTreeView *clist)
 static void mainwin_jtf_set_qbtn_label(GtkTreeView *clist, GtkWidget *button)
 {
     char *label = _("Queue");
+    gint pos;
 
-    if (NULL /* TODO(#gtk3): clist->selection */) {
-        int *pos, lpos = 0 /* TODO(#gtk3): GPOINTER_TO_INT(selection->data) */;
-        pos = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-        if (pos) {
-            if (playlist_is_position_queued(*pos))
-                label = _("Unqueue");
-        }
-    }
+    if (mainwin_tree_view_get_selected_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, &pos) &&
+        playlist_is_position_queued(pos))
+        label = _("Unqueue");
     gtk_button_set_label(GTK_BUTTON(button), label);
 }
 
@@ -1717,10 +1865,7 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
 
     /* Figure out what is currently selected */
     gint row_to_select = -1;
-    gint prev_focus = -1;
-    gint *tmp = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-    if (tmp != NULL)
-        prev_focus = *tmp;
+    gint prev_focus = mainwin_tree_view_get_cursor_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS);
 
     /* lowercase the key string */
     g_strdown(key);
@@ -1740,7 +1885,7 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
         }
     }
 
-    /* TODO(#gtk3): gtk_clist_clear removed */
+    gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(clist)));
 
     while (playlist) {
         int match = 0;
@@ -1800,24 +1945,24 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
         }
 
         if (match) {
-            int row, queue_pos, *data_buf;
+            GtkTreeIter iter;
+            int queue_pos;
             char *tmp_buf;
             queue_pos = playlist_get_queue_position((PlaylistEntry *)playlist->data);
             if (queue_pos != -1) {
                 tmp_buf = g_strdup_printf("%i", queue_pos + 1);
                 desc_buf[0] = tmp_buf;
-                row = 0; /* TODO(#gtk3): gtk_clist_append removed */
-                g_free(tmp_buf);
             } else {
-                desc_buf[0] = g_strdup_printf(" ");
-                row = 0; /* TODO(#gtk3): gtk_clist_append removed */
+                tmp_buf = g_strdup(" ");
+                desc_buf[0] = tmp_buf;
             }
-
-            data_buf = g_malloc(sizeof(int));
-            *data_buf = songnr;
-            /* TODO(#gtk3): gtk_clist_set_row_data_full removed */
+            gtk_list_store_append(GTK_LIST_STORE(gtk_tree_view_get_model(clist)), &iter);
+            gtk_list_store_set(GTK_LIST_STORE(gtk_tree_view_get_model(clist)), &iter,
+                               MAINWIN_JTF_COL_QUEUE, desc_buf[0], MAINWIN_JTF_COL_FILE,
+                               desc_buf[1], MAINWIN_JTF_COL_PLAYLIST_POS, songnr, -1);
+            g_free(tmp_buf);
             if (songnr == prev_focus)
-                row_to_select = row;
+                row_to_select = songnr;
         }
 
         songnr++;
@@ -1826,44 +1971,37 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
 
     PL_UNLOCK();
 
-    if (row_to_select != -1)
-        ;
     if (cfg.sort_jump_to_file) {
-        /* TODO(#gtk3): gtk_clist_set_sort_column removed */
-        /* TODO(#gtk3): gtk_clist_set_sort_type removed */
-        /* TODO(#gtk3): gtk_clist_sort removed */
+        gtk_tree_sortable_set_sort_column_id(
+            GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)), MAINWIN_JTF_COL_FILE,
+            GTK_SORT_ASCENDING);
+    } else {
+        gtk_tree_sortable_set_sort_column_id(
+            GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)),
+            GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+            GTK_SORT_ASCENDING);
     }
 
     g_free(key);
 
-    if (NULL /* TODO(#gtk3): clist->selection */)
-        ;
-    /* TODO(#gtk3): focus_row assignment removed */
+    if (row_to_select != -1)
+        mainwin_tree_view_select_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, row_to_select);
+    else
+        mainwin_tree_view_select_first(clist);
 }
 
 static void mainwin_jump_to_file_edit_cb(GtkWidget *widget, gpointer userdata)
 {
-    GtkTreeView *clist = GTK_TREE_VIEW(userdata);
-    /* TODO(#gtk3): gtk_clist_freeze removed */
     mainwin_jump_to_file_edit_real(widget, userdata);
-    if (0 /* TODO(#gtk3): focus_row */) {
-        /* TODO(#gtk3): gtk_clist_thaw removed */
-        /* TODO(#gtk3): gtk_clist_moveto removed */
-    } else {
-        /* TODO(#gtk3): gtk_clist_select_row removed */
-        /* TODO(#gtk3): gtk_clist_thaw removed */
-    }
 }
 
 static void mainwin_jump_to_file_clist_refresh(GtkWidget *widget, gpointer userdata)
 {
     gfloat adjustment;
     GtkTreeView *clist = GTK_TREE_VIEW(userdata);
-    /* TODO(#gtk3): gtk_clist_freeze removed */
     adjustment = gtk_adjustment_get_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(clist)));
     mainwin_jump_to_file_edit_real(widget, userdata);
     gtk_adjustment_set_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(clist)), adjustment);
-    /* TODO(#gtk3): gtk_clist_thaw removed */
 }
 
 static void mainwin_jump_to_file_queue_toggle(gint pos, gpointer userdata)
@@ -1891,13 +2029,10 @@ static void mainwin_jump_to_file_queue_cb(GtkButton *widget, gpointer userdata)
 {
     GtkWidget **data = (GtkWidget **)userdata;
     GtkTreeView *clist = GTK_TREE_VIEW(data[1]);
-    int *pos;
+    gint pos;
 
-    if (NULL /* TODO(#gtk3): clist->selection */) {
-        int lpos = 0 /* TODO(#gtk3): GPOINTER_TO_INT(selection->data) */;
-        pos = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-        mainwin_jump_to_file_queue_toggle(*pos, userdata);
-    }
+    if (mainwin_tree_view_get_selected_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, &pos))
+        mainwin_jump_to_file_queue_toggle(pos, userdata);
     mainwin_jtf_set_qbtn_label(clist, GTK_WIDGET(widget));
 }
 
@@ -1913,7 +2048,6 @@ static void mainwin_jump_to_file(void)
 {
     GtkWidget *vbox, *scrollwin, *clist, *sep, *bbox, *jump, *queue, *cancel, *edit, *search_label,
         *hbox;
-    char *title[2];
     /*
      * This little bugger is because I need all these widgets in some of
      * the signal handlers. It will be freed when the window
@@ -1935,12 +2069,7 @@ static void mainwin_jump_to_file(void)
 
     queue = gtk_button_new_with_label(_("Queue"));
 
-    title[0] = _("Q");
-    title[1] = _("Files");
-    clist = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
-
-    /* TODO(#gtk3): gtk_clist_set_column_auto_resize removed */
-    /* TODO(#gtk3): gtk_clist_set_column_justification removed */
+    clist = mainwin_create_jump_tree_view();
     /* GTK3: select_row→row-activated + cursor-changed for label updates */
     g_signal_connect(G_OBJECT(clist), "row-activated",
                      G_CALLBACK(mainwin_jump_to_file_select_row_cb), queue);
@@ -2013,17 +2142,9 @@ static void mainwin_jump_to_file(void)
     /* Initial read of playlist (will take care of locking by itself) */
     mainwin_jump_to_file_edit_cb(GTK_WIDGET(edit), clist);
 
-    /* TODO(#gtk3): gtk_clist_select_row removed */
-
     gtk_window_set_modal(GTK_WINDOW(mainwin_jtf), 1);
     gtk_widget_show(mainwin_jtf);
     gtk_widget_grab_focus(edit);
-
-    /* Only do this if there is a selection, or else we get a segfault */
-    if (NULL /* TODO(#gtk3): clist selection */) {
-        /* TODO(#gtk3): gtk_clist_moveto removed */
-        /* TODO(#gtk3): clist focus_row assignment removed */
-    }
 }
 
 static void mainwin_queue_manager_select_row_cb(GtkTreeView *widget, GtkTreePath *path,
@@ -2044,11 +2165,12 @@ static gboolean mainwin_queue_manager_entry_keypress_cb(GtkWidget *widget, GdkEv
 
     switch (event->keyval) {
     case GDK_KEY_Return:
-        if (NULL /* TODO(#gtk3): clist->selection */) {
-            int *pos = NULL /* TODO(#gtk3) */;
-            mainwin_jump_to_file_queue_toggle(*pos, userdata);
-        }
+    {
+        gint pos;
+        if (mainwin_tree_view_get_selected_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, &pos))
+            mainwin_jump_to_file_queue_toggle(pos, userdata);
         break;
+    }
     case GDK_KEY_Escape:
         gtk_widget_destroy(mainwin_qm);
         break;
@@ -2083,24 +2205,19 @@ static void mainwin_queue_manager_queue_refresh(GtkWidget *widget, gpointer user
     GList *queue;
     int pos = 0;
     gint row_to_select = -1;
-    gint prev_focus = -1;
-    gint *tmp;
+    gint prev_focus;
     gfloat adjustment;
-
-    /* TODO(#gtk3): gtk_clist_freeze removed */
 
     PL_LOCK();
 
     adjustment = gtk_adjustment_get_value(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(qlist)));
 
-    tmp = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-    if (tmp != NULL)
-        prev_focus = playlist_get_playlist_position_from_playqueue_position(*tmp);
+    prev_focus = mainwin_tree_view_get_cursor_int(qlist, MAINWIN_QM_COL_QUEUE_POS);
 
-    /* TODO(#gtk3): gtk_clist_clear removed */
+    gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(qlist)));
 
     for (queue = get_queue(); queue; queue = queue->next) {
-        int row, *data_buf;
+        GtkTreeIter iter;
         char *title, *filename, *tmp_buf, *desc_buf[2];
 
         title = ((PlaylistEntry *)queue->data)->title;
@@ -2114,27 +2231,24 @@ static void mainwin_queue_manager_queue_refresh(GtkWidget *widget, gpointer user
 
         tmp_buf = g_strdup_printf("%i", pos + 1);
         desc_buf[0] = tmp_buf;
-        row = 0; /* TODO(#gtk3): gtk_clist_append removed */
+        gtk_list_store_append(GTK_LIST_STORE(gtk_tree_view_get_model(qlist)), &iter);
+        gtk_list_store_set(GTK_LIST_STORE(gtk_tree_view_get_model(qlist)), &iter,
+                           MAINWIN_QM_COL_QUEUE, desc_buf[0], MAINWIN_QM_COL_FILE, desc_buf[1],
+                           MAINWIN_QM_COL_QUEUE_POS, pos, -1);
         g_free(tmp_buf);
 
-        data_buf = g_malloc(sizeof(int));
-        *data_buf = pos;
-        /* TODO(#gtk3): gtk_clist_set_row_data_full removed */
-
-        if (prev_focus != -1 &&
-            prev_focus == playlist_get_playlist_position_from_playqueue_position(pos))
-            row_to_select = row;
+        if (prev_focus == pos)
+            row_to_select = pos;
 
         ++pos;
     }
 
     PL_UNLOCK();
 
-    if (row_to_select != -1) {
-        /* TODO(#gtk3): gtk_clist_select_row removed */
-        /* TODO(#gtk3): focus_row assignment removed */
-    }
-    /* TODO(#gtk3): gtk_clist_thaw removed */
+    if (row_to_select != -1)
+        mainwin_tree_view_select_int(qlist, MAINWIN_QM_COL_QUEUE_POS, row_to_select);
+    else
+        mainwin_tree_view_select_first(qlist);
     /* make sure we don't scroll out of the list */
     if (adjustment +
             gtk_adjustment_get_page_size(gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(qlist))) >
@@ -2155,10 +2269,9 @@ static void mainwin_queue_manager_reorder_real(GtkTreeView *widget, gint arg1, g
 
     /* move and adjust qlist selection accordingly */
     playlist_queue_move(arg1, arg2);
-    /* TODO(#gtk3): gtk_clist_select_row removed */
-    /* TODO(#gtk3): focus_row assignment removed */
     /* refresh qlist */
     mainwin_queue_manager_queue_refresh(GTK_WIDGET(widget), qlist);
+    mainwin_tree_view_select_int(qlist, MAINWIN_QM_COL_QUEUE_POS, arg2);
     /* refresh clist */
     mainwin_jump_to_file_clist_refresh(GTK_WIDGET(edit), clist);
 }
@@ -2175,34 +2288,31 @@ static void mainwin_queue_manager_move_up_cb(GtkWidget *widget, gpointer userdat
 {
     GtkWidget **data = (GtkWidget **)userdata;
     GtkTreeView *qlist = GTK_TREE_VIEW(data[2]);
+    gint pos;
 
-    if (NULL /* TODO(#gtk3): qlist->selection */) {
-        int *pos = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-        if (pos != NULL && *pos > 0)
-            mainwin_queue_manager_reorder_real(qlist, *pos, (*pos) - 1, userdata);
-    }
+    if (mainwin_tree_view_get_selected_int(qlist, MAINWIN_QM_COL_QUEUE_POS, &pos) && pos > 0)
+        mainwin_queue_manager_reorder_real(qlist, pos, pos - 1, userdata);
 }
 
 static void mainwin_queue_manager_move_down_cb(GtkWidget *widget, gpointer userdata)
 {
     GtkWidget **data = (GtkWidget **)userdata;
     GtkTreeView *qlist = GTK_TREE_VIEW(data[2]);
+    gint pos;
 
-    if (NULL /* TODO(#gtk3): qlist->selection */) {
-        int *pos = NULL /* TODO(#gtk3): gtk_clist_get_row_data removed */;
-        if (pos != NULL && *pos < get_playlist_queue_length() - 1)
-            mainwin_queue_manager_reorder_real(qlist, *pos, (*pos) + 1, userdata);
-    }
+    if (mainwin_tree_view_get_selected_int(qlist, MAINWIN_QM_COL_QUEUE_POS, &pos) &&
+        pos < get_playlist_queue_length() - 1)
+        mainwin_queue_manager_reorder_real(qlist, pos, pos + 1, userdata);
 }
 
 static void mainwin_queue_manager_remove_cb(GtkWidget *widget, gpointer userdata)
 {
     GtkWidget **data = (GtkWidget **)userdata;
     GtkTreeView *qlist = GTK_TREE_VIEW(data[2]);
+    gint queue_pos;
 
-    if (NULL /* TODO(#gtk3): qlist->selection */) {
-        int *tmp = NULL /* TODO(#gtk3) */;
-        int pos = playlist_get_playlist_position_from_playqueue_position(*tmp);
+    if (mainwin_tree_view_get_selected_int(qlist, MAINWIN_QM_COL_QUEUE_POS, &queue_pos)) {
+        int pos = playlist_get_playlist_position_from_playqueue_position(queue_pos);
         mainwin_jump_to_file_queue_toggle(pos, userdata);
     }
 }
@@ -2234,7 +2344,6 @@ void mainwin_queue_manager(void)
     GtkWidget *bigbox, *lbox, *vbox, *qscrollwin, *scrollwin, *qlist, *clist, *qsep, *sep, *bbox,
         *qbox, *queue, *cancel, *edit, *queue_label, *search_label, *hbox, *move_up, *move_down,
         *remove;
-    char *title[2];
     /*
      * This little bugger is because I need all these widgets in some of
      * the signal handlers. It will be freed when the window
@@ -2268,22 +2377,16 @@ void mainwin_queue_manager(void)
 
     queue = gtk_button_new_with_label(_("Queue"));
 
-    title[0] = _("Q");
-    title[1] = _("Files");
-    qlist = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
+    qlist = mainwin_create_queue_tree_view();
     qscrollwin = gtk_scrolled_window_new(NULL, NULL);
     queue_label = gtk_label_new(_("Queued files: "));
     gtk_box_pack_start(GTK_BOX(lbox), queue_label, FALSE, FALSE, 0);
     gtk_widget_show(queue_label);
-    /* TODO(#gtk3): gtk_clist_set_column_auto_resize removed */
-    /* TODO(#gtk3): gtk_clist_set_column_justification removed */
-    /* TODO(#gtk3): gtk_clist_set_selection_mode removed */
     g_signal_connect(G_OBJECT(qlist), "key_press_event",
                      G_CALLBACK(mainwin_queue_manager_qlist_keypress_cb),
                      edit_clist_qlist_and_queue);
     g_signal_connect(G_OBJECT(qlist), "row-move", G_CALLBACK(mainwin_queue_manager_reorder),
                      edit_clist_qlist_and_queue);
-    /* TODO(#gtk3): gtk_clist_set_reorderable removed */
     gtk_container_add(GTK_CONTAINER(qscrollwin), qlist);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(qscrollwin), GTK_POLICY_AUTOMATIC,
                                    GTK_POLICY_ALWAYS);
@@ -2324,9 +2427,7 @@ void mainwin_queue_manager(void)
 
     gtk_widget_show(qbox);
 
-    clist = gtk_tree_view_new() /* TODO(#gtk3): GtkCList→GtkTreeView */;
-    /* TODO(#gtk3): gtk_clist_set_column_auto_resize removed */
-    /* TODO(#gtk3): gtk_clist_set_column_justification removed */
+    clist = mainwin_create_jump_tree_view();
     /* GTK3: select_row → row-activated */
     g_signal_connect(G_OBJECT(clist), "row-activated",
                      G_CALLBACK(mainwin_queue_manager_select_row_cb), edit_clist_qlist_and_queue);
@@ -2397,17 +2498,9 @@ void mainwin_queue_manager(void)
     mainwin_jump_to_file_edit_cb(GTK_WIDGET(edit), clist);
     mainwin_queue_manager_queue_refresh(GTK_WIDGET(clist), qlist);
 
-    /* TODO(#gtk3): gtk_clist_select_row removed */
-
     gtk_window_set_modal(GTK_WINDOW(mainwin_qm), 1);
     gtk_widget_show(mainwin_qm);
     gtk_widget_grab_focus(edit);
-
-    /* Only do this if there is a selection, or else we get a segfault */
-    if (NULL /* TODO(#gtk3): clist selection */) {
-        /* TODO(#gtk3): gtk_clist_moveto removed */
-        /* TODO(#gtk3): clist focus_row assignment removed */
-    }
 }
 
 static gboolean mainwin_configure(GtkWidget *window, GdkEventConfigure *event, gpointer data)
@@ -4454,8 +4547,6 @@ int main(int argc, char **argv)
 
     signal(SIGPIPE, SIG_IGN); /* for controlsocket.c */
     signal(SIGSEGV, segfault_handler);
-    /* TODO(#gtk3): g_thread_init removed in GLib 2.32 */
-    /* TODO(#gtk3): gtk_set_locale removed */
     if (!g_thread_supported())
         g_error(_("GLib does not support threads."));
 
@@ -4503,8 +4594,6 @@ int main(int argc, char **argv)
     if (options.quit)
         return 0;
 
-    /* TODO(#gtk3): gdk_rgb_init / set_default_colormap / set_default_visual removed in GTK3 */
-
     if (gtk_major_version == 1 &&
         (gtk_minor_version < 2 || (gtk_minor_version == 2 && gtk_micro_version < 2))) {
         printf(_("Sorry, your GTK+ version (%d.%d.%d) doesn't work with XMMS.\n"
@@ -4518,7 +4607,7 @@ int main(int argc, char **argv)
     mainwin_accel = gtk_accel_group_new();
 
     sm_client_id = sm_init(argc, argv, options.previous_session_id);
-    /* TODO(#gtk3): gdk_set_sm_client_id removed; sm_client_id = */ (void)sm_client_id;
+    (void)sm_client_id;
     mainwin_create();
 
     /* Load per-user CSS override (may not exist; silently ignored). */

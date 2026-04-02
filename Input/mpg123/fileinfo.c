@@ -268,7 +268,6 @@ void mpg123_file_info_box(char *filename)
         GtkWidget *bbox, *save, *remove_id3, *cancel;
 
         window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-        /* TODO(#gtk3): gtk_window_set_policy removed */
         g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_widget_destroyed), &window);
         g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK(file_info_box_keypress_cb),
                          NULL);

@@ -31,6 +31,13 @@ static GtkWidget *playlistwin_url_window = NULL;
 static GtkWidget *playlistwin_sort_menu, *playlistwin_sub_menu;
 static GtkWidget *playlistwin_popup_menu, *playlistwin_save_menu;
 static GtkAccelGroup *playlistwin_accel;
+static GtkWidget *playlistwin_sort_sel_title, *playlistwin_sort_sel_filename;
+static GtkWidget *playlistwin_sort_sel_path, *playlistwin_sort_sel_date;
+static GtkWidget *playlistwin_sort_sel_randomize;
+static GtkWidget *playlistwin_popup_remove_selected, *playlistwin_popup_remove_crop;
+static GtkWidget *playlistwin_popup_selection_info, *playlistwin_popup_queue;
+static GtkWidget *playlistwin_popup_fileinfo, *playlistwin_sub_remove_dead;
+static gint playlistwin_popup_position = 0;
 
 static cairo_surface_t *playlistwin_bg;
 static cairo_t *playlistwin_gc;
@@ -90,6 +97,7 @@ enum {
 static void playlistwin_sort_menu_callback(gpointer cb_data, guint action, GtkWidget *w);
 static void playlistwin_sub_menu_callback(gpointer cb_data, guint action, GtkWidget *w);
 static void playlistwin_save_type_cb(gpointer cb_data, guint action, GtkWidget *w);
+static void playlistwin_save_type_combo_changed(GtkComboBox *combo, gpointer data);
 static void playlistwin_set_hints(void);
 static void playlistwin_set_shade(gboolean shaded);
 static void playlistwin_popup_menu_callback(gpointer cb_data, guint action, GtkWidget *w);
@@ -653,38 +661,26 @@ static void playlistwin_fileinfo(void)
 
 static void playlistwin_set_sensitive_popupmenu(void)
 {
-    GtkWidget *w;
     gboolean set;
 
     set = playlist_get_num_selected() > 0;
 
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
+    gtk_widget_set_sensitive(playlistwin_popup_remove_selected, set);
+    gtk_widget_set_sensitive(playlistwin_popup_remove_crop, set);
+    gtk_widget_set_sensitive(playlistwin_popup_selection_info, set);
 }
 
 static void playlistwin_set_sensitive_sortmenu(void)
 {
-    GtkWidget *w;
     gboolean set;
 
     set = playlist_get_num_selected() > 1;
 
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
-    w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(w, set);
+    gtk_widget_set_sensitive(playlistwin_sort_sel_title, set);
+    gtk_widget_set_sensitive(playlistwin_sort_sel_filename, set);
+    gtk_widget_set_sensitive(playlistwin_sort_sel_path, set);
+    gtk_widget_set_sensitive(playlistwin_sort_sel_date, set);
+    gtk_widget_set_sensitive(playlistwin_sort_sel_randomize, set);
 }
 
 static void playlistwin_save_playlist_error(char *path, GtkWidget *filesel)
@@ -699,7 +695,10 @@ static void playlistwin_save_playlist_error(char *path, GtkWidget *filesel)
     text = g_strdup_printf(_("Error writing playlist \"%s\": %s"), path, strerror(errno));
     label = gtk_label_new(text);
     g_free(text);
-    /* TODO(#gtk3): gtk_misc_set_padding deprecated */
+    gtk_widget_set_margin_start(label, 10);
+    gtk_widget_set_margin_end(label, 10);
+    gtk_widget_set_margin_top(label, 10);
+    gtk_widget_set_margin_bottom(label, 10);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), label, TRUE, TRUE,
                        0);
 
@@ -747,8 +746,11 @@ static void playlistwin_check_overwrite(GtkWidget *filesel, char *filename, int 
 
     text = g_strdup_printf(_("%s already exists."), filename);
     label = gtk_label_new(text);
-    /* TODO(#gtk3): gtk_misc_set_padding deprecated */
     g_free(text);
+    gtk_widget_set_margin_start(label, 10);
+    gtk_widget_set_margin_end(label, 10);
+    gtk_widget_set_margin_top(label, 10);
+    gtk_widget_set_margin_bottom(label, 10);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), label, TRUE, TRUE,
                        0);
 
@@ -776,8 +778,7 @@ static void playlistwin_check_overwrite(GtkWidget *filesel, char *filename, int 
     gtk_widget_show_all(dialog);
 }
 
-static void playlistwin_save_filesel_ok(
-    GtkWidget *w, GtkFileChooser /* TODO(#gtk3): was GtkFileSelection */ *filesel)
+static void playlistwin_save_filesel_ok(GtkWidget *w, GtkFileChooser *filesel)
 {
     char *filename, *slash;
     struct stat statd;
@@ -787,7 +788,7 @@ static void playlistwin_save_filesel_ok(
     if (util_filebrowser_is_dir(filesel))
         return;
 
-    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)) /* TODO(#gtk3) */;
+    filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel));
 
     if ((slash = strrchr(filename, '/')) != NULL)
         len = slash - filename + 1;
@@ -840,7 +841,7 @@ static void playlistwin_load_filesel_ok(GtkWidget *w, GtkWidget *filesel)
     if (util_filebrowser_is_dir(GTK_FILE_CHOOSER(filesel)))
         return;
 
-    filename = g_strdup(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel) /* TODO(#gtk3) */));
+    filename = g_strdup(gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(filesel)));
     text = g_strdup(filename);
 
     if ((tmp = strrchr(text, '/')) != NULL)
@@ -862,10 +863,7 @@ static void playlistwin_load_filesel_ok(GtkWidget *w, GtkWidget *filesel)
 static void playlistwin_show_sub_misc_menu(void)
 {
     int x, y;
-    GtkWidget *widget;
-
-    widget = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    gtk_widget_set_sensitive(widget, playlist_get_num_selected() > 0);
+    gtk_widget_set_sensitive(playlistwin_sub_remove_dead, playlist_get_num_selected() > 0);
     util_get_root_pointer(&x, &y);
     util_item_factory_popup(GTK_WIDGET(playlistwin_sub_menu), x, y, 1, GDK_CURRENT_TIME);
 }
@@ -877,12 +875,11 @@ static void playlistwin_show_load_filesel(void)
 
     if (load_filesel != NULL)
         return;
-    load_filesel = gtk_file_chooser_dialog_new("Select file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN,
-                                               NULL) /* TODO(#gtk3) */;
+    load_filesel =
+        gtk_file_chooser_dialog_new("Select file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN, NULL);
 
     if (cfg.playlist_path)
-        gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(load_filesel),
-                                      cfg.playlist_path) /* TODO(#gtk3) */;
+        gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(load_filesel), cfg.playlist_path);
     object =
         G_OBJECT(gtk_dialog_get_widget_for_response(GTK_DIALOG(load_filesel), GTK_RESPONSE_ACCEPT));
     g_signal_connect(object, "clicked", G_CALLBACK(playlistwin_load_filesel_ok), load_filesel);
@@ -898,24 +895,21 @@ static void playlistwin_show_load_filesel(void)
 static void playlistwin_show_save_filesel(void)
 {
     static GtkWidget *filesel;
-    GtkWidget *frame, *hbox, *label, *menu, *om;
+    GtkWidget *frame, *hbox, *label, *om;
     GObject *object;
 
     if (filesel != NULL) {
         if (!gtk_widget_is_visible(filesel)) {
             if (cfg.playlist_path)
-                gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(filesel),
-                                              cfg.playlist_path) /* TODO(#gtk3) */;
+                gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(filesel), cfg.playlist_path);
             gtk_widget_show(filesel);
         }
         return;
     }
 
-    filesel = gtk_file_chooser_dialog_new("Select file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN,
-                                          NULL) /* TODO(#gtk3) */;
+    filesel = gtk_file_chooser_dialog_new("Select file", NULL, GTK_FILE_CHOOSER_ACTION_OPEN, NULL);
     if (cfg.playlist_path)
-        gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(filesel),
-                                      cfg.playlist_path) /* TODO(#gtk3) */;
+        gtk_file_chooser_set_filename(GTK_FILE_CHOOSER(filesel), cfg.playlist_path);
     object = G_OBJECT(gtk_dialog_get_widget_for_response(GTK_DIALOG(filesel), GTK_RESPONSE_ACCEPT));
     g_signal_connect(object, "clicked", G_CALLBACK(playlistwin_save_filesel_ok), filesel);
     object = G_OBJECT(gtk_dialog_get_widget_for_response(GTK_DIALOG(filesel), GTK_RESPONSE_CANCEL));
@@ -931,10 +925,14 @@ static void playlistwin_show_save_filesel(void)
     gtk_container_add(GTK_CONTAINER(frame), hbox);
     label = gtk_label_new(_("Determine file type:"));
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, 0);
-    om = gtk_combo_box_new() /* TODO(#gtk3): was gtk_option_menu_new */;
+    om = gtk_combo_box_text_new();
     gtk_box_pack_start(GTK_BOX(hbox), om, TRUE, TRUE, 0);
-    menu = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-    /* TODO(#gtk3): gtk_option_menu_set_menu removed */
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(om), _("By extension"));
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(om), "m3u");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(om), "pls");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(om), playlistwin_save_type);
+    g_signal_connect(G_OBJECT(om), "changed", G_CALLBACK(playlistwin_save_type_combo_changed),
+                     NULL);
     gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(filesel))), frame, TRUE, TRUE,
                        0);
 
@@ -944,6 +942,12 @@ static void playlistwin_show_save_filesel(void)
 static void playlistwin_save_type_cb(gpointer cb_data, guint action, GtkWidget *w)
 {
     playlistwin_save_type = action;
+}
+
+static void playlistwin_save_type_combo_changed(GtkComboBox *combo, gpointer data)
+{
+    (void)data;
+    playlistwin_save_type = gtk_combo_box_get_active(combo);
 }
 
 static void playlistwin_popup_handler(int item)
@@ -1160,16 +1164,13 @@ static void playlistwin_press(GtkWidget *widget, GdkEventButton *event, gpointer
                                     event->time);
         else {
             int pos, sensitive;
-            GtkWidget *w;
             pos = playlist_list_get_playlist_position(playlistwin_list, event->x, event->y);
             if (pos != -1)
                 pos++;
             sensitive = pos != -1;
-            w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-            gtk_widget_set_sensitive(w, sensitive);
-
-            w = NULL /* TODO(#gtk3): gtk_item_factory_get_widget removed */;
-            gtk_widget_set_sensitive(w, sensitive);
+            playlistwin_popup_position = pos;
+            gtk_widget_set_sensitive(playlistwin_popup_fileinfo, sensitive);
+            gtk_widget_set_sensitive(playlistwin_popup_queue, sensitive);
 
             playlistwin_set_sensitive_sortmenu();
             playlistwin_set_sensitive_popupmenu();
@@ -1884,28 +1885,102 @@ static void playlistwin_create_gtk(void)
 
 void playlistwin_create(void)
 {
-    GtkWidget *item, *menu;
+    GtkWidget *item, *sub;
 
     playlistwin_accel = gtk_accel_group_new();
 
     playlistwin_sort_menu = gtk_menu_new();
-    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
-    /* TODO(#gtk3): gtk_item_factory_create_items removed */
+    sub = menu_sub_new(playlistwin_sort_menu, N_("Sort List"));
+    menu_item_new(sub, N_("By Title"), G_CALLBACK(playlistwin_sort_menu_callback),
+                  PLAYLISTWIN_SORT_BYTITLE);
+    menu_item_new(sub, N_("By Filename"), G_CALLBACK(playlistwin_sort_menu_callback),
+                  PLAYLISTWIN_SORT_BYFILENAME);
+    menu_item_new(sub, N_("By Path + Filename"), G_CALLBACK(playlistwin_sort_menu_callback),
+                  PLAYLISTWIN_SORT_BYPATH);
+    menu_item_new(sub, N_("By Date"), G_CALLBACK(playlistwin_sort_menu_callback),
+                  PLAYLISTWIN_SORT_BYDATE);
+    sub = menu_sub_new(playlistwin_sort_menu, N_("Selection"));
+    playlistwin_sort_sel_title =
+        menu_item_new(sub, N_("Sort By Title"), G_CALLBACK(playlistwin_sort_menu_callback),
+                      PLAYLISTWIN_SORT_SEL_BYTITLE);
+    playlistwin_sort_sel_filename =
+        menu_item_new(sub, N_("Sort By Filename"), G_CALLBACK(playlistwin_sort_menu_callback),
+                      PLAYLISTWIN_SORT_SEL_BYFILENAME);
+    playlistwin_sort_sel_path =
+        menu_item_new(sub, N_("Sort By Path + Filename"),
+                      G_CALLBACK(playlistwin_sort_menu_callback),
+                      PLAYLISTWIN_SORT_SEL_BYPATH);
+    playlistwin_sort_sel_date =
+        menu_item_new(sub, N_("Sort By Date"), G_CALLBACK(playlistwin_sort_menu_callback),
+                      PLAYLISTWIN_SORT_SEL_BYDATE);
+    playlistwin_sort_sel_randomize =
+        menu_item_new(sub, N_("Randomize"), G_CALLBACK(playlistwin_sort_menu_callback),
+                      PLAYLISTWIN_SORT_SEL_RANDOMIZE);
+    menu_sep_new(playlistwin_sort_menu);
+    menu_item_new(playlistwin_sort_menu, N_("Randomize List"),
+                  G_CALLBACK(playlistwin_sort_menu_callback), PLAYLISTWIN_SORT_RANDOMIZE);
+    menu_item_new(playlistwin_sort_menu, N_("Reverse List"),
+                  G_CALLBACK(playlistwin_sort_menu_callback), PLAYLISTWIN_SORT_REVERSE);
     playlistwin_sub_menu = gtk_menu_new();
-    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
-    /* TODO(#gtk3): gtk_item_factory_create_items removed */
+    playlistwin_sub_remove_dead =
+        menu_item_new(playlistwin_sub_menu, N_("Remove Dead Files"),
+                      G_CALLBACK(playlistwin_sub_menu_callback), PLAYLISTWIN_REMOVE_DEAD_FILES);
+    menu_item_new(playlistwin_sub_menu, N_("Physically Delete Files"),
+                  G_CALLBACK(playlistwin_sub_menu_callback), PLAYLISTWIN_PHYSICALLY_DELETE);
     playlistwin_bg =
         cairo_image_surface_create(CAIRO_FORMAT_RGB24, cfg.playlist_width, cfg.playlist_height);
 
     playlistwin_popup_menu = gtk_menu_new();
-    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
-    /* TODO(#gtk3): gtk_item_factory_create_items removed */
-
-    /* TODO(#gtk3): submenu items not yet ported from GtkItemFactory */
+    playlistwin_popup_fileinfo =
+        menu_item_new(playlistwin_popup_menu, N_("View File Info"),
+                      G_CALLBACK(playlistwin_popup_menu_callback), MISC_FILEINFO);
+    playlistwin_popup_queue =
+        menu_item_new(playlistwin_popup_menu, N_("Queue - Unqueue"),
+                      G_CALLBACK(playlistwin_popup_menu_callback), MISC_QUEUE);
+    menu_item_new(playlistwin_popup_menu, N_("Queue manager"),
+                  G_CALLBACK(playlistwin_popup_menu_callback), MISC_QUEUE_MANAGER);
+    menu_sep_new(playlistwin_popup_menu);
+    sub = menu_sub_new(playlistwin_popup_menu, N_("Add"));
+    menu_item_new(sub, N_("File"), G_CALLBACK(playlistwin_popup_menu_callback), ADD_FILE);
+    menu_item_new(sub, N_("Directory"), G_CALLBACK(playlistwin_popup_menu_callback), ADD_DIR);
+    menu_item_new(sub, N_("Url"), G_CALLBACK(playlistwin_popup_menu_callback), ADD_URL);
+    sub = menu_sub_new(playlistwin_popup_menu, N_("Remove"));
+    playlistwin_popup_remove_selected =
+        menu_item_new(sub, N_("Selected"), G_CALLBACK(playlistwin_popup_menu_callback),
+                      SUB_SELECTED);
+    playlistwin_popup_remove_crop =
+        menu_item_new(sub, N_("Crop"), G_CALLBACK(playlistwin_popup_menu_callback), SUB_CROP);
+    menu_item_new(sub, N_("All"), G_CALLBACK(playlistwin_popup_menu_callback), SUB_ALL);
+    item = gtk_menu_item_new_with_label(_("Misc"));
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), playlistwin_sub_menu);
+    gtk_menu_shell_append(GTK_MENU_SHELL(sub), item);
+    gtk_widget_show(item);
+    sub = menu_sub_new(playlistwin_popup_menu, N_("Selection"));
+    menu_item_new(sub, N_("Select All"), G_CALLBACK(playlistwin_popup_menu_callback), SEL_ALL);
+    menu_item_new(sub, N_("Select None"), G_CALLBACK(playlistwin_popup_menu_callback), SEL_ZERO);
+    menu_item_new(sub, N_("Invert Selection"), G_CALLBACK(playlistwin_popup_menu_callback),
+                  SEL_INV);
+    menu_sep_new(sub);
+    playlistwin_popup_selection_info =
+        menu_item_new(sub, N_("Read Extended Info"), G_CALLBACK(playlistwin_popup_menu_callback),
+                      SEL_LOOKUP);
+    item = gtk_menu_item_new_with_label(_("Sort"));
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(item), playlistwin_sort_menu);
+    gtk_menu_shell_append(GTK_MENU_SHELL(playlistwin_popup_menu), item);
+    gtk_widget_show(item);
+    sub = menu_sub_new(playlistwin_popup_menu, N_("Playlist"));
+    menu_item_new(sub, N_("Load List"), G_CALLBACK(playlistwin_popup_menu_callback), PLIST_LOAD);
+    menu_item_new(sub, N_("Save List"), G_CALLBACK(playlistwin_popup_menu_callback), PLIST_SAVE);
+    menu_item_new(sub, N_("New List"), G_CALLBACK(playlistwin_popup_menu_callback), PLIST_NEW);
 
     playlistwin_save_menu = gtk_menu_new();
-    /* TODO(#gtk3): gtk_item_factory_set_translate_func removed */
-    /* TODO(#gtk3): gtk_item_factory_create_items removed */
+    menu_item_new(playlistwin_save_menu, N_("By extension"), G_CALLBACK(playlistwin_save_type_cb),
+                  PLAYLISTWIN_SAVE_EXTENSION);
+    menu_sep_new(playlistwin_save_menu);
+    menu_item_new(playlistwin_save_menu, "m3u", G_CALLBACK(playlistwin_save_type_cb),
+                  PLAYLISTWIN_SAVE_M3U);
+    menu_item_new(playlistwin_save_menu, "pls", G_CALLBACK(playlistwin_save_type_cb),
+                  PLAYLISTWIN_SAVE_PLS);
 
     playlistwin_create_gtk();
     playlistwin_gc = cairo_create(playlistwin_bg);
@@ -1971,7 +2046,7 @@ void playlistwin_real_hide(void)
 
 static void playlistwin_popup_menu_callback(gpointer cb_data, guint action, GtkWidget *w)
 {
-    int pos = 0; /* TODO(#gtk3): gtk_item_factory_popup_data_from_widget removed */
+    int pos = playlistwin_popup_position;
     switch (action) {
     case MISC_FILEINFO:
         if (pos == 0)
