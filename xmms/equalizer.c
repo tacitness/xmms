@@ -130,10 +130,14 @@ static gint equalizerwin_presets_menu_entries_num = 0; /* GTK3: entries disabled
 
 void equalizerwin_set_shape_mask(void)
 {
+    cairo_region_t *region;
+
     if (cfg.show_wm_decorations)
         return;
 
-    /* TODO(#gtk3): gtk_widget_shape_combine_mask removed */
+    /* GTK3: apply the skin mask via cairo_region_t. */
+    region = skin_get_mask(SKIN_MASK_EQ, EQUALIZER_DOUBLESIZE, cfg.equalizer_shaded);
+    gtk_widget_shape_combine_region(equalizerwin, region);
 }
 
 void equalizerwin_set_doublesize(gboolean ds)
