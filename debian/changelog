@@ -1,0 +1,9 @@
+xmms (1.3.0-1) unstable; urgency=medium
+
+  * Initial packaging of XMMS Resurrection v1.3.0.
+  * Migrated from GTK+2 to GTK3; CMake replaces Autotools as primary build.
+  * Freedesktop icon set (7 sizes) and .desktop entry included.
+  * Supports ALSA and PulseAudio output plugins.
+  * Supports MP3 (mpg123), OGG Vorbis, FLAC, WAV, AIFF input plugins.
+
+ -- XMMS Resurrection Team <xmms-dev@example.com>  Mon, 28 Apr 2025 00:00:00 +0000

@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable verbose mode)
+# export DH_VERBOSE = 1
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake
+
+# Skip autoreconf — we use CMake, not the legacy autotools tree
+override_dh_autoreconf:
+	@echo "Skipping autoreconf: CMake is the primary build system"
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DXMMS_GTK_VERSION=3 \
+		-DXMMS_ENABLE_ALSA=ON \
+		-DXMMS_ENABLE_PULSE=ON \
+		-DCMAKE_INSTALL_PREFIX=/usr
+
+override_dh_auto_build:
+	dh_auto_build -- -j$(nproc)

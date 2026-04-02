@@ -3519,13 +3519,20 @@ void create_popups(void)
 
 static void mainwin_set_icon(GtkWidget *win)
 {
-    static cairo_surface_t *icon;
-    static cairo_surface_t *mask;
-    Atom icon_atom;
-    glong data[2];
-
-    /* TODO(#gtk3): KWM_WIN_ICON and GDK_WINDOW_XWINDOW removed; use gtk_window_set_icon_name */
-    gdk_window_set_icon_name(gtk_widget_get_window(win), PACKAGE);
+    /* Load our installed icon directly, bypassing the GTK theme chain.
+     * gtk_window_set_icon_name("xmms") would hit the Humanity theme's
+     * legacy xmms.svg before reaching our hicolor PNGs. */
+    GError *err = NULL;
+    GdkPixbuf *pb = gdk_pixbuf_new_from_file(
+        SHARE_DIR "/icons/hicolor/48x48/apps/xmms.png", &err);
+    if (pb) {
+        gtk_window_set_icon(GTK_WINDOW(win), pb);
+        g_object_unref(pb);
+    } else {
+        if (err) g_error_free(err);
+        /* fallback: let the WM pick whatever it finds */
+        gtk_window_set_icon_name(GTK_WINDOW(win), PACKAGE);
+    }
 }
 
 static void mainwin_create_widgets(void)
