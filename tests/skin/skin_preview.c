@@ -1,7 +1,7 @@
 #include "skin_preview.h"
 
 #include <cairo.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gdk/gdk.h>
 #include <glib/gstdio.h>
 #include <string.h>
 
@@ -14,18 +14,10 @@ typedef struct {
 } SkinPreviewAsset;
 
 static const SkinPreviewAsset skin_preview_assets[] = {
-    {"main.bmp", 0, 0},
-    {"pledit.bmp", 0, 116},
-    {"eqmain.bmp", 275, 0},
-    {"titlebar.bmp", 275, 116},
-    {"cbuttons.bmp", 275, 144},
-    {"nums_ex.bmp", 275, 232},
-    {"numbers.bmp", 275, 232},
-    {"volume.bmp", 383, 232},
-    {"shufrep.bmp", 275, 262},
-    {"posbar.bmp", 331, 262},
-    {"playpaus.bmp", 275, 292},
-    {"monoster.bmp", 331, 292},
+    {"main.bmp", 0, 0},         {"pledit.bmp", 0, 116},     {"eqmain.bmp", 275, 0},
+    {"titlebar.bmp", 275, 116}, {"cbuttons.bmp", 275, 144}, {"nums_ex.bmp", 275, 232},
+    {"numbers.bmp", 275, 232},  {"volume.bmp", 383, 232},   {"shufrep.bmp", 275, 262},
+    {"posbar.bmp", 331, 262},   {"playpaus.bmp", 275, 292}, {"monoster.bmp", 331, 292},
     {"text.bmp", 387, 292},
 };
 
@@ -91,8 +83,8 @@ static void skin_preview_draw_background(cairo_t *cr)
 }
 
 static gboolean skin_preview_draw_asset(cairo_t *cr, const gchar *skin_dir,
-                                        const SkinPreviewAsset *asset,
-                                        gboolean *drawn_assets, GError **error)
+                                        const SkinPreviewAsset *asset, gboolean *drawn_assets,
+                                        GError **error)
 {
     gchar *asset_path;
     GdkPixbuf *pixbuf;
@@ -113,8 +105,9 @@ static gboolean skin_preview_draw_asset(cairo_t *cr, const gchar *skin_dir,
     return TRUE;
 }
 
-static gboolean skin_preview_render_to_surface(const gchar *skin_path, cairo_surface_t **surface_out,
-                                               gchar **cleanup_dir, GError **error)
+static gboolean skin_preview_render_to_surface(const gchar *skin_path,
+                                               cairo_surface_t **surface_out, gchar **cleanup_dir,
+                                               GError **error)
 {
     const gchar *ending;
     const gchar *skin_dir = skin_path;
