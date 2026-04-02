@@ -1,0 +1,60 @@
+# Dockerfile.alpine-apk — Build xmms APK inside an Alpine 3.21 container
+# Usage (from repo root):
+#   docker build -f scripts/Dockerfile.alpine-apk -t xmms-apkbuild .
+#   docker run --rm -v $(pwd)/dist/apk:/out xmms-apkbuild
+
+FROM alpine:3.21
+
+LABEL maintainer="Joel Hanger <joel@tacitsoft.dev>"
+LABEL description="XMMS Resurrection — APK build environment (Alpine 3.21)"
+
+# ── Build toolchain + abuild ──────────────────────────────────────────────────
+RUN apk add --no-cache \
+        alpine-sdk abuild cmake ninja pkgconf \
+        gtk+3.0-dev glib-dev cairo-dev \
+        alsa-lib-dev pulseaudio-dev \
+        libvorbis-dev libogg-dev mpg123-dev flac-dev \
+        libx11-dev libxext-dev libxxf86vm-dev \
+        gettext-dev desktop-file-utils \
+        git bash
+
+# ── Non-root build user (abuild refuses to run as root) ────────────────────────
+RUN adduser -D -G abuild builder && \
+    mkdir -p /home/builder/.abuild && \
+    chown -R builder:abuild /home/builder
+
+# ── Set up package signing key (auto-generate, no passphrase) ─────────────────
+RUN su builder -c "abuild-keygen -a -n" && \
+    # Trust the generated key system-wide so abuild install works
+    cp /home/builder/.abuild/*.pub /etc/apk/keys/
+
+# ── Copy source tree + APKBUILD ───────────────────────────────────────────────
+WORKDIR /home/builder/packages/xmms
+COPY --chown=builder:abuild . /home/builder/src/
+
+# ── Create source tarball (abuild fetches Sources locally via file://) ─────────
+RUN VERSION=$(grep -m1 'VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
+    echo "Packaging XMMS $VERSION for APK" && \
+    cd /home/builder/src && \
+    git archive --format=tar.gz --prefix=xmms-${VERSION}/ HEAD \
+        > /home/builder/xmms-${VERSION}.tar.gz && \
+    chown builder:abuild /home/builder/xmms-${VERSION}.tar.gz
+
+# ── Patch APKBUILD to use local tarball + regenerate checksum ─────────────────
+RUN VERSION=$(grep -m1 'VERSION [0-9]' /home/builder/src/CMakeLists.txt | awk '{print $2}') && \
+    cp /home/builder/src/APKBUILD /home/builder/packages/xmms/APKBUILD && \
+    # Point source at the local tarball we created
+    sed -i "s|source=.*|source=\"xmms-${VERSION}.tar.gz\"|" \
+        /home/builder/packages/xmms/APKBUILD && \
+    cp /home/builder/xmms-${VERSION}.tar.gz \
+       /home/builder/packages/xmms/xmms-${VERSION}.tar.gz && \
+    chown -R builder:abuild /home/builder/packages/
+
+# ── Generate checksum + build ─────────────────────────────────────────────────
+RUN su builder -c "cd /home/builder/packages/xmms && abuild checksum && abuild -r"
+
+# ── Collect output ─────────────────────────────────────────────────────────────
+RUN mkdir -p /out && \
+    find /home/builder/packages -name '*.apk' -exec cp -v {} /out/ \;
+
+CMD ["bash", "-c", "echo '=== Built APKs ===' && ls -lh /out/"]

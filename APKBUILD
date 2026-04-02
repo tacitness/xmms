@@ -1,5 +1,5 @@
-# Maintainer: XMMS Resurrection Team <xmms-dev@example.com>
-# Contributor: XMMS Resurrection Team <xmms-dev@example.com>
+# Maintainer: Joel Hanger <joel@tacitsoft.dev>
+# Contributor: Joel Hanger <joel@tacitsoft.dev>
 #
 # sha512sums is left empty here; CI regenerates it via `abuild checksum`
 # before building (the tarball is created from `git archive` in CI).

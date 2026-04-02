@@ -1,0 +1,48 @@
+# Dockerfile.fedora-rpm — Build xmms RPM inside a Fedora 41 container
+# Usage (from repo root):
+#   docker build -f scripts/Dockerfile.fedora-rpm -t xmms-rpmbuild .
+#   docker run --rm -v $(pwd)/dist/rpm:/out xmms-rpmbuild
+
+FROM fedora:41
+
+LABEL maintainer="Joel Hanger <joel@tacitsoft.dev>"
+LABEL description="XMMS Resurrection — RPM build environment (Fedora 41)"
+
+# ── Build toolchain + RPM tools ──────────────────────────────────────────────
+RUN dnf install -y \
+        cmake ninja-build gcc pkg-config \
+        gtk3-devel glib2-devel cairo-devel \
+        alsa-lib-devel pulseaudio-libs-devel \
+        libvorbis-devel libogg-devel mpg123-devel flac-devel \
+        libX11-devel libXext-devel libXxf86vm-devel \
+        gettext-devel desktop-file-utils \
+        rpm-build rpmdevtools git \
+    && dnf clean all
+
+# ── Workspace ────────────────────────────────────────────────────────────────
+WORKDIR /build
+COPY . /build/src/
+
+# ── Create source tarball from git archive ───────────────────────────────────
+# (git archive works even without a tag — uses HEAD)
+RUN cd /build/src && \
+    VERSION=$(grep -m1 'VERSION [0-9]' CMakeLists.txt | awk '{print $2}') && \
+    echo "Packaging XMMS $VERSION for RPM" && \
+    git archive --format=tar.gz --prefix=xmms-${VERSION}/ HEAD \
+        > /tmp/xmms-${VERSION}.tar.gz && \
+    echo "Tarball: /tmp/xmms-${VERSION}.tar.gz"
+
+# ── Set up rpmbuild tree and build ───────────────────────────────────────────
+RUN rpmdev-setuptree && \
+    VERSION=$(grep -m1 'VERSION [0-9]' /build/src/CMakeLists.txt | awk '{print $2}') && \
+    cp /tmp/xmms-${VERSION}.tar.gz ~/rpmbuild/SOURCES/ && \
+    rpmbuild -ba /build/src/xmms.spec \
+        --define "_topdir ${HOME}/rpmbuild" \
+        2>&1 | tee /tmp/rpmbuild.log
+
+# ── Copy output so the caller can docker cp or volume-mount ──────────────────
+RUN mkdir -p /out && \
+    find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -exec cp -v {} /out/ \;
+
+# Default: list what was built
+CMD ["bash", "-c", "echo '=== Built RPMs ===' && ls -lh /out/"]
