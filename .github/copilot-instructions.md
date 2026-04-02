@@ -1,5 +1,77 @@
 # GitHub Copilot Instructions — XMMS Resurrection Project
 
+## Agent Dispatch — tsctl
+
+This repo is registered in the Tacitsoft infrastructure control CLI (`tsctl`) as key **`xmms`**.
+Use `tsctl` to dispatch Codex (or other runner) jobs for GitHub issues.
+
+### repos.yaml location
+
+```
+/data/src/tacitsoft/infrastructure/tsctl/repos.yaml
+```
+
+Always pass `--repos-file` to every tsctl command:
+
+```bash
+REPOS=/data/src/tacitsoft/infrastructure/tsctl/repos.yaml
+```
+
+### Common tsctl commands
+
+```bash
+# List registered repos
+tsctl repos list --repos-file $REPOS
+
+# Run preflight checks (always do this before dispatching)
+tsctl agent preflight xmms --repos-file $REPOS
+
+# Plan dispatch order for a set of issues (DAG-aware wave schedule)
+tsctl agent plan xmms --repos-file $REPOS --issues 27,24,36,28
+
+# Dispatch a single issue to Codex
+tsctl agent dispatch xmms --repos-file $REPOS --runner codex --issue 27 --mode implement
+
+# Dispatch multiple issues as a dependency-aware batch
+tsctl agent dispatch xmms --repos-file $REPOS --runner codex --issues 24,27,28 --wait
+
+# Dry-run (prints k8s Job manifest, no job created)
+tsctl agent dispatch xmms --repos-file $REPOS --runner codex --issue 27 --dry-run
+
+# Watch job logs
+tsctl agent logs xmms-27 --repos-file $REPOS
+
+# List active jobs
+tsctl agent jobs --repos-file $REPOS
+```
+
+### Dispatch order for remaining v1.3.0 issues
+
+Wave schedule (from `tsctl agent plan xmms --issues 27,24,36,28`):
+
+| Wave | Issues | Notes |
+|------|--------|-------|
+| 1 (parallel) | #27, #24, #28 | No inter-dependencies |
+| 2 (after #24) | #36 | Vis menu depends on GtkItemFactory → GMenuModel work in #24 |
+
+Dispatch wave 1:
+```bash
+tsctl agent dispatch xmms --repos-file $REPOS --runner codex --issues 27,24,28 --wait
+```
+
+Dispatch wave 2 (after wave 1 completes):
+```bash
+tsctl agent dispatch xmms --repos-file $REPOS --runner codex --issue 36 --mode implement
+```
+
+### Available runners
+
+`codex | copilot | claude | aider | ollama | gemini | amazonq | gptscript | openhands | shell`
+
+Use `tsctl agent list --repos-file $REPOS` to check which runners are installed locally.
+
+---
+
 ## Project Overview
 
 **XMMS** (X Multimedia System) is a classic Winamp-style media player originally built with GTK+1/GTK+2. This project is being **modernized and resurrected** — migrating to GTK3/GTK4 while preserving the beloved Winamp-skin UI paradigm and plugin architecture.
