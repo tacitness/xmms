@@ -37,7 +37,7 @@ GArray *read_ini_array(const gchar *filename, const gchar *section, const gchar 
 GArray *string_to_garray(const gchar *str);
 void glist_movedown(GList *list);
 void glist_moveup(GList *list);
-/* GTK3: GtkItemFactory removed — TODO(#3): migrate to GMenuModel/GtkPopoverMenu */
+/* GTK3: popup helpers wrap native GtkMenu positioning */
 void util_item_factory_popup(GtkWidget *menu, guint x, guint y, guint mouse_button, guint32 time);
 void util_item_factory_popup_with_data(GtkWidget *menu, gpointer data, GDestroyNotify destroy,
                                        guint x, guint y, guint mouse_button, guint32 time);

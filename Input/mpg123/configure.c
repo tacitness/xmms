@@ -256,7 +256,6 @@ void mpg123_configure(void)
     g_signal_connect(G_OBJECT(mpg123_configurewin), "destroy", G_CALLBACK(configure_destroy),
                      &mpg123_configurewin);
     gtk_window_set_title(GTK_WINDOW(mpg123_configurewin), _("MPG123 Configuration"));
-    /* TODO(#gtk3): gtk_window_set_policy removed */
     /*  gtk_window_set_position(GTK_WINDOW(mpg123_configurewin), GTK_WIN_POS_MOUSE); */
     gtk_container_set_border_width(GTK_CONTAINER(mpg123_configurewin), 10);
 

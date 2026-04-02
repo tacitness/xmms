@@ -66,7 +66,7 @@ extern gboolean mainwin_moving;
 extern GList *disabled_iplugins;
 extern GtkWidget *equalizerwin;
 extern GtkWidget *playlistwin;
-/* GTK3: GtkItemFactory removed — TODO(#3): migrate to GMenuModel/GtkPopoverMenu */
+/* GTK3: menus are built with native GtkMenu helpers */
 extern GtkWidget *mainwin_vis_menu, *mainwin_general_menu, *mainwin_options_menu;
 extern GList *dock_window_list;
 extern gboolean pposition_broken;
