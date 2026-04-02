@@ -43,10 +43,13 @@ builddir="$srcdir/xmms-$pkgver"
 sha512sums=""
 
 build() {
+	# musl libc doesn't transitively include unistd.h/string.h like glibc does;
+	# force-include them so legacy POSIX calls resolve without touching ~100 files.
 	cmake -B build -G Ninja \
 		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
 		-DCMAKE_INSTALL_PREFIX=/usr \
 		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_C_FLAGS="-include unistd.h -include string.h -Wno-cast-function-type" \
 		-DXMMS_GTK_VERSION=3 \
 		-DXMMS_ENABLE_ALSA=ON \
 		-DXMMS_ENABLE_PULSE=ON
