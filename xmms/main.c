@@ -3519,13 +3519,8 @@ void create_popups(void)
 
 static void mainwin_set_icon(GtkWidget *win)
 {
-    static cairo_surface_t *icon;
-    static cairo_surface_t *mask;
-    Atom icon_atom;
-    glong data[2];
-
-    /* TODO(#gtk3): KWM_WIN_ICON and GDK_WINDOW_XWINDOW removed; use gtk_window_set_icon_name */
-    gdk_window_set_icon_name(gtk_widget_get_window(win), PACKAGE);
+    /* gtk3: use theme icon lookup — falls back to hicolor/NxN/apps/xmms.png */
+    gtk_window_set_icon_name(GTK_WINDOW(win), PACKAGE);
 }
 
 static void mainwin_create_widgets(void)
