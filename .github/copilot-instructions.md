@@ -502,3 +502,30 @@ When GitHub Copilot assists with this project:
 12. **State the target issue/milestone** at the start of any multi-step coding session
 13. **Use branch naming convention**: `fix/NNN-short-desc`, `feat/NNN-short-desc`, `gtk3/NNN-desc`
 14. **Every commit resolving an issue** must include `Closes #NNN` or `Refs #NNN` in the message
+
+
+<!-- tsctl-agent-bootstrap-reference:start -->
+
+## Shared tsctl Agent Bootstrap
+
+Also read `./tsctl-agents-bootstrap.md` for Tacitsoft agent dispatch rules,
+`tsctl` interaction patterns, `repos.yaml` contract expectations, issue
+taxonomy, review/merge workflow, runtime selection behavior, validation flow,
+post-agent PR/branch hygiene, and shared control-plane operating rules.
+
+Treat it as additive control-plane context. Keep this repo's local product,
+domain, architecture, and coding instructions authoritative for repo-specific
+behavior.
+
+After agent runs complete, inventory PR and branch sprawl before creating any
+new branch or PR:
+
+```bash
+gh pr list && git fetch && git branch && git branch -r
+```
+
+If a PR already exists for the issue work, review, resolve, and merge that
+existing PR. Create a new branch or PR only when no PR exists for completed
+work, or work never reached a PR and needs branch recovery.
+
+<!-- tsctl-agent-bootstrap-reference:end -->

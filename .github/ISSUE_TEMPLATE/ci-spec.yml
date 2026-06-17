@@ -1,0 +1,196 @@
+name: CI / Build Specification
+description: Request a non-trivial CI, packaging, workflow, or release-pipeline change.
+title: "[surface] "
+labels:
+  - ci
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!-- sdd-spec-version: 1.1 -->
+        Use this form for non-trivial CI, build, workflow, or release changes.
+
+        Before implementation or dispatch:
+        - Replace `[surface]` in the title with the primary implementation surface.
+        - This form applies the type label automatically. After creation, add one or more area or domain labels and exactly one priority label.
+        - Use `wui`, `gui`, `tui`, or `cli` instead of the legacy `ui` label. Use `brain` as an additional label when relevant, not as the default title prefix.
+  - type: input
+    id: what
+    attributes:
+      label: What workflow or pipeline needs to change?
+      description: One sentence describing the requested change.
+      placeholder: Add a label-sync validation step to the bootstrap rollout workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Describe the delivery, packaging, or automation impact.
+      placeholder: The current process is manual and easy to drift across repos.
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state or evidence
+      description: Describe the existing workflow, failure mode, or operational gap.
+      placeholder: |
+        - Current workflow:
+        - Evidence or logs:
+        - Relevant actions or scripts:
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired outcome
+      description: Describe the target workflow or pipeline behavior.
+      placeholder: |
+        - Desired pipeline behavior:
+        - Expected operator or release result:
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Name the repos, paths, workflows, packages, or systems that are in scope.
+      placeholder: |
+        - Repos:
+        - Paths allowed:
+        - Paths forbidden:
+        - Workflows or build systems:
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and do-not-dos
+      description: Record release, permissions, secrets, or safety constraints and forbidden approaches.
+      placeholder: |
+        - Do not hardcode secrets.
+        - Keep permissions minimal.
+        - Do not widen scope into unrelated deploy paths.
+    validations:
+      required: true
+  - type: textarea
+    id: repo-clarity
+    attributes:
+      label: "Repository & System Clarity"
+      description: |
+        Name the exact target repo (matching a repos.yaml key), the CI system, and the workflow or pipeline in scope.
+      placeholder: |
+        - Repo: jmh-devel/<repo> (repos.yaml key: <key>)
+        - CI system: GitHub Actions | Makefile | Docker | K8s CronJob
+        - Workflow / pipeline in scope: <file or job name>
+    validations:
+      required: true
+  - type: textarea
+    id: impl-constraints
+    attributes:
+      label: "Implementation Constraints"
+      description: |
+        Record secrets handling, permissions, deployment context, and K8s-specific constraints.
+        Write N/A per item when it does not apply.
+      placeholder: |
+        - Secrets: injected via ExternalSecret | environment variable | N/A
+        - Permissions: minimal GitHub token scopes | K8s RBAC | N/A
+        - K8s / deployment: namespace | image tag | env var | N/A
+        - Idempotency: re-run is safe | migration is one-shot | N/A
+  - type: textarea
+    id: testing-strategy
+    attributes:
+      label: "Testing Strategy"
+      description: |
+        How to verify the pipeline change locally before pushing. Include dry-run commands.
+      placeholder: |
+        - Local dry-run: make ... --dry-run | act | kubectl apply --dry-run=server
+        - Pipeline / workflow validation: <command>
+        - Expected artifacts or outputs: <describe>
+    validations:
+      required: true
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues & Blockers"
+      description: |
+        PRs that must merge first and dependencies on other work. Write "none" if no dependencies.
+      placeholder: |
+        - Depends on: <#N | none>
+        - Blocked by: <issue or PR | none>
+        - Related: <issue | none>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write concrete done conditions as a checklist.
+      placeholder: |
+        - [ ] Workflow or build change implemented.
+        - [ ] Validation evidence captured.
+        - [ ] Docs updated if operator flow changes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and tests
+      description: Record the commands, dry runs, CI checks, or packaging checks that must pass before closure.
+      placeholder: |
+        - Workflow validation or dry run:
+        - Packaging or build checks:
+        - Additional focused checks:
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Explicitly name what this issue must not expand into.
+      placeholder: |
+        - No unrelated release process redesign.
+        - No product feature work.
+    validations:
+      required: true
+  - type: input
+    id: primary-surface
+    attributes:
+      label: Primary surface or owning workflow
+      description: This should usually match the bracket title prefix.
+      placeholder: ci, agents, repos, server
+    validations:
+      required: true
+  - type: dropdown
+    id: requested-priority
+    attributes:
+      label: Requested priority
+      description: Select the urgency tier and apply the matching label after creation.
+      options:
+        - p0
+        - p1
+        - p2
+        - p3
+        - p4
+    validations:
+      required: true
+  - type: input
+    id: additional-labels
+    attributes:
+      label: Additional labels to apply
+      description: List area or domain labels to add after the issue is created.
+      placeholder: agents, repos, deps
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checks
+      options:
+        - label: I included acceptance criteria, validation expectations, and out-of-scope boundaries.
+          required: true
+        - label: I included Repository & System Clarity, Testing Strategy, and Related Issues & Blockers.
+          required: true
+        - label: I understand that labels are authoritative and must be completed before implementation starts.
+          required: true

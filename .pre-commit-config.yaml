@@ -14,6 +14,10 @@
 default_language_version:
   python: python3
 
+# Externally-managed files synced verbatim from tsctl (SDD issue forms) are
+# excluded from all hooks so re-syncs via link-agent-bootstrap.sh never churn.
+exclude: '^\.github/ISSUE_TEMPLATE/'
+
 repos:
 
   # ── Basic file hygiene (pre-commit/pre-commit-hooks) ────────────────────

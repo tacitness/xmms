@@ -2,6 +2,11 @@
 # yamllint configuration for XMMS project
 extends: default
 
+# Externally-managed files synced verbatim from tsctl (SDD issue forms) —
+# do not lint, so re-syncs via link-agent-bootstrap.sh never churn.
+ignore: |
+  .github/ISSUE_TEMPLATE/
+
 rules:
   line-length:
     max: 120

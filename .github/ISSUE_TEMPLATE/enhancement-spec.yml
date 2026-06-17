@@ -1,0 +1,229 @@
+name: Enhancement Specification
+description: Propose a feature or capability with required scope, constraints, and validation.
+title: "[surface] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!-- sdd-spec-version: 1.1 -->
+        Use this form for non-trivial feature or capability work.
+
+        Before implementation or dispatch:
+        - Replace `[surface]` in the title with the primary implementation surface.
+        - This form applies the type label automatically. After creation, add one or more area or domain labels and exactly one priority label.
+        - Use `wui`, `gui`, `tui`, or `cli` instead of the legacy `ui` label. Use `brain` as an additional label when relevant, not as the default title prefix.
+  - type: input
+    id: what
+    attributes:
+      label: What needs to change?
+      description: One sentence describing the requested capability or outcome.
+      placeholder: Add operator-visible quota lane reporting to the server UI.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Describe the user, operator, product, or business impact.
+      placeholder: Without this, operators cannot route work or understand urgency.
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state or evidence
+      description: Describe the current behavior, gap, or evidence observed today.
+      placeholder: |
+        - Current behavior:
+        - Evidence or links:
+        - Commands or screens checked:
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired behavior
+      description: Describe what should happen when the work is complete.
+      placeholder: |
+        - Desired behavior:
+        - Operator or user outcome:
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Name the repos, paths, commands, screens, or systems that are in scope.
+      placeholder: |
+        - Repos:
+        - Paths allowed:
+        - Paths forbidden:
+        - Systems or screens:
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and do-not-dos
+      description: Record safety, rollout, data, or architecture constraints and forbidden approaches.
+      placeholder: |
+        - Keep changes minimal and reversible.
+        - Do not rotate secrets.
+        - Do not widen scope into unrelated modules.
+    validations:
+      required: true
+  - type: textarea
+    id: repo-clarity
+    attributes:
+      label: "Repository & System Clarity"
+      description: |
+        Name the exact target repo (matching a repos.yaml key), the system or subdomain affected,
+        and — for API/backend work — link the existing endpoint spec or OpenAPI doc.
+      placeholder: |
+        - Repo: jmh-devel/<repo> (repos.yaml key: <key>)
+        - System / subdomain: fos.tacitsoft.dev | turnstileops.com | internal
+        - API spec / OpenAPI doc: <link or N/A>
+    validations:
+      required: true
+  - type: textarea
+    id: existing-solutions
+    attributes:
+      label: "Existing System Audit — \"Existing Solutions\""
+      description: |
+        Paste concrete evidence you looked before building. Required — not a checkbox.
+        Grep results, file paths, endpoint lists. Example: "Checked src/models/ — no Campaign model exists."
+      placeholder: |
+        - Checked <paths>: <finding>
+        - Endpoint inventory: <result or N/A>
+        - Related models, services, or tables already present: <none | list>
+        - Do not create new <X> if <Y> exists: <describe>
+    validations:
+      required: true
+  - type: textarea
+    id: api-contracts
+    attributes:
+      label: "API / Data Contracts"
+      description: |
+        Required when this issue involves an API or data change. Provide exact payload schemas with
+        closed enums (e.g. mode ∈ {Build, Sell, Stabilize, Recover}), response structures, and an
+        error-code table. Inline or link an OpenAPI fragment. Write N/A if there is no API surface.
+      placeholder: |
+        - Request schema: { ... }
+        - Closed enum values: field ∈ {A, B, C}
+        - Response structure: { ... }
+        - Error codes: 401 (auth), 422 (validation), …
+        - OpenAPI fragment or link: <inline | link | N/A>
+  - type: textarea
+    id: impl-constraints
+    attributes:
+      label: "Implementation Constraints"
+      description: |
+        Record auth assumptions (Bearer token, CSRF, session/cookie), timezone/locale requirements,
+        database/ORM specifics (migrations, naming, soft-deletes), and K8s/deployment context.
+        Write N/A per item when it does not apply.
+      placeholder: |
+        - Auth: Bearer token | CSRF | session/cookie | N/A
+        - Timezone / locale: UTC | user-local | N/A
+        - DB / ORM: migrations required | soft-deletes | naming convention | N/A
+        - K8s / deployment: namespace | image tag | env var | N/A
+  - type: textarea
+    id: testing-strategy
+    attributes:
+      label: "Testing Strategy"
+      description: |
+        How to verify locally before deploy. Include literal curl commands for API endpoints
+        and database persistence checks where applicable.
+      placeholder: |
+        - Local verification steps:
+        - curl example: curl -X POST https://... -H 'Authorization: Bearer ...' -d '{...}'
+        - DB persistence check: SELECT ... FROM ...
+        - make test / go test ./... / uv run pytest ...
+    validations:
+      required: true
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues & Blockers"
+      description: |
+        PRs that must merge first and dependencies on other work. Blockers are explicit, not implied.
+        Write "none" if there are genuinely no dependencies.
+      placeholder: |
+        - Depends on: #44, #36 (must merge first)
+        - Blocked by: <issue or PR | none>
+        - Related: <issue | none>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write concrete done conditions as a checklist.
+      placeholder: |
+        - [ ] Command(s):
+        - [ ] Behavior change verified:
+        - [ ] Docs updated if needed:
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and tests
+      description: Record the commands, checks, and evidence that must pass before closure.
+      placeholder: |
+        - make test
+        - make lint
+        - Additional focused checks:
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Explicitly name what this issue must not expand into.
+      placeholder: |
+        - No unrelated cleanup.
+        - No production credential changes.
+    validations:
+      required: true
+  - type: input
+    id: primary-surface
+    attributes:
+      label: Primary surface or owning workflow
+      description: This should usually match the bracket title prefix.
+      placeholder: agents, server, api, repos, cli, wui, gui, tui, k8s
+    validations:
+      required: true
+  - type: dropdown
+    id: requested-priority
+    attributes:
+      label: Requested priority
+      description: Select the urgency tier and apply the matching label after creation.
+      options:
+        - p0
+        - p1
+        - p2
+        - p3
+        - p4
+    validations:
+      required: true
+  - type: input
+    id: additional-labels
+    attributes:
+      label: Additional labels to apply
+      description: List area or domain labels to add after the issue is created.
+      placeholder: agents, repos, brain
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checks
+      options:
+        - label: I included acceptance criteria, validation expectations, and out-of-scope boundaries.
+          required: true
+        - label: I included Repository & System Clarity, Existing System Audit, Testing Strategy, and Related Issues & Blockers.
+          required: true
+        - label: I understand that labels are authoritative and must be completed before implementation starts.
+          required: true

@@ -1,0 +1,1 @@
+/data/src/tacitsoft/infrastructure/tsctl/docs/shared/tacitsoft-agent-bootstrap.md

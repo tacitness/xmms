@@ -1,0 +1,172 @@
+name: Documentation Specification
+description: Request a non-trivial documentation change with explicit audience, scope, and verification.
+title: "[surface] "
+labels:
+  - docs
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!-- sdd-spec-version: 1.1 -->
+        Use this form for documentation-only work with non-trivial scope.
+
+        Before implementation or dispatch:
+        - Replace `[surface]` in the title with the primary implementation surface.
+        - This form applies the type label automatically. After creation, add one or more area or domain labels and exactly one priority label.
+        - Use `wui`, `gui`, `tui`, or `cli` instead of the legacy `ui` label. Use `brain` as an additional label when relevant, not as the default title prefix.
+  - type: input
+    id: what
+    attributes:
+      label: What documentation needs to change?
+      description: One sentence describing the docs update.
+      placeholder: Document the repo-wide issue taxonomy and review-merge flow.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Describe the audience, confusion, or workflow gap this docs change addresses.
+      placeholder: Operators and agents need one canonical source of truth.
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state or evidence
+      description: Describe what is missing, misleading, stale, or inconsistent today.
+      placeholder: |
+        - Missing or stale docs:
+        - Incorrect examples:
+        - Related links:
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired outcome
+      description: Describe what readers should understand or be able to do after the update.
+      placeholder: |
+        - Reader outcome:
+        - Updated pages or references:
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Name the repos, paths, pages, or commands that are in scope.
+      placeholder: |
+        - Repos:
+        - Paths allowed:
+        - Paths forbidden:
+        - Pages or docs sections:
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and do-not-dos
+      description: Record audience, tone, policy, or rollout constraints and forbidden approaches.
+      placeholder: |
+        - Preserve authoritative wording where required.
+        - Do not broaden into product changes.
+        - Keep examples executable and current.
+    validations:
+      required: true
+  - type: textarea
+    id: repo-clarity
+    attributes:
+      label: "Repository & System Clarity"
+      description: |
+        Name the target repo (matching a repos.yaml key), the doc system, and the pages or sections in scope.
+      placeholder: |
+        - Repo: jmh-devel/<repo> (repos.yaml key: <key>)
+        - Doc system: Hugo | README | GitHub Wiki | inline code comments
+        - Pages / sections in scope: <list>
+    validations:
+      required: true
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues & Blockers"
+      description: |
+        Work this doc change supports or depends on. Write "none" if no dependencies.
+      placeholder: |
+        - Documents: <#N — the implementation issue>
+        - Depends on: <#N | none>
+        - Related: <issue | none>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write concrete done conditions as a checklist.
+      placeholder: |
+        - [ ] Canonical docs updated.
+        - [ ] Cross-links added where needed.
+        - [ ] Examples or commands validated.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and tests
+      description: Record the commands, doc builds, or spot checks that must pass before closure.
+      placeholder: |
+        - Doc build or preview check:
+        - Command examples reviewed:
+        - Linked docs verified:
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Explicitly name what this issue must not expand into.
+      placeholder: |
+        - No product behavior change.
+        - No unrelated taxonomy redesign.
+    validations:
+      required: true
+  - type: input
+    id: primary-surface
+    attributes:
+      label: Primary surface or owning workflow
+      description: This should usually match the bracket title prefix.
+      placeholder: docs, agents, server, repos, cli, wui
+    validations:
+      required: true
+  - type: dropdown
+    id: requested-priority
+    attributes:
+      label: Requested priority
+      description: Select the urgency tier and apply the matching label after creation.
+      options:
+        - p0
+        - p1
+        - p2
+        - p3
+        - p4
+    validations:
+      required: true
+  - type: input
+    id: additional-labels
+    attributes:
+      label: Additional labels to apply
+      description: List area or domain labels to add after the issue is created.
+      placeholder: agents, repos, brain
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checks
+      options:
+        - label: I included acceptance criteria, validation expectations, and out-of-scope boundaries.
+          required: true
+        - label: I included Repository & System Clarity and Related Issues & Blockers.
+          required: true
+        - label: I understand that labels are authoritative and must be completed before implementation starts.
+          required: true

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Label Taxonomy
+    url: https://github.com/tacitness/tsctl/blob/main/docs/shared/github-label-taxonomy.yaml
+    about: Canonical type, priority, area, and workflow labels for all managed repos.
+  - name: Spec Directive Template
+    url: https://github.com/tacitness/tsctl/blob/main/directives/spec-directive-template.md
+    about: Use this when the issue also needs a machine-executable directive.
+  - name: Initiative Layout Reference
+    url: https://github.com/tacitness/tsctl/blob/main/directives/initiatives/README.md
+    about: Use this when the work spans multiple phases or repositories.

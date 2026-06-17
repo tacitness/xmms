@@ -1,0 +1,184 @@
+name: Tech Debt Specification
+description: Track refactoring, cleanup, or structural maintenance with explicit boundaries and validation.
+title: "[surface] "
+labels:
+  - tech-debt
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!-- sdd-spec-version: 1.1 -->
+        Use this form for non-trivial refactors, cleanup, or structural maintenance.
+
+        Before implementation or dispatch:
+        - Replace `[surface]` in the title with the primary implementation surface.
+        - This form applies the type label automatically. After creation, add one or more area or domain labels and exactly one priority label.
+        - Use `wui`, `gui`, `tui`, or `cli` instead of the legacy `ui` label. Use `brain` as an additional label when relevant, not as the default title prefix.
+  - type: input
+    id: what
+    attributes:
+      label: What needs cleanup or restructuring?
+      description: One sentence describing the structural change.
+      placeholder: Normalize review-merge helpers to use one worktree cleanup path.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Describe the operational, maintenance, or quality impact.
+      placeholder: The current split behavior creates drift and repeated repair work.
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current state or evidence
+      description: Describe the current structure, duplication, risk, or maintenance burden.
+      placeholder: |
+        - Current state:
+        - Evidence or examples:
+        - Affected commands or files:
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired state
+      description: Describe the target structure or maintenance outcome.
+      placeholder: |
+        - Desired end state:
+        - Expected maintenance improvement:
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Name the repos, paths, commands, screens, or systems that are in scope.
+      placeholder: |
+        - Repos:
+        - Paths allowed:
+        - Paths forbidden:
+        - Systems or commands:
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and do-not-dos
+      description: Record safety, rollout, data, or architecture constraints and forbidden approaches.
+      placeholder: |
+        - Preserve public behavior unless explicitly approved.
+        - Keep changes incremental.
+        - Do not fold unrelated cleanup into the same issue.
+    validations:
+      required: true
+  - type: textarea
+    id: repo-clarity
+    attributes:
+      label: "Repository & System Clarity"
+      description: |
+        Name the exact target repo (matching a repos.yaml key) and the system or subdomain affected.
+      placeholder: |
+        - Repo: jmh-devel/<repo> (repos.yaml key: <key>)
+        - System / subdomain: fos.tacitsoft.dev | turnstileops.com | internal
+    validations:
+      required: true
+  - type: textarea
+    id: existing-solutions
+    attributes:
+      label: "Existing System Audit — \"Existing Solutions\""
+      description: |
+        Paste concrete evidence of the current structure: file paths, duplication examples,
+        affected commands or test coverage. Do not create alternatives if a canonical path already exists.
+      placeholder: |
+        - Checked <paths>: <finding>
+        - Current duplication or debt: <describe>
+        - Related code or patterns already present: <none | list>
+    validations:
+      required: true
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues & Blockers"
+      description: |
+        PRs that must merge first and dependencies on other work. Write "none" if no dependencies.
+      placeholder: |
+        - Depends on: <#N | none>
+        - Blocked by: <issue or PR | none>
+        - Related: <issue | none>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write concrete done conditions as a checklist.
+      placeholder: |
+        - [ ] Structure simplified or unified.
+        - [ ] Validation still passes.
+        - [ ] Docs updated if workflow changes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and tests
+      description: Record the commands, checks, and evidence that must pass before closure.
+      placeholder: |
+        - Targeted regression checks:
+        - make test
+        - make lint
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Explicitly name what this issue must not expand into.
+      placeholder: |
+        - No new features unless required to complete the refactor.
+        - No unrelated module moves.
+    validations:
+      required: true
+  - type: input
+    id: primary-surface
+    attributes:
+      label: Primary surface or owning workflow
+      description: This should usually match the bracket title prefix.
+      placeholder: agents, server, api, repos, cli, wui, gui, tui, k8s
+    validations:
+      required: true
+  - type: dropdown
+    id: requested-priority
+    attributes:
+      label: Requested priority
+      description: Select the urgency tier and apply the matching label after creation.
+      options:
+        - p0
+        - p1
+        - p2
+        - p3
+        - p4
+    validations:
+      required: true
+  - type: input
+    id: additional-labels
+    attributes:
+      label: Additional labels to apply
+      description: List area or domain labels to add after the issue is created.
+      placeholder: agents, repos, deps
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checks
+      options:
+        - label: I included acceptance criteria, validation expectations, and out-of-scope boundaries.
+          required: true
+        - label: I included Repository & System Clarity, Existing System Audit, and Related Issues & Blockers.
+          required: true
+        - label: I understand that labels are authoritative and must be completed before implementation starts.
+          required: true

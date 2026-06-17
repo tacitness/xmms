@@ -1,0 +1,171 @@
+name: Research Spike Specification
+description: Define a time-bounded investigation with explicit questions, evidence, and next-step output.
+title: "[surface] "
+labels:
+  - spike
+body:
+  - type: markdown
+    attributes:
+      value: |
+        <!-- sdd-spec-version: 1.1 -->
+        Use this form for time-bounded research or evaluation work.
+
+        Before implementation or dispatch:
+        - Replace `[surface]` in the title with the primary implementation surface.
+        - This form applies the type label automatically. After creation, add one or more area or domain labels and exactly one priority label.
+        - Use `wui`, `gui`, `tui`, or `cli` instead of the legacy `ui` label. Use `brain` as an additional label when relevant, not as the default title prefix.
+  - type: input
+    id: what
+    attributes:
+      label: What question needs investigation?
+      description: One sentence describing the uncertainty or decision to resolve.
+      placeholder: Evaluate whether local Codex runs can be backfilled through existing artifact ingestion.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Describe the operational or product decision this spike supports.
+      placeholder: The team needs a safe path before committing implementation time.
+    validations:
+      required: true
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current context or evidence
+      description: Describe what is already known, including prior commands, findings, or linked issues.
+      placeholder: |
+        - Known facts:
+        - Existing evidence:
+        - Open questions:
+    validations:
+      required: true
+  - type: textarea
+    id: desired-state
+    attributes:
+      label: Desired output
+      description: Describe the deliverable expected from the investigation.
+      placeholder: |
+        - Decision memo, recommendation, or prototype:
+        - Acceptance threshold for a recommendation:
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Name the repos, paths, commands, screens, or systems that are in scope.
+      placeholder: |
+        - Repos:
+        - Paths allowed:
+        - Paths forbidden:
+        - Systems or commands:
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and do-not-dos
+      description: Record time limits, evidence requirements, and forbidden expansion paths.
+      placeholder: |
+        - No production-impacting changes.
+        - No broad implementation beyond a reversible probe.
+        - Stop at decision-ready evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: repo-clarity
+    attributes:
+      label: "Repository & System Clarity"
+      description: |
+        Name the target repo (matching a repos.yaml key) and the system or subdomain under investigation.
+      placeholder: |
+        - Repo: jmh-devel/<repo> (repos.yaml key: <key>)
+        - System / subdomain: fos.tacitsoft.dev | turnstileops.com | internal
+    validations:
+      required: true
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: "Related Issues & Blockers"
+      description: |
+        Work this spike supports or depends on. Write "none" if no dependencies.
+      placeholder: |
+        - Supports: <#N — decision or implementation issue>
+        - Depends on: <#N | none>
+        - Related: <issue | none>
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Write concrete done conditions as a checklist.
+      placeholder: |
+        - [ ] Open questions answered.
+        - [ ] Risks and tradeoffs documented.
+        - [ ] Clear next recommendation provided.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation and evidence
+      description: Record the commands, checks, evidence, or references the spike must gather.
+      placeholder: |
+        - Commands or traces reviewed:
+        - Data sources inspected:
+        - Evidence required in the final summary:
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: Explicitly name what this spike must not expand into.
+      placeholder: |
+        - No full production implementation.
+        - No unrelated cleanup discovered during research.
+    validations:
+      required: true
+  - type: input
+    id: primary-surface
+    attributes:
+      label: Primary surface or owning workflow
+      description: This should usually match the bracket title prefix.
+      placeholder: agents, server, api, repos, cli, k8s, dns
+    validations:
+      required: true
+  - type: dropdown
+    id: requested-priority
+    attributes:
+      label: Requested priority
+      description: Select the urgency tier and apply the matching label after creation.
+      options:
+        - p0
+        - p1
+        - p2
+        - p3
+        - p4
+    validations:
+      required: true
+  - type: input
+    id: additional-labels
+    attributes:
+      label: Additional labels to apply
+      description: List area or domain labels to add after the issue is created.
+      placeholder: agents, brain, repos
+    validations:
+      required: true
+  - type: checkboxes
+    id: readiness
+    attributes:
+      label: Readiness checks
+      options:
+        - label: I included acceptance criteria, validation expectations, and out-of-scope boundaries.
+          required: true
+        - label: I included Repository & System Clarity and Related Issues & Blockers.
+          required: true
+        - label: I understand that labels are authoritative and must be completed before implementation starts.
+          required: true
