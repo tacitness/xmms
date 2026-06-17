@@ -1,0 +1,103 @@
+---
+# XMMS Resurrection — Signed Package Repository Publish
+#
+# After a GitHub Release is published (package.yml attaches the deb/rpm/apk
+# assets), this workflow signs the repository metadata and publishes signed
+# apt / dnf / apk repositories to the TacitSoft S3 + CloudFront distribution.
+#
+# It is INERT until the operator provisions the configuration below, so it is
+# safe to merge ahead of the infrastructure:
+#
+#   Repo variables (Settings → Secrets and variables → Actions → Variables):
+#     PACKAGE_REPO_BUCKET    e.g. packages.tacitsoft.dev
+#     PACKAGE_REPO_BASE_URL  e.g. https://packages.tacitsoft.dev
+#     PACKAGE_REPO_CF_DIST   CloudFront distribution id (optional)
+#     AWS_REGION             e.g. us-west-2
+#     AWS_ROLE_TO_ASSUME     IAM role ARN for OIDC (s3:PutObject + cloudfront)
+#   Repo secrets:
+#     PACKAGE_SIGNING_KEY    ASCII-armored private GPG key (the archive key)
+#     ABUILD_PRIVKEY         (optional) Alpine abuild private key for apk index
+#
+# Until PACKAGE_REPO_BUCKET is set the publish job is skipped.
+
+name: Release Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to (re)publish (e.g. v1.3.0)"
+        required: true
+      dry_run:
+        description: "Build repo metadata but do not push to S3"
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write   # OIDC → AWS
+
+jobs:
+  publish:
+    name: Sign + Publish Repositories
+    runs-on: ubuntu-24.04
+    # Skip cleanly when the distribution endpoint is not yet configured.
+    if: vars.PACKAGE_REPO_BUCKET != ''
+
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      S3_BUCKET: ${{ vars.PACKAGE_REPO_BUCKET }}
+      REPO_BASE_URL: ${{ vars.PACKAGE_REPO_BASE_URL }}
+      CF_DISTRIBUTION_ID: ${{ vars.PACKAGE_REPO_CF_DIST }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install repo tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            reprepro createrepo-c gnupg awscli
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p staging
+          gh release download "$TAG" --repo "${{ github.repository }}" \
+            --pattern '*.deb' --pattern '*.rpm' --pattern '*.apk' \
+            --dir staging
+          echo "Downloaded:"; ls -la staging
+
+      - name: Import signing key
+        env:
+          PACKAGE_SIGNING_KEY: ${{ secrets.PACKAGE_SIGNING_KEY }}
+        run: |
+          if [[ -z "$PACKAGE_SIGNING_KEY" ]]; then
+            echo "::error::PACKAGE_SIGNING_KEY secret is not set"; exit 1
+          fi
+          echo "$PACKAGE_SIGNING_KEY" | gpg --batch --import
+          KEY_ID=$(gpg --list-secret-keys --with-colons \
+                   | awk -F: '/^sec:/ {print $5; exit}')
+          echo "GPG_KEY_ID=$KEY_ID" >> "$GITHUB_ENV"
+          echo "Imported key $KEY_ID"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+
+      - name: Build + publish repositories
+        env:
+          STAGING_DIR: ${{ github.workspace }}/staging
+          PUBLISH: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '0' || '1' }}
+        run: bash scripts/publish-repo.sh
