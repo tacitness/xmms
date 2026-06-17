@@ -1,0 +1,21 @@
+---
+# Dependabot — keep pinned GitHub Actions up to date.
+# (C/C++ system deps come from distro package managers, not a lockfile, so the
+#  github-actions ecosystem is the meaningful surface Dependabot can manage.)
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - ci
+      - deps
+    groups:
+      actions:
+        patterns:
+          - "*"

@@ -40,6 +40,9 @@ option(XMMS_ENABLE_OPENGLSPECTRUM "Build OpenGL spectrum analyzer visualization 
 option(XMMS_ONE_PLUGIN_DIR  "Install all plugins into one dir" OFF)
 option(XMMS_DISABLE_USER_PLUGIN_DIR "Disable per-user plugin dir" OFF)
 option(BUILD_SHARED_LIBS    "Build shared libraries"         ON)
+option(XMMS_ENABLE_HARDENING  "Enable compiler/linker exploit-mitigation flags" ON)
+option(XMMS_ENABLE_SANITIZERS "Build with AddressSanitizer + UBSan"             OFF)
+option(XMMS_BUILD_FUZZERS     "Build libFuzzer harnesses (requires clang)"      OFF)
 
 # Always export compile_commands.json for clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -57,6 +60,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 # ---------------------------------------------------------------------------
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(XmmsPlugin)
+include(XmmsHardening)
 include(GNUInstallDirs)
 
 # ---------------------------------------------------------------------------
@@ -74,6 +78,13 @@ set(XMMS_C_WARNINGS
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND XMMS_C_WARNINGS -Og -g)
 endif()
+
+# ---------------------------------------------------------------------------
+# Security hardening + optional sanitizers (must run before add_subdirectory
+# so add_compile_options/add_link_options propagate to every target)
+# ---------------------------------------------------------------------------
+xmms_apply_sanitizers()   # no-op unless XMMS_ENABLE_SANITIZERS=ON
+xmms_apply_hardening()    # no-op unless XMMS_ENABLE_HARDENING=ON
 
 # ---------------------------------------------------------------------------
 # Install paths
@@ -318,6 +329,8 @@ install(CODE "
 message(STATUS "")
 message(STATUS "===== XMMS build summary =====")
 message(STATUS "  GTK version  : ${XMMS_GTK_VERSION}")
+message(STATUS "  Hardening    : ${XMMS_ENABLE_HARDENING}")
+message(STATUS "  Sanitizers   : ${XMMS_ENABLE_SANITIZERS}")
 message(STATUS "  Prefix       : ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  Plugin dir   : ${XMMS_PLUGIN_BASE_DIR}")
 message(STATUS "  ALSA         : ${XMMS_ENABLE_ALSA}")

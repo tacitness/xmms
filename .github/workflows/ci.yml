@@ -90,7 +90,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_COMPILER=clang-18 \
             -G Ninja \
-            -DENABLE_GTK3=ON \
+            -DXMMS_GTK_VERSION=3 \
             2>/dev/null || echo "CMakeLists.txt not yet present — skipping clang-tidy"
 
       - name: Run clang-tidy
@@ -282,15 +282,21 @@ jobs:
             libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
             libx11-dev libxext-dev libxxf86vm-dev
 
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: cmake-gtk3-${{ runner.os }}
+
       - name: Configure with CMake
         run: |
           cmake -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DENABLE_GTK3=ON \
-            -DENABLE_ALSA=ON \
-            -DENABLE_PULSE=ON
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DXMMS_GTK_VERSION=3 \
+            -DXMMS_ENABLE_ALSA=ON \
+            -DXMMS_ENABLE_PULSE=ON
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -343,11 +349,16 @@ jobs:
             echo "No tests/ directory yet — skipping (tracked in GH issue)"
           fi
 
-  # ── Memory Safety (ASAN) ───────────────────────────────────────────────────
+  # ── Memory Safety (ASan + UBSan) ───────────────────────────────────────────
   asan:
-    name: AddressSanitizer Build
+    name: AddressSanitizer + UBSan
     runs-on: ubuntu-24.04
     needs: build
+
+    env:
+      # halt_on_error so the smoke run fails the job on the first real finding
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1:strict_string_checks=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
 
     steps:
       - name: Checkout
@@ -356,28 +367,65 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            clang-18 libasan8 \
+          sudo apt-get install -y --no-install-recommends \
+            clang-18 cmake ninja-build pkg-config xvfb \
             libgtk-3-dev libglib2.0-dev \
             libasound2-dev libpulse-dev \
-            libvorbis-dev libogg-dev libx11-dev libxext-dev
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev
 
-      - name: Configure with ASAN
-        run: |
-          autoreconf -fi || true
-          ./configure \
-            CC=clang-18 \
-            CFLAGS="-std=c11 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer" \
-            LDFLAGS="-fsanitize=address,undefined" \
-            --prefix=/usr \
-            --disable-esd \
-            || echo "Configure failed (pre-CMake era) — skipping ASAN build"
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: asan-gtk3-${{ runner.os }}
 
-      - name: Build with ASAN
+      - name: Configure with sanitizers (CMake)
         run: |
-          if [[ -f Makefile ]]; then
-            make -j"$(nproc)" 2>&1 | head -200
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang-18 \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DXMMS_GTK_VERSION=3 \
+            -DXMMS_ENABLE_SANITIZERS=ON
+
+      - name: Build with sanitizers
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Headless smoke run under xvfb
+        run: |
+          # Launch the instrumented binary headlessly; ASan/UBSan abort the
+          # process (non-zero exit) on any memory or UB error during startup.
+          # A clean startup + SIGTERM shutdown is the pass condition.
+          XMMS_BIN="$(find build -name xmms -type f -executable | head -n1)"
+          if [[ -z "$XMMS_BIN" ]]; then
+            echo "::error::xmms binary not found after build"; exit 1
           fi
+          echo "Smoke-running $XMMS_BIN under xvfb..."
+          set +e
+          xvfb-run -a timeout --signal=TERM 15 "$XMMS_BIN" 2>asan.log
+          rc=$?
+          set -e
+          cat asan.log
+          # timeout sends SIGTERM → exit 124 (timeout) or 143 (SIGTERM) are the
+          # healthy "ran clean until we killed it" outcomes.
+          if [[ $rc -eq 124 || $rc -eq 143 || $rc -eq 0 ]]; then
+            echo "✅ Sanitizer smoke run clean (exit $rc)"
+          else
+            echo "::error::Sanitizer reported an error (exit $rc)"; exit 1
+          fi
+          # Belt-and-braces: fail if the log shows a sanitizer report even if the
+          # exit code was swallowed by GTK's own signal handling.
+          if grep -qE "runtime error:|ERROR: AddressSanitizer|SUMMARY: (Address|Undefined)" asan.log; then
+            echo "::error::Sanitizer diagnostic found in output"; exit 1
+          fi
+
+      - name: Upload sanitizer log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asan-smoke-log
+          path: asan.log
+          retention-days: 7
 
   # ── PR Summary Gate ────────────────────────────────────────────────────────
   summary:
