@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2001,  Espen Skoglund <esk@ira.uka.de>
  * Copyright (C) 2001, 2004, 2006  Haavard Kvaalen <havardk@xmms.org>
- * Copyright (C) 2004,  Matti Hämäläinen <ccr@tnsp.org>
+ * Copyright (C) 2004,  Matti Hï¿½mï¿½lï¿½inen <ccr@tnsp.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,6 +31,9 @@
 
 #include "../xmms/i18n.h"
 #include "titlestring.h"
+
+/* Upper bound on %-format field width / precision (anti-DoS, see parse_variable) */
+#define XMMS_TITLE_MAX_PAD 8192
 
 struct padding {
     int side, width, precision;
@@ -144,8 +147,10 @@ static int parse_variable(char **fmt, GString *string, TitleInput *input)
         }
         padding.width = 0;
         while (isdigit(*ptr)) {
-            padding.width *= 10;
-            padding.width += *ptr - '0';
+            /* Stop accumulating once past the cap so we never overflow int
+             * (signed overflow is UB); excess digits are consumed but ignored. */
+            if (padding.width < XMMS_TITLE_MAX_PAD)
+                padding.width = padding.width * 10 + (*ptr - '0');
             ptr++;
         }
     }
@@ -156,15 +161,31 @@ static int parse_variable(char **fmt, GString *string, TitleInput *input)
         if (isdigit(*ptr)) {
             padding.precision = 0;
             while (isdigit(*ptr)) {
-                padding.precision *= 10;
-                padding.precision += *ptr - '0';
+                if (padding.precision < XMMS_TITLE_MAX_PAD)
+                    padding.precision = padding.precision * 10 + (*ptr - '0');
                 ptr++;
             }
         }
     }
 
-    /* Parse format conversion */
-    switch (c = *ptr++) {
+    /* Clamp attacker-controllable field width / precision: these drive
+     * character-append loops downstream, so an unbounded value (e.g.
+     * "%999999999p") turns into a multi-gigabyte allocation / DoS. No
+     * legitimate title template pads beyond a few thousand characters. */
+    if (padding.width > XMMS_TITLE_MAX_PAD)
+        padding.width = XMMS_TITLE_MAX_PAD;
+    if (padding.precision > XMMS_TITLE_MAX_PAD)
+        padding.precision = XMMS_TITLE_MAX_PAD;
+
+    /* Parse format conversion.
+     * Read the conversion char but do NOT advance past a terminating NUL:
+     * a format string ending in '%' lands here with *ptr == '\0', and
+     * consuming it would push the caller's cursor one byte past the buffer
+     * (heap over-read at the outer `while (*fmt)` loop). */
+    c = *ptr;
+    if (c != '\0')
+        ptr++;
+    switch (c) {
     case 'a':
         exp = xmms_vputstr(string, input->album_name, &padding);
         break;

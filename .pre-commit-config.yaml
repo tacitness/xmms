@@ -14,9 +14,10 @@
 default_language_version:
   python: python3
 
-# Externally-managed files synced verbatim from tsctl (SDD issue forms) are
-# excluded from all hooks so re-syncs via link-agent-bootstrap.sh never churn.
-exclude: '^\.github/ISSUE_TEMPLATE/'
+# Files excluded from ALL hooks:
+#  - SDD issue forms synced verbatim from tsctl (re-syncs must not churn)
+#  - fuzz corpus seeds (byte-exact reproducers; eof/whitespace fixers corrupt them)
+exclude: '^(\.github/ISSUE_TEMPLATE/|tests/fuzz/corpus/)'
 
 repos:
 
@@ -73,6 +74,10 @@ repos:
         language: script
         types_or: [c, c++]
         pass_filenames: true
+        # Fuzz harnesses are only in compile_commands.json when
+        # -DXMMS_BUILD_FUZZERS=ON, so a default build can't resolve their
+        # includes. They are exercised by the dedicated fuzz CI job instead.
+        exclude: '^tests/fuzz/'
         # Requires build/compile_commands.json.
         # Generate: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
         # Skips gracefully if compile_commands.json is absent.

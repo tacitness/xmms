@@ -84,6 +84,17 @@ endif()
 # so add_compile_options/add_link_options propagate to every target)
 # ---------------------------------------------------------------------------
 xmms_apply_sanitizers()   # no-op unless XMMS_ENABLE_SANITIZERS=ON
+
+# libFuzzer: instrument every target for coverage; harnesses link -fsanitize=fuzzer
+if(XMMS_BUILD_FUZZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "XMMS_BUILD_FUZZERS=ON requires clang (got ${CMAKE_C_COMPILER_ID})")
+    endif()
+    add_compile_options(-fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+    message(STATUS "Fuzzing: ENABLED (libFuzzer + ASan + UBSan)")
+endif()
+
 xmms_apply_hardening()    # no-op unless XMMS_ENABLE_HARDENING=ON
 
 # ---------------------------------------------------------------------------

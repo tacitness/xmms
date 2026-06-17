@@ -53,7 +53,7 @@ function(xmms_apply_hardening)
     # --- _FORTIFY_SOURCE ----------------------------------------------------
     # Requires optimization, so only enable in optimized build types.
     # FORTIFY conflicts with ASan instrumentation — skip when sanitizing.
-    if(NOT XMMS_ENABLE_SANITIZERS AND
+    if(NOT XMMS_ENABLE_SANITIZERS AND NOT XMMS_BUILD_FUZZERS AND
        CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo|MinSizeRel)$")
         # Level 3 needs gcc>=12 or clang>=9; fall back to 2 elsewhere.
         set(_fortify 2)
