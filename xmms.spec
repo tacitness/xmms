@@ -13,7 +13,7 @@
 %global _hardened_build 1
 
 Name:           xmms
-Version:        1.3.0
+Version:        1.3.1
 Release:        1%{?dist}
 Summary:        X Multimedia System — classic Winamp-style audio player (GTK3 resurrection)
 
@@ -158,6 +158,10 @@ find %{buildroot} -name '*.a' -delete
 
 # ─────────────────────────────────────────────────────────────────────────────
 %changelog
+* Wed Sep 02 2026 XMMS Resurrection Team <xmms-dev@example.com> - 1.3.1-1
+- Prevent startup crashes when GTK uses the Wayland backend
+- Add Ubuntu 26.04 Resolute package builds
+
 * Mon Apr 28 2025 XMMS Resurrection Team <xmms-dev@example.com> - 1.3.0-1
 - Rewrite spec for GTK3 + CMake build system (replaces GTK+1/2 + autotools)
 - Remove ESD sub-package (dead dependency)

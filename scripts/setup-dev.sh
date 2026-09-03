@@ -133,7 +133,12 @@ esac
 
 # ── Python tools (pre-commit, commitizen, detect-secrets) ─────────────────────
 echo "==> Installing Python dev tools..."
-pip3 install --user --quiet \
+PIP_USER_ARGS=(--user --quiet)
+if pip3 install --help | grep -q -- '--break-system-packages'; then
+    # Ubuntu 26.04 enforces PEP 668 even for user-site installs.
+    PIP_USER_ARGS+=(--break-system-packages)
+fi
+pip3 install "${PIP_USER_ARGS[@]}" \
     pre-commit \
     commitizen \
     detect-secrets

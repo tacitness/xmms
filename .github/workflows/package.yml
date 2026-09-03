@@ -157,7 +157,7 @@ jobs:
             ~/rpmbuild/SRPMS/**/*.rpm
           retention-days: 30
 
-  # ── DEB: Debian 12, Ubuntu 22.04 LTS, Ubuntu 24.04 LTS ────────────────────
+  # ── DEB: Debian 12 and supported Ubuntu LTS releases ──
   build-deb:
     name: DEB / ${{ matrix.distro }}
     runs-on: ubuntu-latest
@@ -176,6 +176,9 @@ jobs:
           - distro: ubuntu-24.04
             image: ubuntu:24.04
             suite: noble
+          - distro: ubuntu-26.04
+            image: ubuntu:26.04
+            suite: resolute
 
     container:
       image: ${{ matrix.image }}
@@ -376,6 +379,7 @@ jobs:
             | Debian 12 | DEB | `deb-debian-12/*.deb` |
             | Ubuntu 22.04 | DEB | `deb-ubuntu-22.04/*.deb` |
             | Ubuntu 24.04 | DEB | `deb-ubuntu-24.04/*.deb` |
+            | Ubuntu 26.04 | DEB | `deb-ubuntu-26.04/*.deb` |
             | Alpine 3.19 | APK | `apk-alpine-3.19/*.apk` |
             | Alpine 3.20 | APK | `apk-alpine-3.20/*.apk` |
             | Alpine edge | APK | `apk-alpine-edge/*.apk` |

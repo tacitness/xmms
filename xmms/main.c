@@ -124,12 +124,7 @@ enum {
     MAINWIN_JTF_N_COLUMNS
 };
 
-enum {
-    MAINWIN_QM_COL_QUEUE,
-    MAINWIN_QM_COL_FILE,
-    MAINWIN_QM_COL_QUEUE_POS,
-    MAINWIN_QM_N_COLUMNS
-};
+enum { MAINWIN_QM_COL_QUEUE, MAINWIN_QM_COL_FILE, MAINWIN_QM_COL_QUEUE_POS, MAINWIN_QM_N_COLUMNS };
 
 enum { VOLSET_STARTUP, VOLSET_UPDATE, VOLUME_ADJUSTED, VOLUME_SET };
 
@@ -1155,14 +1150,11 @@ void mainwin_menubtn_cb(void)
 
 void mainwin_minimize_cb(void)
 {
-    Window xwindow;
-
     if (!gtk_widget_get_window(mainwin))
         return;
 
-    xwindow = gdk_x11_window_get_xid(gtk_widget_get_window(mainwin));
-    XIconifyWindow(gdk_x11_get_default_xdisplay(), xwindow,
-                   DefaultScreen(gdk_x11_get_default_xdisplay()));
+    /* GTK3: use the backend-neutral window API instead of XIconifyWindow(). */
+    gtk_window_iconify(GTK_WINDOW(mainwin));
 }
 
 void mainwin_shade_toggle(void)
@@ -1431,14 +1423,16 @@ void mainwin_release(GtkWidget *widget, GdkEventButton *event, gpointer callback
 void mainwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer callback_data)
 {
     XEvent ev;
-    gint i = 0;
+    GdkDisplay *display = gdk_display_get_default();
 
-    XSync(gdk_x11_get_default_xdisplay(), False);
+    /* GTK3: only coalesce raw X11 events when the active backend is X11. */
+    if (display && GDK_IS_X11_DISPLAY(display)) {
+        XSync(gdk_x11_get_default_xdisplay(), False);
 
-    while (XCheckTypedEvent(gdk_x11_get_default_xdisplay(), MotionNotify, &ev)) {
-        event->x = ev.xmotion.x;
-        event->y = ev.xmotion.y;
-        i++;
+        while (XCheckTypedEvent(gdk_x11_get_default_xdisplay(), MotionNotify, &ev)) {
+            event->x = ev.xmotion.x;
+            event->y = ev.xmotion.y;
+        }
     }
     if (cfg.doublesize) {
         event->x /= 2;
@@ -2017,14 +2011,12 @@ static void mainwin_jump_to_file_edit_real(GtkWidget *widget, gpointer userdata)
     PL_UNLOCK();
 
     if (cfg.sort_jump_to_file) {
-        gtk_tree_sortable_set_sort_column_id(
-            GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)), MAINWIN_JTF_COL_FILE,
-            GTK_SORT_ASCENDING);
+        gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)),
+                                             MAINWIN_JTF_COL_FILE, GTK_SORT_ASCENDING);
     } else {
-        gtk_tree_sortable_set_sort_column_id(
-            GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)),
-            GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
-            GTK_SORT_ASCENDING);
+        gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(gtk_tree_view_get_model(clist)),
+                                             GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID,
+                                             GTK_SORT_ASCENDING);
     }
 
     g_free(key);
@@ -2209,8 +2201,7 @@ static gboolean mainwin_queue_manager_entry_keypress_cb(GtkWidget *widget, GdkEv
         return FALSE;
 
     switch (event->keyval) {
-    case GDK_KEY_Return:
-    {
+    case GDK_KEY_Return: {
         gint pos;
         if (mainwin_tree_view_get_selected_int(clist, MAINWIN_JTF_COL_PLAYLIST_POS, &pos))
             mainwin_jump_to_file_queue_toggle(pos, userdata);
@@ -3733,13 +3724,13 @@ static void mainwin_set_icon(GtkWidget *win)
      * gtk_window_set_icon_name("xmms") would hit the Humanity theme's
      * legacy xmms.svg before reaching our hicolor PNGs. */
     GError *err = NULL;
-    GdkPixbuf *pb = gdk_pixbuf_new_from_file(
-        SHARE_DIR "/icons/hicolor/48x48/apps/xmms.png", &err);
+    GdkPixbuf *pb = gdk_pixbuf_new_from_file(SHARE_DIR "/icons/hicolor/48x48/apps/xmms.png", &err);
     if (pb) {
         gtk_window_set_icon(GTK_WINDOW(win), pb);
         g_object_unref(pb);
     } else {
-        if (err) g_error_free(err);
+        if (err)
+            g_error_free(err);
         /* fallback: let the WM pick whatever it finds */
         gtk_window_set_icon_name(GTK_WINDOW(win), PACKAGE);
     }
@@ -4600,6 +4591,12 @@ static GdkFilterReturn save_yourself_filter(GdkXEvent *xevent, GdkEvent *event, 
 
 static void enable_x11r5_session_management(int argc, char **argv)
 {
+    GdkDisplay *display = gdk_display_get_default();
+
+    /* GTK3: X11R5 properties are unavailable on native Wayland windows. */
+    if (!display || !GDK_IS_X11_DISPLAY(display))
+        return;
+
     /*
      * X11R5 Session Management
      *

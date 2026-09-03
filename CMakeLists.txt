@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(xmms
-    VERSION 1.3.0
+    VERSION 1.3.1
     DESCRIPTION "XMMS Resurrection — X Multimedia System (GTK3 Edition)"
     LANGUAGES C
 )

@@ -551,6 +551,7 @@ static void playlistwin_queue_resize(int width, int height)
 static void playlistwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointer callback_data)
 {
     XEvent ev;
+    GdkDisplay *display = gdk_display_get_default();
 
     if (playlistwin_resizing) {
         playlistwin_resize(event->x + playlistwin_resize_x, event->y + playlistwin_resize_y);
@@ -564,8 +565,11 @@ static void playlistwin_motion(GtkWidget *widget, GdkEventMotion *event, gpointe
         draw_playlist_window(FALSE);
     }
     /* gdk_flush() no-op in GTK3 */
-    while (XCheckMaskEvent(gdk_x11_get_default_xdisplay(), ButtonMotionMask, &ev))
-        ;
+    /* GTK3: raw X11 event coalescing is unavailable on the Wayland backend. */
+    if (display && GDK_IS_X11_DISPLAY(display)) {
+        while (XCheckMaskEvent(gdk_x11_get_default_xdisplay(), ButtonMotionMask, &ev))
+            ;
+    }
 }
 
 static void playlistwin_show_filebrowser(void)
@@ -1908,8 +1912,7 @@ void playlistwin_create(void)
                       PLAYLISTWIN_SORT_SEL_BYFILENAME);
     playlistwin_sort_sel_path =
         menu_item_new(sub, N_("Sort By Path + Filename"),
-                      G_CALLBACK(playlistwin_sort_menu_callback),
-                      PLAYLISTWIN_SORT_SEL_BYPATH);
+                      G_CALLBACK(playlistwin_sort_menu_callback), PLAYLISTWIN_SORT_SEL_BYPATH);
     playlistwin_sort_sel_date =
         menu_item_new(sub, N_("Sort By Date"), G_CALLBACK(playlistwin_sort_menu_callback),
                       PLAYLISTWIN_SORT_SEL_BYDATE);

@@ -26,13 +26,13 @@
 
 static const char *credit_text[] =
     {/* ---------------------------------------------------------------
-      * XMMS Resurrection — GTK3 Edition (v1.3.0)
+      * XMMS Resurrection — GTK3 Edition (v1.3.1)
       * Ported from GTK+2 (XMMS 1.2.11) to GTK3 by Joel Hanger,
       * TacitSoft.dev, using AI-assisted engineering.  Full parity:
       * window shaping, cairo rendering, GtkTreeView, vis plugin menu,
       * skin test corpus, CMake build system, freedesktop packaging.
       * --------------------------------------------------------------- */
-     N_("XMMS Resurrection v1.3.0:"), N_("GTK3 Port — AI-Assisted Engineering"),
+     N_("XMMS Resurrection v1.3.1:"), N_("GTK3 Port — AI-Assisted Engineering"),
      N_("Joel Hanger · TacitSoft.dev"), NULL, N_("Main Programming:"), N_("Peter Alm"), NULL,
      N_("Additional Programming:"),
      /* I18N: UTF-8 Translation: "H\303\245vard Kv\303\245len" */

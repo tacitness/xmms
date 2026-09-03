@@ -441,6 +441,12 @@ static void gnome_wm_check_features(void)
 
 void check_wm_hints(void)
 {
+    GdkDisplay *display = gdk_display_get_default();
+
+    /* GTK3: X11 atom APIs are invalid when GTK is using the Wayland backend. */
+    if (!display || !GDK_IS_X11_DISPLAY(display))
+        return;
+
     if (net_wm_found())
         net_wm_check_features();
     if (gnome_wm_found())

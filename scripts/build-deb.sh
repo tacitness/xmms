@@ -30,7 +30,11 @@ for arg in "$@"; do
     esac
 done
 
-PKG_VERSION="$(grep -m1 'VERSION [0-9]' "${SRC_DIR}/CMakeLists.txt" | awk '{print $2}')"
+PKG_VERSION="$(awk '
+    $1 == "project(xmms" { in_project = 1; next }
+    in_project && $1 == "VERSION" { print $2; exit }
+    in_project && $0 ~ /^\)/ { exit }
+' "${SRC_DIR}/CMakeLists.txt")"
 echo "Building XMMS ${PKG_VERSION} Debian package..."
 
 cd "${SRC_DIR}"
