@@ -343,13 +343,10 @@ void util_item_factory_popup_with_data(GtkWidget *ifactory, gpointer data, GDest
      * positions the menu relative to a GdkWindow + GdkRectangle in screen
      * coordinates and handles screen-edge clamping internally. */
     {
-        GdkRectangle rect = { (gint)x, (gint)y, 1, 1 };
+        GdkRectangle rect = {(gint)x, (gint)y, 1, 1};
         gtk_menu_popup_at_rect(GTK_MENU(ifactory),
-                               gdk_screen_get_root_window(gdk_screen_get_default()),
-                               &rect,
-                               GDK_GRAVITY_NORTH_WEST,
-                               GDK_GRAVITY_NORTH_WEST,
-                               NULL);
+                               gdk_screen_get_root_window(gdk_screen_get_default()), &rect,
+                               GDK_GRAVITY_NORTH_WEST, GDK_GRAVITY_NORTH_WEST, NULL);
     }
 }
 

@@ -1,9 +1,8 @@
-#include "skin_preview.h"
-
 #include <glib.h>
 #include <glib/gstdio.h>
 
 #include "skin_archive.h"
+#include "skin_preview.h"
 
 static gchar *skin_test_fixture_path(const gchar *name)
 {
@@ -140,8 +139,10 @@ int main(int argc, char **argv)
     g_test_add_func("/skin/archive/reject-traversal", test_skin_archive_rejects_traversal);
     g_test_add_func("/skin/archive/reject-corrupt", test_skin_archive_rejects_corrupt_archive);
     g_test_add_func("/skin/preview/classic", test_skin_preview_matches_classic_golden);
-    g_test_add_func("/skin/preview/missing-eqmain", test_skin_preview_matches_missing_eqmain_golden);
-    g_test_add_func("/skin/preview/custom-overlay", test_skin_preview_matches_custom_overlay_golden);
+    g_test_add_func("/skin/preview/missing-eqmain",
+                    test_skin_preview_matches_missing_eqmain_golden);
+    g_test_add_func("/skin/preview/custom-overlay",
+                    test_skin_preview_matches_custom_overlay_golden);
 
     return g_test_run();
 }

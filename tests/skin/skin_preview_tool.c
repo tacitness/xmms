@@ -1,7 +1,7 @@
-#include "skin_preview.h"
-
 #include <glib.h>
 #include <stdio.h>
+
+#include "skin_preview.h"
 
 int main(int argc, char **argv)
 {

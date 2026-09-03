@@ -12,8 +12,8 @@ static gboolean skin_archive_has_windows_drive_prefix(const gchar *path)
 static gboolean skin_archive_run_command(gchar **argv, gchar **stdout_data, gchar **stderr_data,
                                          gint *status, GError **error)
 {
-    return g_spawn_sync(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, stdout_data,
-                        stderr_data, status, error);
+    return g_spawn_sync(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, stdout_data, stderr_data,
+                        status, error);
 }
 
 static const gchar *skin_archive_get_tool(const gchar *env_name, const gchar *fallback)
@@ -134,8 +134,8 @@ static gboolean skin_archive_extract_with_unzip(const gchar *archive_path, const
                                                 GError **error)
 {
     const gchar *unzip;
-    gchar *argv[] = {(gchar *)"", (gchar *)"-qq", (gchar *)"-o", (gchar *)"-j",
-                     (gchar *)archive_path, (gchar *)"-d", (gchar *)tempdir, NULL};
+    gchar *argv[] = {(gchar *)"",           (gchar *)"-qq", (gchar *)"-o",    (gchar *)"-j",
+                     (gchar *)archive_path, (gchar *)"-d",  (gchar *)tempdir, NULL};
     gchar *stdout_data = NULL;
     gchar *stderr_data = NULL;
     gint status = 0;
@@ -155,8 +155,8 @@ static gboolean skin_archive_extract_with_tar(const gchar *archive_path, const g
                                               const gchar *mode, GError **error)
 {
     const gchar *tar;
-    gchar *argv[] = {(gchar *)"", (gchar *)"", (gchar *)archive_path, (gchar *)"-C",
-                     (gchar *)tempdir, NULL};
+    gchar *argv[] = {(gchar *)"",   (gchar *)"",      (gchar *)archive_path,
+                     (gchar *)"-C", (gchar *)tempdir, NULL};
     gchar *stdout_data = NULL;
     gchar *stderr_data = NULL;
     gint status = 0;
@@ -246,8 +246,8 @@ gchar *skin_archive_extract_to_tempdir(const gchar *path, GError **error)
         if (!skin_archive_extract_with_tar(path, tempdir, "-xf", error))
             goto failure;
     } else {
-        g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_NOSYS,
-                    "Unsupported skin archive format: %s", ending);
+        g_set_error(error, G_FILE_ERROR, G_FILE_ERROR_NOSYS, "Unsupported skin archive format: %s",
+                    ending);
         goto failure;
     }
 

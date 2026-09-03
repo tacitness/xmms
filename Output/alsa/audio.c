@@ -72,7 +72,7 @@ static int prebuffer_size;
 /* EOF drain detection for PipeWire (issues/19):
  * PipeWire never leaves SND_PCM_STATE_RUNNING so we detect completion by
  * watching the time since the last alsa_write() call. */
-static gint64 last_write_time_us;  /* g_get_monotonic_time() at last write */
+static gint64 last_write_time_us; /* g_get_monotonic_time() at last write */
 
 static guint mixer_timeout;
 
@@ -146,7 +146,7 @@ int alsa_playing(void)
      * Ref: https://github.com/tacitness/xmms/issues/19 */
     if (last_write_time_us > 0 && outputf && outputf->bps > 0) {
         gint64 hw_drain_ms = (gint64)hw_buffer_size * 1000 / outputf->bps;
-        gint64 silence_us  = g_get_monotonic_time() - last_write_time_us;
+        gint64 silence_us = g_get_monotonic_time() - last_write_time_us;
         if (silence_us > (hw_drain_ms + 300) * G_GINT64_CONSTANT(1000))
             return FALSE;
     }

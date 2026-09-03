@@ -801,7 +801,7 @@ static void genre_set_popdown(GtkWidget *combo, GList *genres)
         '    genre_combo = gtk_combo_new();',
         '    genre_combo = gtk_combo_box_text_new();'
     )
-    # Remove old list signal connecton (select_child → we use "changed" on combo itself)
+    # Remove old list signal connection (select_child → we use "changed" on combo itself)
     content = re.sub(
         r'\s*gtk_signal_connect\s*\(GTK_OBJECT\(GTK_COMBO\(genre_combo\)->list\),\s*"select_child"[^;]+;',
         '\n    g_signal_connect(G_OBJECT(genre_combo), "changed", G_CALLBACK(genre_selected), NULL);',
