@@ -77,9 +77,11 @@ jobs:
           # Normalise: 1.3.0-beta1 → RPM 1.3.0~beta1 / DEB 1.3.0~beta1
           RPM_VER="${RAW//-/.}"          # RPM: dashes → dots
           DEB_VER="${RAW//-/~}"          # DEB: dashes → tildes (pre-release ordering)
-          echo "version=$RAW"           >> "$GITHUB_OUTPUT"
-          echo "rpm_version=$RPM_VER"   >> "$GITHUB_OUTPUT"
-          echo "deb_version=$DEB_VER"   >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$RAW"
+            echo "rpm_version=$RPM_VER"
+            echo "deb_version=$DEB_VER"
+          } >> "$GITHUB_OUTPUT"
 
   # ── RPM: Fedora 40, Fedora 41, RHEL 9 ──────────────────────────────────────
   build-rpm:
