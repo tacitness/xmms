@@ -41,6 +41,13 @@
 /* Order matters: plugin.h → widget.h → skin.h → vis.h must precede all
  * headers that embed or reference InputPlugin/AFormat, Widget, SkinIndex,
  * or VisType.  Do not reorder these four without careful dependency analysis. */
+/* clang-format off */
+#include "plugin.h" /* InputPlugin, AFormat */
+#include "widget.h" /* Widget struct */
+#include "skin.h"   /* SkinIndex enum */
+#include "vis.h"    /* VisType enum; embeds Widget */
+/* clang-format on */
+
 #include "about.h"
 #include "bmp.h"
 #include "config.h"
@@ -69,11 +76,9 @@
 #include "playlist_slider.h"
 #include "playlistwin.h"
 #include "playstatus.h"
-#include "plugin.h" /* InputPlugin, AFormat — must precede input.h, effect.h, output.h, general.h */
 #include "pluginenum.h"
 #include "prefswin.h"
 #include "sbutton.h"
-#include "skin.h" /* SkinIndex enum — must precede hslider.h, menurow.h, monostereo.h */
 #include "skinwin.h"
 #include "sm.h"
 #include "svis.h"
@@ -81,8 +86,6 @@
 #include "textbox.h"
 #include "urldecode.h"
 #include "util.h"
-#include "vis.h"    /* VisType enum; embeds Widget — must precede main.h */
 #include "visualization.h"
-#include "widget.h" /* Widget struct — must precede vis.h, eq_graph.h, eq_slider.h, hslider.h, menurow.h, monostereo.h */
 
 #endif
