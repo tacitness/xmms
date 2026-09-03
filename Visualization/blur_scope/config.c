@@ -22,9 +22,8 @@ static void configure_ok(GtkWidget *w, gpointer data)
     if (!cfg)
         cfg = xmms_cfg_new();
     gtk_color_chooser_get_rgba(GTK_COLOR_CHOOSER(options_colorpicker), &rgba);
-    bscope_cfg.color = ((guint32)(rgba.red   * 255) << 16) |
-                       ((guint32)(rgba.green * 255) <<  8) |
-                        (guint32)(rgba.blue  * 255);
+    bscope_cfg.color = ((guint32)(rgba.red * 255) << 16) | ((guint32)(rgba.green * 255) << 8) |
+                       (guint32)(rgba.blue * 255);
     xmms_cfg_write_int(cfg, "BlurScope", "color", bscope_cfg.color);
     xmms_cfg_write_file(cfg, filename);
     xmms_cfg_free(cfg);
@@ -44,9 +43,8 @@ static void color_changed(GtkColorChooser *chooser, GParamSpec *pspec, gpointer 
 {
     GdkRGBA rgba;
     gtk_color_chooser_get_rgba(chooser, &rgba);
-    bscope_cfg.color = ((guint32)(rgba.red   * 255) << 16) |
-                       ((guint32)(rgba.green * 255) <<  8) |
-                        (guint32)(rgba.blue  * 255);
+    bscope_cfg.color = ((guint32)(rgba.red * 255) << 16) | ((guint32)(rgba.green * 255) << 8) |
+                       (guint32)(rgba.blue * 255);
     generate_cmap();
 }
 
@@ -57,9 +55,9 @@ void bscope_configure(void)
         return;
 
     bscope_read_config();
-    rgba.red   = (bscope_cfg.color >> 16) / 255.0;
+    rgba.red = (bscope_cfg.color >> 16) / 255.0;
     rgba.green = ((bscope_cfg.color >> 8) & 0xFF) / 255.0;
-    rgba.blue  = (bscope_cfg.color & 0xFF) / 255.0;
+    rgba.blue = (bscope_cfg.color & 0xFF) / 255.0;
     rgba.alpha = 1.0;
 
     /* GTK3: GTK_WINDOW_DIALOG -> GTK_WINDOW_TOPLEVEL;
@@ -84,8 +82,8 @@ void bscope_configure(void)
     options_colorpicker = gtk_color_chooser_widget_new();
     gtk_color_chooser_set_use_alpha(GTK_COLOR_CHOOSER(options_colorpicker), FALSE);
     gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(options_colorpicker), &rgba);
-    g_signal_connect(G_OBJECT(options_colorpicker), "notify::rgba",
-                     G_CALLBACK(color_changed), NULL);
+    g_signal_connect(G_OBJECT(options_colorpicker), "notify::rgba", G_CALLBACK(color_changed),
+                     NULL);
 
     gtk_box_pack_start(GTK_BOX(options_vbox), options_colorpicker, FALSE, FALSE, 0);
     gtk_widget_show(options_colorpicker);

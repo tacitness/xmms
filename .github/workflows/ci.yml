@@ -3,8 +3,8 @@
 # Runs on every push to develop/main and on all PRs.
 # Jobs:
 #   lint        — clang-format + clang-tidy + codespell + shellcheck
-#   build       — Autotools + GTK3 matrix across distros
-#   build-cmake — CMake build (future default build system)
+#   build       — informational legacy Autotools matrix across distros
+#   build-cmake — blocking primary CMake build
 #   test        — Unit tests via Check/cmocka
 #   asan        — AddressSanitizer build for memory safety
 #   summary     — Final gate job
@@ -69,7 +69,8 @@ jobs:
             ! -path './intl/*' \
             ! -path './build/*' \
             ! -name 'soundcard.h' \
-            | xargs clang-format-18 --style=file --dry-run --Werror
+            -print0 \
+            | xargs -0 clang-format-18 --style=file --dry-run --Werror
 
       # ── clang-tidy ─────────────────────────────────────────────────────────
       - name: Install build deps + clang-tidy
@@ -103,8 +104,8 @@ jobs:
             # P0-critical; these must not block libxmms migration PRs.
             # Header files (.h) are excluded because they fail when compiled
             # standalone (they rely on parent .c include context).
-            find libxmms -type f -name '*.c' \
-              | xargs clang-tidy-18 \
+            find libxmms -type f -name '*.c' -print0 \
+              | xargs -0 clang-tidy-18 \
                   --config-file=.clang-tidy \
                   -p build \
                   2>&1 | tee clang-tidy-report.txt
@@ -130,13 +131,17 @@ jobs:
       - name: Check shell scripts
         if: matrix.check == 'shellcheck'
         run: |
-          find scripts/ -name '*.sh' | xargs shellcheck --severity=warning --shell=bash
+          find scripts/ -name '*.sh' -print0 \
+            | xargs -0 shellcheck --severity=warning --shell=bash
 
   # ── Autotools Build Matrix ─────────────────────────────────────────────────
   build:
     name: Build / ${{ matrix.distro }} / GTK${{ matrix.gtk }}
     runs-on: ubuntu-latest
     needs: lint
+    # Autotools is retained as a compatibility fallback. CMake is the primary
+    # build system and the blocking build below.
+    continue-on-error: true
 
     strategy:
       fail-fast: false
@@ -266,8 +271,6 @@ jobs:
     name: CMake Build (GTK3 / Ubuntu 24.04)
     runs-on: ubuntu-24.04
     needs: lint
-    # Currently informational — failures don't block PRs until CMake is primary build system
-    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -307,7 +310,7 @@ jobs:
   test:
     name: Unit Tests / ${{ matrix.distro }}
     runs-on: ubuntu-24.04
-    needs: build
+    needs: build-cmake
     # Tests directory is not yet fully established — mark non-blocking for now
     continue-on-error: true
 
@@ -347,7 +350,9 @@ jobs:
   asan:
     name: AddressSanitizer Build
     runs-on: ubuntu-24.04
-    needs: build
+    needs: build-cmake
+    # This job still exercises the legacy Autotools sanitizer path.
+    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -383,14 +388,14 @@ jobs:
   summary:
     name: CI Gate
     runs-on: ubuntu-latest
-    needs: [lint, build]
+    needs: [lint, build-cmake]
     if: always()
 
     steps:
       - name: Check results
         env:
           LINT_RESULT:  ${{ needs.lint.result }}
-          BUILD_RESULT: ${{ needs.build.result }}
+          BUILD_RESULT: ${{ needs.build-cmake.result }}
         run: |
           echo "Lint:  $LINT_RESULT"
           echo "Build: $BUILD_RESULT"

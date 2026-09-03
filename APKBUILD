@@ -6,7 +6,7 @@
 # For local builds, populate it with: abuild checksum
 
 pkgname=xmms
-pkgver=1.3.0
+pkgver=1.3.1
 pkgrel=0
 pkgdesc="X Multimedia System — classic Winamp-style audio player (GTK3 resurrection)"
 url="https://github.com/tacitness/xmms"
