@@ -273,6 +273,9 @@ include_directories("${CMAKE_BINARY_DIR}")   # so #include "config.h" works
 # Subdirectories
 # ---------------------------------------------------------------------------
 add_subdirectory(libxmms)
+add_subdirectory(tools)
+
+install(PROGRAMS scripts/xmms-remote DESTINATION "${CMAKE_INSTALL_BINDIR}")
 add_subdirectory(xmms)
 add_subdirectory(Output)
 add_subdirectory(Input)

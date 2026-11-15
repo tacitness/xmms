@@ -27,6 +27,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -38,6 +39,14 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
+
+static gchar *remote_socket_dir;
+
+void xmms_remote_set_socket_dir(const gchar *directory)
+{
+    g_free(remote_socket_dir);
+    remote_socket_dir = g_strdup(directory);
+}
 
 
 static int read_all(int fd, void *buf, size_t count)
@@ -288,7 +297,8 @@ int xmms_connect_to_session(int session)
         stored_uid = getuid();
         euid = geteuid();
         setuid(euid);
-        g_snprintf(saddr.sun_path, 108, "%s/xmms_%s.%d", g_get_tmp_dir(), g_get_user_name(),
+        g_snprintf(saddr.sun_path, sizeof(saddr.sun_path), "%s/xmms_%s.%d",
+                   remote_socket_dir ? remote_socket_dir : g_get_tmp_dir(), g_get_user_name(),
                    session);
         setreuid(stored_uid, euid);
         if (connect(fd, (struct sockaddr *)&saddr, sizeof(saddr)) != -1)
