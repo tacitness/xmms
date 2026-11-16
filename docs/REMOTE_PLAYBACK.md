@@ -27,8 +27,9 @@ position are mirrored. Position is corrected when drift exceeds 2.5 seconds.
 
 Open **Remote Playback Control** from XMMS's General menu, or run
 `xmms-remote-control` to open the button panel. Choose **Yoda is master**
-or **JMH is master** to switch which player controls the other; choose **Turn
-remote client off** to stop synchronization while leaving both players open.
+or **JMH is master** to switch which player controls the other; choose **Stop
+remote playback and client** to stop JMH playback and synchronization while
+leaving both players open.
 The panel expects SSH aliases `jmh` and `yoda` to work in both directions.
 
 To launch a user-local build that is not on the remote `PATH`, pass its binary

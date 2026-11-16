@@ -17,6 +17,12 @@ stop_syncs() {
     sleep 1
 }
 
+turn_client_off() {
+    stop_syncs
+    ssh -o BatchMode=yes "$host" \
+        "LD_LIBRARY_PATH='$remote_library_dir' '$remote_xmms' --session=0 --stop"
+}
+
 start_master() {
     target=$1
     source_host=$2
@@ -27,7 +33,7 @@ start_master() {
 }
 
 if [ "${1:-}" = "--stop" ]; then
-    stop_syncs
+    turn_client_off
     exit 0
 fi
 
@@ -37,7 +43,7 @@ command -v zenity >/dev/null 2>&1 || {
 }
 
 action=$(zenity --list --title="XMMS Remote Control" --text="Choose playback control" \
-    --column="Action" "Yoda is master" "JMH is master" "Turn remote client off" \
+    --column="Action" "Yoda is master" "JMH is master" "Stop remote playback and client" \
     "Cancel") || exit 0
 
 case "$action" in
@@ -50,8 +56,8 @@ case "$action" in
         stop_syncs
         start_master "$reverse_host" "$host"
         ;;
-    "Turn remote client off")
-        stop_syncs
+    "Stop remote playback and client")
+        turn_client_off
         ;;
     *) exit 0 ;;
 esac
