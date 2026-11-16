@@ -3,9 +3,9 @@
 # Runs on every push to develop/main and on all PRs.
 # Jobs:
 #   lint        — clang-format + clang-tidy + codespell + shellcheck
-#   build       — informational legacy Autotools matrix across distros
+#   build       — CMake build matrix for supported Ubuntu LTS releases
 #   build-cmake — blocking primary CMake build
-#   test        — Unit tests via Check/cmocka
+#   test        — CTest suite using the CMake build
 #   asan        — AddressSanitizer build for memory safety
 #   summary     — Final gate job
 
@@ -134,70 +134,24 @@ jobs:
           find scripts/ -name '*.sh' -print0 \
             | xargs -0 shellcheck --severity=warning --shell=bash
 
-  # ── Autotools Build Matrix ─────────────────────────────────────────────────
+  # ── Supported CMake Build Matrix ──────────────────────────────────────────
   build:
     name: Build / ${{ matrix.distro }} / GTK${{ matrix.gtk }}
     runs-on: ubuntu-latest
     needs: lint
-    # Autotools is retained as a compatibility fallback. CMake is the primary
-    # build system and the blocking build below.
-    continue-on-error: true
-
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Ubuntu LTS — GTK3
           - distro: ubuntu-22.04
             image: ubuntu:22.04
             gtk: 3
-            pkg_cmd: apt-get install -y --no-install-recommends
-            deps_gtk: libgtk-3-dev
-            pkg_update: apt-get update -qq
-
-          # Ubuntu 24.04 — GTK4
           - distro: ubuntu-24.04
             image: ubuntu:24.04
-            gtk: 4
-            pkg_cmd: apt-get install -y --no-install-recommends
-            deps_gtk: libgtk-4-dev
-            pkg_update: apt-get update -qq
-
-          # Fedora 40 — GTK3
-          - distro: fedora-40
-            image: fedora:40
             gtk: 3
-            pkg_cmd: dnf install -y
-            deps_gtk: gtk3-devel
-            pkg_update: dnf check-update -y || true
-
-          # Fedora 41 — GTK4
-          - distro: fedora-41
-            image: fedora:41
-            gtk: 4
-            pkg_cmd: dnf install -y
-            deps_gtk: gtk4-devel
-            pkg_update: dnf check-update -y || true
-
-          # Arch Linux — GTK3 (rolling)
-          - distro: arch-latest
-            image: archlinux:latest
-            gtk: 3
-            pkg_cmd: pacman -S --noconfirm
-            deps_gtk: gtk3
-            pkg_update: pacman -Syu --noconfirm
-
-          # Alpine — GTK3 (musl libc)
-          - distro: alpine-3.20
-            image: alpine:3.20
-            gtk: 3
-            pkg_cmd: apk add --no-cache
-            deps_gtk: gtk+3.0-dev
-            pkg_update: apk update
 
     container:
       image: ${{ matrix.image }}
-      options: --privileged
 
     steps:
       - name: Checkout
@@ -205,66 +159,22 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          ${{ matrix.pkg_update }}
-          ${{ matrix.pkg_cmd }} \
-            gcc make autoconf automake libtool pkgconf \
-            ${{ matrix.deps_gtk }} glib2-dev \
-            alsa-lib-dev pulseaudio-dev \
-            libvorbis-dev libogg-dev \
-            libx11-dev libxext-dev \
-            2>/dev/null || \
-          ${{ matrix.pkg_cmd }} \
-            gcc make autoconf automake libtool pkg-config \
-            ${{ matrix.deps_gtk }} libglib2.0-dev \
-            libasound2-dev libpulse-dev \
-            libvorbis-dev libogg-dev \
-            libx11-dev libxext-dev
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config \
+            libgtk-3-dev libglib2.0-dev libasound2-dev libpulse-dev \
+            libvorbis-dev libogg-dev libmpg123-dev libflac-dev \
+            libx11-dev libxext-dev libxxf86vm-dev libgl1-mesa-dev
 
-      - name: Bootstrap Autotools
+      - name: Configure with CMake
         run: |
-          autoreconf -fi || (libtoolize --force && aclocal && autoheader && automake --add-missing && autoconf)
-
-      - name: Configure
-        run: |
-          GTK_FLAGS=""
-          if [[ "${{ matrix.gtk }}" == "3" ]]; then
-            GTK_FLAGS="--with-gtk3"
-          else
-            GTK_FLAGS="--with-gtk4"
-          fi
-          ./configure \
-            --prefix=/usr \
-            --enable-alsa \
-            --disable-esd \
-            --disable-solaris \
-            $GTK_FLAGS \
-            CFLAGS="-Wall -Wextra -std=c11 -O2" \
-          || ./configure \
-            --prefix=/usr \
-            --enable-alsa \
-            --disable-esd \
-            CFLAGS="-Wall -Wextra -O2"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DXMMS_GTK_VERSION=${{ matrix.gtk }} \
+            -DXMMS_ENABLE_MIKMOD=OFF
 
       - name: Build
-        run: make -j"$(nproc)"
-
-      - name: Install (staged)
-        run: make DESTDIR=/tmp/xmms-install install
-
-      - name: Verify installation
-        run: |
-          ls -la /tmp/xmms-install/usr/bin/xmms || echo "No xmms binary found (may be expected)"
-          ls -la /tmp/xmms-install/usr/lib/xmms/ || echo "No plugin dir found (may be expected)"
-
-      - name: Upload build artefacts
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: build-logs-${{ matrix.distro }}-gtk${{ matrix.gtk }}
-          path: |
-            config.log
-            xmms/*.log
-          retention-days: 7
+        run: cmake --build build -j"$(nproc)"
 
   # ── CMake Build (migration target) ────────────────────────────────────────
   build-cmake:
@@ -287,13 +197,14 @@ jobs:
 
       - name: Configure with CMake
         run: |
-          cmake -B build \
+          cmake -S . -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DENABLE_GTK3=ON \
-            -DENABLE_ALSA=ON \
-            -DENABLE_PULSE=ON
+            -DXMMS_GTK_VERSION=3 \
+            -DXMMS_ENABLE_ALSA=ON \
+            -DXMMS_ENABLE_PULSE=ON \
+            -DXMMS_ENABLE_MIKMOD=OFF
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
@@ -308,43 +219,34 @@ jobs:
 
   # ── Unit Tests ─────────────────────────────────────────────────────────────
   test:
-    name: Unit Tests / ${{ matrix.distro }}
+    name: Unit Tests / ubuntu-24.04
     runs-on: ubuntu-24.04
     needs: build-cmake
-    # Tests directory is not yet fully established — mark non-blocking for now
-    continue-on-error: true
-
-    strategy:
-      matrix:
-        distro: [ubuntu-24.04, fedora-41]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install test deps
+      - name: Install test dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            check libcmocka-dev \
-            libgtk-3-dev libglib2.0-dev \
-            libasound2-dev libpulse-dev \
-            libvorbis-dev libogg-dev libx11-dev
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config libgtk-3-dev libglib2.0-dev \
+            libasound2-dev libpulse-dev libvorbis-dev libogg-dev \
+            libmpg123-dev libflac-dev libx11-dev libxext-dev \
+            libxxf86vm-dev libgl1-mesa-dev
 
-      - name: Build with tests
+      - name: Configure with CMake
         run: |
-          autoreconf -fi || true
-          ./configure --prefix=/usr --enable-tests 2>/dev/null || \
-          ./configure --prefix=/usr
-          make -j"$(nproc)"
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DXMMS_ENABLE_MIKMOD=OFF
+
+      - name: Build test targets
+        run: cmake --build build -j"$(nproc)"
 
       - name: Run tests
-        run: |
-          if [[ -d tests ]]; then
-            make check || make test ARGS="--output-on-failure"
-          else
-            echo "No tests/ directory yet — skipping (tracked in GH issue)"
-          fi
+        run: ctest --test-dir build --output-on-failure
 
   # ── Memory Safety (ASAN) ───────────────────────────────────────────────────
   asan:
