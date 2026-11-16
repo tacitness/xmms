@@ -76,6 +76,8 @@ target_link_libraries(xmms PRIVATE
 # GTK3: export all symbols so dlopen'd plugins can resolve symbols defined in
 # the main binary (e.g. get_current_effect_plugin, xmms_get_gentitle_format)
 target_link_options(xmms PRIVATE -Wl,--export-dynamic)
+target_compile_definitions(xmms PRIVATE
+    XMMS_REMOTE_CONTROL_PATH="${CMAKE_INSTALL_FULL_BINDIR}/xmms-remote-control")
 
 # Install
 install(TARGETS xmms

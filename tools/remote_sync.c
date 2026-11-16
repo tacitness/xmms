@@ -125,10 +125,68 @@ static gboolean copy_track(const gchar *host, const gchar *source, const gchar *
     return TRUE;
 }
 
+static gchar *sync_playlist(gint local_session, gint remote_session, const gchar *socket_dir,
+                            const gchar *remote_dir, gint selected, gint position,
+                            gchar **playlist_signature)
+{
+    xmms_remote_set_socket_dir(NULL);
+    gint count = xmms_remote_get_playlist_length(local_session);
+    gchar **tracks = g_new0(gchar *, count + 1);
+    GString *signature = g_string_new(NULL);
+    gchar *current = NULL;
+
+    for (gint i = 0; i < count; i++) {
+        gchar *source = xmms_remote_get_playlist_file(local_session, i);
+        gchar *media = source ? remote_media_path(source) : NULL;
+        if (!media) {
+            g_printerr("xmms-remote-sync: playlist item %d has no usable media path\n", i + 1);
+            xmms_remote_set_socket_dir(socket_dir);
+            g_free(source);
+            g_free(media);
+            g_strfreev(tracks);
+            g_string_free(signature, TRUE);
+            return NULL;
+        }
+        if (g_path_is_absolute(media)) {
+            gchar *normalized = g_canonicalize_filename(media, NULL);
+            tracks[i] = remote_destination(normalized, remote_dir);
+            g_free(normalized);
+        } else {
+            tracks[i] = g_strdup(media);
+        }
+        g_string_append_printf(signature, "%s\n", source);
+        if (i == position)
+            current = g_strdup(tracks[i]);
+        g_free(source);
+        g_free(media);
+    }
+
+    xmms_remote_set_socket_dir(socket_dir);
+    if (count > 0) {
+        gchar *digest = g_compute_checksum_for_string(G_CHECKSUM_SHA256, signature->str, -1);
+        if (g_strcmp0(digest, *playlist_signature) == 0) {
+            if (xmms_remote_get_playlist_pos(remote_session) != selected)
+                xmms_remote_set_playlist_pos(remote_session, selected);
+            g_free(digest);
+            g_strfreev(tracks);
+            g_string_free(signature, TRUE);
+            return current;
+        }
+        xmms_remote_playlist(remote_session, tracks, count, FALSE);
+        xmms_remote_set_playlist_pos(remote_session, selected);
+        g_free(*playlist_signature);
+        *playlist_signature = g_strdup(digest);
+        g_free(digest);
+    }
+    g_strfreev(tracks);
+    g_string_free(signature, TRUE);
+    return current;
+}
+
 static gboolean sync_once(gint local_session, gint remote_session, const gchar *host,
                           const gchar *socket_dir, const gchar *remote_dir, gboolean start_current,
                           gchar **last_track, gint *last_position, gboolean *was_active,
-                          gboolean *local_was_playing)
+                          gboolean *local_was_playing, gchar **playlist_signature)
 {
     gint position;
     gboolean playing;
@@ -162,6 +220,21 @@ static gboolean sync_once(gint local_session, gint remote_session, const gchar *
         return FALSE;
     }
 
+    {
+        gchar *current_remote = sync_playlist(local_session, remote_session, socket_dir, remote_dir,
+                                              position, position, playlist_signature);
+        if (current_remote) {
+            g_free(current_remote);
+        } else if (xmms_remote_get_playlist_length(local_session) > 0) {
+            xmms_remote_set_socket_dir(socket_dir);
+            g_printerr("xmms-remote-sync: could not resolve playlist selection %d of %d\n",
+                       position, xmms_remote_get_playlist_length(remote_session));
+            g_free(media);
+            g_free(source);
+            return FALSE;
+        }
+    }
+
     if ((!playing && (!start_current || *local_was_playing)) || position < 0) {
         if (*was_active || xmms_remote_is_playing(remote_session) ||
             xmms_remote_is_paused(remote_session)) {
@@ -183,7 +256,9 @@ static gboolean sync_once(gint local_session, gint remote_session, const gchar *
 
         if (changed) {
             if (g_path_is_absolute(media)) {
-                destination = remote_destination(media, remote_dir);
+                gchar *normalized = g_canonicalize_filename(media, NULL);
+                destination = remote_destination(normalized, remote_dir);
+                g_free(normalized);
             } else {
                 destination = g_strdup(media);
             }
@@ -215,10 +290,6 @@ static gboolean sync_once(gint local_session, gint remote_session, const gchar *
                         g_free(media);
                         g_free(source);
                         return FALSE;
-                    }
-                    {
-                        gchar *playlist[] = {destination, NULL};
-                        xmms_remote_playlist(remote_session, playlist, 1, FALSE);
                     }
                     g_usleep(500000);
                     xmms_remote_jump_to_time(remote_session, remote_time);
@@ -289,6 +360,7 @@ int main(int argc, char **argv)
     gint last_position = -1;
     gboolean was_active = FALSE;
     gboolean local_was_playing = FALSE;
+    gchar *playlist_signature = NULL;
     gboolean ok = TRUE;
 
     g_option_context_add_main_entries(context, entries, NULL);
@@ -316,7 +388,8 @@ int main(int argc, char **argv)
     signal(SIGTERM, stop_sync);
     while (keep_running) {
         if (!sync_once(local_session, remote_session, host, socket_dir, remote_dir, start_current,
-                       &last_track, &last_position, &was_active, &local_was_playing)) {
+                       &last_track, &last_position, &was_active, &local_was_playing,
+                       &playlist_signature)) {
             ok = FALSE;
             break;
         }
@@ -327,6 +400,7 @@ int main(int argc, char **argv)
     }
 
     g_free(last_track);
+    g_free(playlist_signature);
     g_free(host);
     g_free(socket_dir);
     g_free(remote_dir);

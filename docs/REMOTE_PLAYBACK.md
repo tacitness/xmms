@@ -1,6 +1,6 @@
 # Remote playback
 
-`xmms-remote` mirrors the current local XMMS session to an XMMS instance on a
+`xmms-remote` mirrors the local XMMS session to an XMMS instance on a
 remote desktop. It uses SSH's Unix-domain socket forwarding to reach the remote
 XMMS control socket. The control protocol is not opened on a TCP port.
 
@@ -18,11 +18,18 @@ xmms-remote --host jmh --display :0
 ```
 
 This attaches to remote XMMS session 0, or starts XMMS on display `:0` if the
-session is absent. It follows local session 0 until interrupted. Local files
-are copied with `scp` to a private directory under `/tmp` on the remote host;
+session is absent. It follows local session 0 until interrupted. The full
+playlist and its current selection are synchronized. Only the selected local
+file is copied with `scp` to a private directory under `/tmp` on the remote host;
 the remote player reads the copy. URI tracks are passed through for the remote
 player to open itself. Track changes, play/pause/stop state, and playback
 position are mirrored. Position is corrected when drift exceeds 2.5 seconds.
+
+Open **Remote Playback Control** from XMMS's General menu, or run
+`xmms-remote-control` to open the button panel. Choose **Yoda is master**
+or **JMH is master** to switch which player controls the other; choose **Turn
+remote client off** to stop synchronization while leaving both players open.
+The panel expects SSH aliases `jmh` and `yoda` to work in both directions.
 
 To launch a user-local build that is not on the remote `PATH`, pass its binary
 path explicitly, for example `--remote-xmms /home/joel/.local/opt/xmms-ng/bin/xmms`.
