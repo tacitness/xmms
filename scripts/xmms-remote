@@ -1,0 +1,163 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    cat <<'EOF'
+Usage: xmms-remote --host HOST [options] [-- XMMS_OPTIONS_AND_FILES...]
+
+Open a private SSH tunnel to a remote XMMS session. With no trailing XMMS
+arguments, mirror the local player's current track and playback state. With
+arguments after --, pass them to the remote XMMS session (for example -- -u).
+
+Options:
+  --host HOST            SSH host alias (required)
+  --display DISPLAY      X display for a new remote player (default :0)
+  --session N            Remote XMMS session (default 0)
+  --remote-xmms PATH     Remote player binary (default xmms from PATH)
+  --source-session N     Local XMMS session to mirror (default 0)
+  --attach               Connect only; fail if the remote session is absent
+  --once                 Mirror current state once, then exit
+  --start-current        Play the selected local track if local playback is stopped
+  -h, --help             Show this help
+EOF
+}
+
+host=
+display=:0
+remote_session=0
+source_session=0
+remote_xmms=xmms
+launch=1
+once=0
+start_current=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --host) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; host=$2; shift 2 ;;
+        --display) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; display=$2; shift 2 ;;
+        --session) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; remote_session=$2; shift 2 ;;
+        --source-session) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; source_session=$2; shift 2 ;;
+        --remote-xmms) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; remote_xmms=$2; shift 2 ;;
+        --attach) launch=0; shift ;;
+        --once) once=1; shift ;;
+        --start-current) start_current=1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        --) shift; break ;;
+        *) printf 'xmms-remote: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+    esac
+done
+
+case "$host" in
+    ''|-*|*[!A-Za-z0-9_.@-]*) printf 'xmms-remote: invalid SSH host alias\n' >&2; exit 2 ;;
+esac
+case "$remote_xmms" in
+    ''|*[!A-Za-z0-9_./-]*) printf 'xmms-remote: remote binary path contains unsupported characters\n' >&2; exit 2 ;;
+esac
+display_number=${display#:}
+case "$display_number" in
+    ''|*[!0-9.]*|.*|*..*|*.)
+        printf 'xmms-remote: DISPLAY must be a local X display such as :0 or :0.0\n' >&2
+        exit 2
+        ;;
+esac
+case "$remote_session" in ''|*[!0-9]*) printf 'xmms-remote: remote session must be a nonnegative integer\n' >&2; exit 2 ;; esac
+case "$source_session" in ''|*[!0-9]*) printf 'xmms-remote: source session must be a nonnegative integer\n' >&2; exit 2 ;; esac
+[ "${#remote_session}" -le 8 ] || { printf 'xmms-remote: remote session number is too large\n' >&2; exit 2; }
+[ "${#source_session}" -le 8 ] || { printf 'xmms-remote: source session number is too large\n' >&2; exit 2; }
+
+command -v ssh >/dev/null 2>&1 || { printf 'xmms-remote: ssh is required\n' >&2; exit 1; }
+command -v scp >/dev/null 2>&1 || { printf 'xmms-remote: scp is required\n' >&2; exit 1; }
+command -v xmms >/dev/null 2>&1 || { printf 'xmms-remote: local xmms binary is required\n' >&2; exit 1; }
+
+remote_user=$(ssh -o BatchMode=yes "$host" id -un) || {
+    printf 'xmms-remote: cannot identify the SSH account on %s\n' "$host" >&2
+    exit 1
+}
+case "$remote_user" in
+    ''|*[!A-Za-z0-9_.-]*) printf 'xmms-remote: unexpected remote account name\n' >&2; exit 1 ;;
+esac
+
+remote_socket="/tmp/xmms_${remote_user}.${remote_session}"
+remote_media_dir="/tmp/xmms-remote-sync-$(id -u)"
+remote_runtime="/run/user/$(ssh -o BatchMode=yes "$host" id -u)"
+if ! ssh -o BatchMode=yes "$host" "test -S '$remote_socket'"; then
+    if [ "$launch" -eq 0 ]; then
+        printf 'xmms-remote: XMMS session %s is not running on %s\n' "$remote_session" "$host" >&2
+        exit 1
+    fi
+    if ! ssh -o BatchMode=yes "$host" "test -x '$remote_xmms'"; then
+        printf 'xmms-remote: XMMS is not installed on %s; install the XMMS package first\n' "$host" >&2
+        exit 1
+    fi
+    if [ "$remote_session" != 0 ]; then
+        printf 'xmms-remote: automatic launch uses XMMS session 0; attach to an existing nonzero session\n' >&2
+        exit 1
+    fi
+    remote_libdir=
+    case "$remote_xmms" in
+        */bin/xmms) remote_libdir="${remote_xmms%/bin/xmms}/lib" ;;
+    esac
+    if [ -n "$remote_libdir" ]; then
+        ssh -o BatchMode=yes "$host" "env DISPLAY='$display' XAUTHORITY=\$HOME/.Xauthority XDG_RUNTIME_DIR='$remote_runtime' DBUS_SESSION_BUS_ADDRESS='unix:path=$remote_runtime/bus' PULSE_SERVER='unix:$remote_runtime/pulse/native' LD_LIBRARY_PATH='$remote_libdir' nohup '$remote_xmms' >/tmp/xmms-remote-display.log 2>&1 </dev/null &"
+    else
+        ssh -o BatchMode=yes "$host" "env DISPLAY='$display' XAUTHORITY=\$HOME/.Xauthority XDG_RUNTIME_DIR='$remote_runtime' DBUS_SESSION_BUS_ADDRESS='unix:path=$remote_runtime/bus' PULSE_SERVER='unix:$remote_runtime/pulse/native' nohup '$remote_xmms' >/tmp/xmms-remote-display.log 2>&1 </dev/null &"
+    fi
+    tries=0
+    while ! ssh -o BatchMode=yes "$host" "test -S '$remote_socket'"; do
+        tries=$((tries + 1))
+        if [ "$tries" -ge 10 ]; then
+            printf 'xmms-remote: XMMS did not create %s; inspect /tmp/xmms-remote-display.log on %s\n' \
+                "$remote_socket" "$host" >&2
+            exit 1
+        fi
+        sleep 1
+    done
+fi
+
+ssh -o BatchMode=yes "$host" "umask 077; mkdir -p '$remote_media_dir'; chmod 700 '$remote_media_dir'" || {
+    printf 'xmms-remote: could not prepare the remote temporary media directory\n' >&2
+    exit 1
+}
+socket_dir=$(mktemp -d /tmp/xmms-fwd.XXXXXX)
+local_socket="$socket_dir/xmms_$(id -un).${remote_session}"
+ssh -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -N \
+    -L "$local_socket:$remote_socket" "$host" &
+tunnel_pid=$!
+cleanup() {
+    kill "$tunnel_pid" 2>/dev/null || true
+    wait "$tunnel_pid" 2>/dev/null || true
+    [ ! -S "$local_socket" ] || rm -- "$local_socket"
+    rmdir "$socket_dir" 2>/dev/null || true
+}
+trap cleanup EXIT HUP INT TERM
+
+tries=0
+while [ ! -S "$local_socket" ]; do
+    if ! kill -0 "$tunnel_pid" 2>/dev/null; then
+        printf 'xmms-remote: SSH could not open the private XMMS socket tunnel\n' >&2
+        exit 1
+    fi
+    tries=$((tries + 1))
+    if [ "$tries" -ge 10 ]; then
+        printf 'xmms-remote: timed out waiting for SSH socket forwarding\n' >&2
+        exit 1
+    fi
+    sleep 1
+done
+
+if [ "$#" -gt 0 ]; then
+    TMPDIR=$socket_dir xmms --session="$remote_session" "$@"
+else
+    command -v xmms-remote-sync >/dev/null 2>&1 || {
+        printf 'xmms-remote: xmms-remote-sync is required; install the XMMS package\n' >&2
+        exit 1
+    }
+    set -- --host "$host" --socket-dir "$socket_dir" --remote-dir "$remote_media_dir" \
+        --session "$source_session" --remote-session "$remote_session"
+    if [ "$once" -eq 1 ]; then
+        set -- "$@" --once
+    fi
+    if [ "$start_current" -eq 1 ]; then
+        set -- "$@" --start-current
+    fi
+    xmms-remote-sync "$@"
+fi

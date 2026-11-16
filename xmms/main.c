@@ -522,6 +522,7 @@ enum {
     MAINWIN_GENERAL_SHOWMWIN,
     MAINWIN_GENERAL_SHOWPLWIN,
     MAINWIN_GENERAL_SHOWEQWIN,
+    MAINWIN_GENERAL_REMOTE_CONTROL,
     MAINWIN_GENERAL_PREV,
     MAINWIN_GENERAL_PLAY,
     MAINWIN_GENERAL_PAUSE,
@@ -3207,6 +3208,16 @@ void mainwin_general_menu_callback(gpointer cb_data, guint action, GtkWidget *w)
         else
             equalizerwin_real_hide();
         break;
+    case MAINWIN_GENERAL_REMOTE_CONTROL: {
+        gchar *argv[] = {XMMS_REMOTE_CONTROL_PATH, NULL};
+        GError *error = NULL;
+        if (!g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error)) {
+            g_warning("Unable to open remote playback controls: %s",
+                      error ? error->message : "unknown error");
+            g_clear_error(&error);
+        }
+        break;
+    }
     case MAINWIN_GENERAL_PREV:
         playlist_prev();
         break;
@@ -3676,6 +3687,9 @@ void create_popups(void)
     mi_gen_showeqwin =
         menu_check_new(mainwin_general_menu, "Graphical EQ", cfg.equalizer_visible,
                        G_CALLBACK(mainwin_general_menu_callback), MAINWIN_GENERAL_SHOWEQWIN);
+    menu_sep_new(mainwin_general_menu);
+    menu_item_new(mainwin_general_menu, "Remote Playback Control",
+                  G_CALLBACK(mainwin_general_menu_callback), MAINWIN_GENERAL_REMOTE_CONTROL);
     menu_sep_new(mainwin_general_menu);
     {
         GtkWidget *opts_item = gtk_menu_item_new_with_label(_("Options"));

@@ -28,6 +28,7 @@ extern "C" {
 
 gint xmms_connect_to_session(
     gint session); /* Do NOT use this! This is only for control socket initialization now. */
+void xmms_remote_set_socket_dir(const gchar *directory);
 void xmms_remote_playlist(gint session, gchar **list, gint num, gboolean enqueue);
 gint xmms_remote_get_version(gint session);
 void xmms_remote_playlist_add(gint session, GList *list);

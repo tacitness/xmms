@@ -1,0 +1,63 @@
+#!/bin/sh
+set -eu
+
+host=${XMMS_REMOTE_HOST:-jmh}
+reverse_host=${XMMS_RETURN_HOST:-yoda}
+remote_tool_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+remote_xmms=$remote_tool_dir/xmms
+remote_library_dir=$(dirname "$remote_tool_dir")/lib
+PATH=$remote_tool_dir:$PATH
+LD_LIBRARY_PATH=$remote_library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export PATH LD_LIBRARY_PATH
+
+stop_syncs() {
+    pkill -TERM -f "^xmms-remote-sync --host $host " 2>/dev/null || true
+    ssh -o BatchMode=yes "$host" \
+        "pkill -TERM -f '^xmms-remote-sync --host $reverse_host ' 2>/dev/null || true"
+    sleep 1
+}
+
+turn_client_off() {
+    stop_syncs
+    ssh -o BatchMode=yes "$host" \
+        "LD_LIBRARY_PATH='$remote_library_dir' '$remote_xmms' --session=0 --stop"
+}
+
+start_master() {
+    target=$1
+    source_host=$2
+    ssh -o BatchMode=yes "$source_host" \
+        "nohup env PATH='$remote_tool_dir':\$PATH LD_LIBRARY_PATH='$remote_library_dir' \
+         '$remote_tool_dir/xmms-remote' --host '$target' --display :0 \
+         --remote-xmms '$remote_xmms' >/tmp/xmms-remote-master.log 2>&1 </dev/null &"
+}
+
+if [ "${1:-}" = "--stop" ]; then
+    turn_client_off
+    exit 0
+fi
+
+command -v zenity >/dev/null 2>&1 || {
+    printf 'xmms-remote-control: zenity is required for the button panel\n' >&2
+    exit 1
+}
+
+action=$(zenity --list --title="XMMS Remote Control" --text="Choose playback control" \
+    --column="Action" "Yoda is master" "JMH is master" "Stop remote playback and client" \
+    "Cancel") || exit 0
+
+case "$action" in
+    "Yoda is master")
+        stop_syncs
+        nohup "$remote_tool_dir/xmms-remote" --host "$host" --display :0 \
+            --remote-xmms "$remote_xmms" >/tmp/xmms-remote-master.log 2>&1 </dev/null &
+        ;;
+    "JMH is master")
+        stop_syncs
+        start_master "$reverse_host" "$host"
+        ;;
+    "Stop remote playback and client")
+        turn_client_off
+        ;;
+    *) exit 0 ;;
+esac
